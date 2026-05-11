@@ -1,3 +1,37 @@
+/* 3D 地球背景 */
+/* 首页顶部 3D 地球横幅 */
+.globe-hero {
+    width: 100%;
+    height: 380px;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid rgba(0, 180, 255, 0.35);
+}
+
+.globe-hero iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+/* 确保首页内容显示在地球上方 */
+body {
+    position: relative;
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+}
+
+.top-header,
+main,
+section,
+footer {
+    position: relative;
+    z-index: 2;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -5,8 +39,8 @@
 body {
     margin: 0;
     font-family: Arial, "Microsoft YaHei", sans-serif;
-    background: #ffffff;
-    color: #111;
+    background: #000;
+    color: #fff;
 }
 
 a {
@@ -21,8 +55,8 @@ a {
     align-items: center;
     padding: 8px 22px;
     border-top: 4px solid #202833;
-    border-bottom: 1px solid #ddd;
-    background: #fff;
+    border-bottom: 1px solid rgba(0, 180, 255, 0.35);
+    background: rgba(0, 0, 0, 0.72);
 }
 
 .logo-box {
