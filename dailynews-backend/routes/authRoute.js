@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const db = require("../db");
 
 const {
@@ -237,4 +238,88 @@ router.post("/register", async (req, res) => {
   }
 });
 
+/**
+ * 会员登录
+ * POST /api/auth/login
+ */
+router.post("/login", async (req, res) => {
+  try {
+    const { account, password } = req.body;
+
+    if (!account || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "请输入账号和密码"
+      });
+    }
+
+    db.get(
+      `
+      SELECT * FROM users
+      WHERE username = ? OR account = ?
+      LIMIT 1
+      `,
+      [account, account],
+      async (err, user) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: "用户查询失败"
+          });
+        }
+
+        if (!user) {
+          return res.status(400).json({
+            success: false,
+            message: "账号不存在"
+          });
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(
+          password,
+          user.password_hash
+        );
+
+        if (!isPasswordCorrect) {
+          return res.status(400).json({
+            success: false,
+            message: "密码错误"
+          });
+        }
+
+        const token = jwt.sign(
+          {
+            id: user.id,
+            username: user.username,
+            account: user.account,
+            memberLevel: user.member_level
+          },
+          process.env.JWT_SECRET || "dailynews_default_secret",
+          {
+            expiresIn: "7d"
+          }
+        );
+
+        return res.json({
+          success: true,
+          message: "登录成功",
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            account: user.account,
+            accountType: user.account_type,
+            memberLevel: user.member_level
+          }
+        });
+      }
+    );
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "服务器错误",
+      error: error.message
+    });
+  }
+});
 module.exports = router;
