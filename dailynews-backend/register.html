@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>会员注册 - Daily News</title>
+  <style>
+    body {
+      background: #07111f;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 40px;
+    }
+
+    .box {
+      width: 380px;
+      margin: auto;
+      background: #101c2e;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 120, 255, 0.3);
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #2b5f9e;
+      background: #07111f;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #0077ff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #005fd1;
+    }
+
+    .tips {
+      font-size: 13px;
+      color: #8fb8e8;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    #message {
+      margin-top: 15px;
+      color: #ffd700;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Daily News 会员注册</h2>
+
+    <input id="username" placeholder="会员名：字母大小写和数字" />
+    <input id="account" placeholder="邮箱或新加坡手机号码" />
+
+    <button onclick="sendOtp()">发送验证码</button>
+
+    <input id="otpCode" placeholder="请输入验证码" />
+    <input id="password" type="password" placeholder="密码：字母数字和符号" />
+
+    <button onclick="register()">注册会员</button>
+
+    <div class="tips">
+      会员名只能使用 A-Z、a-z、0-9。<br />
+      手机号支持：91234567 或 +6591234567。<br />
+      目前验证码会显示在 VS Code 终端里。
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:5000/api/auth";
+
+    function showMessage(text) {
+      document.getElementById("message").innerText = text;
+    }
+
+    async function sendOtp() {
+      const account = document.getElementById("account").value.trim();
+
+      if (!account) {
+        showMessage("请输入邮箱或手机号码");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/send-otp`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ account })
+        });
+
+        const data = await res.json();
+        showMessage(data.message);
+      } catch (error) {
+        showMessage("发送验证码失败，请确认后端是否启动");
+      }
+    }
+
+    async function register() {
+      const username = document.getElementById("username").value.trim();
+      const account = document.getElementById("account").value.trim();
+      const otpCode = document.getElementById("otpCode").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!username || !account || !otpCode || !password) {
+        showMessage("请填写完整注册信息");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            username,
+            account,
+            otpCode,
+            password
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage("注册成功，欢迎加入 Daily News！");
+        } else {
+          showMessage(data.message);
+        }
+      } catch (error) {
+        showMessage("注册失败，请确认后端是否启动");
+      }
+    }
+  </script>
+</body>
+</html>
