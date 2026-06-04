@@ -108,9 +108,9 @@
             data.user.memberLevel
           );
 
-          // 后面可以改成跳转到我的 MY 页面
-          // window.location.href = "my.html";
-        } else {
+          setTimeout(() => {
+          window.location.href = "my.html";
+        }, 800);
           showMessage(data.message);
         }
       } catch (error) {

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>我的 MY - Daily News</title>
+  <style>
+    body {
+      margin: 0;
+      background: #07111f;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .header {
+      background: #101c2e;
+      padding: 18px 30px;
+      border-bottom: 1px solid #1f3f66;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #ffffff;
+    }
+
+    .logout-btn {
+      background: #d93636;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .welcome {
+      background: linear-gradient(135deg, #0d2b52, #123f78);
+      padding: 26px;
+      border-radius: 14px;
+      box-shadow: 0 0 20px rgba(0, 120, 255, 0.25);
+      margin-bottom: 24px;
+    }
+
+    .welcome h2 {
+      margin-top: 0;
+      color: #ffd700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      background: #101c2e;
+      border: 1px solid #1f3f66;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 0 15px rgba(0, 80, 180, 0.15);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #8fc7ff;
+      font-size: 18px;
+    }
+
+    .item {
+      margin: 12px 0;
+      color: #d7e7ff;
+      line-height: 1.6;
+    }
+
+    .label {
+      color: #8fb8e8;
+    }
+
+    .value {
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .vip-btn {
+      background: #0077ff;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .vip-btn:hover {
+      background: #005fd1;
+    }
+
+    #message {
+      color: #ffd700;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Daily News 我的 MY</h1>
+    <button class="logout-btn" onclick="logout()">退出登录</button>
+  </div>
+
+  <div class="container">
+    <div class="welcome">
+      <h2 id="welcomeText">欢迎回来</h2>
+      <p>这里是你的会员账户中心，可以查看个人资料、会员等级、钱包余额和订阅状态。</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>个人资料</h3>
+        <div class="item">
+          <span class="label">会员 ID：</span>
+          <span class="value" id="userId">-</span>
+        </div>
+        <div class="item">
+          <span class="label">会员名：</span>
+          <span class="value" id="username">-</span>
+        </div>
+        <div class="item">
+          <span class="label">账号：</span>
+          <span class="value" id="account">-</span>
+        </div>
+        <div class="item">
+          <span class="label">账号类型：</span>
+          <span class="value" id="accountType">-</span>
+        </div>
+        <div class="item">
+          <span class="label">注册时间：</span>
+          <span class="value" id="createdAt">-</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>会员订阅</h3>
+        <div class="item">
+          <span class="label">当前等级：</span>
+          <span class="value" id="memberLevel">-</span>
+        </div>
+        <div class="item">
+          <span class="label">订阅状态：</span>
+          <span class="value" id="subscriptionStatus">-</span>
+        </div>
+        <div class="item">
+          <span class="label">到期时间：</span>
+          <span class="value" id="subscriptionExpireAt">-</span>
+        </div>
+        <button class="vip-btn" onclick="goVip()">升级 VIP 会员</button>
+      </div>
+
+      <div class="card">
+        <h3>我的钱包</h3>
+        <div class="item">
+          <span class="label">钱包余额：</span>
+          <span class="value" id="walletBalance">SGD 0.00</span>
+        </div>
+        <div class="item">
+          <span class="label">充值记录：</span>
+          <span class="value">暂未开放</span>
+        </div>
+        <div class="item">
+          <span class="label">消费记录：</span>
+          <span class="value">暂未开放</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>账户安全</h3>
+        <div class="item">
+          <span class="label">登录状态：</span>
+          <span class="value">已登录</span>
+        </div>
+        <div class="item">
+          <span class="label">Token 验证：</span>
+          <span class="value">已通过</span>
+        </div>
+        <div class="item">
+          <span class="label">密码修改：</span>
+          <span class="value">后续开发</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:5000/api/auth";
+
+    async function loadMyProfile() {
+      const token = localStorage.getItem("dailynews_token");
+
+      if (!token) {
+        alert("请先登录");
+        window.location.href = "login.html";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/me`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          alert(data.message || "登录状态失效，请重新登录");
+          localStorage.removeItem("dailynews_token");
+          localStorage.removeItem("dailynews_user");
+          window.location.href = "login.html";
+          return;
+        }
+
+        const user = data.user;
+
+        document.getElementById("welcomeText").innerText =
+          `欢迎回来，${user.username}`;
+
+        document.getElementById("userId").innerText = user.id;
+        document.getElementById("username").innerText = user.username;
+        document.getElementById("account").innerText = user.account;
+        document.getElementById("accountType").innerText =
+          user.accountType === "phone" ? "手机号码" : "邮箱";
+        document.getElementById("memberLevel").innerText =
+          user.memberLevel === "free" ? "免费会员" : user.memberLevel;
+
+        document.getElementById("walletBalance").innerText =
+          `SGD ${Number(user.walletBalance || 0).toFixed(2)}`;
+
+        document.getElementById("subscriptionStatus").innerText =
+          user.subscriptionStatus === "free" ? "免费版" : user.subscriptionStatus;
+
+        document.getElementById("subscriptionExpireAt").innerText =
+          user.subscriptionExpireAt || "暂无到期时间";
+
+        document.getElementById("createdAt").innerText =
+          user.createdAt || "-";
+
+        localStorage.setItem("dailynews_user", JSON.stringify(user));
+      } catch (error) {
+        document.getElementById("message").innerText =
+          "加载 MY 页面失败，请确认后端是否启动";
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("dailynews_token");
+      localStorage.removeItem("dailynews_user");
+      window.location.href = "login.html";
+    }
+
+    function goVip() {
+      alert("VIP 会员订阅功能后续开发");
+    }
+
+    loadMyProfile();
+  </script>
+</body>
+</html>

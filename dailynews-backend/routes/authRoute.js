@@ -322,4 +322,90 @@ router.post("/login", async (req, res) => {
     });
   }
 });
+/**
+ * 验证 Token 中间件
+ */
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({
+      success: false,
+      message: "未登录，请先登录"
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Token 无效"
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "dailynews_default_secret"
+    );
+
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "登录已过期，请重新登录"
+    });
+  }
+}
+
+/**
+ * 获取当前登录用户信息
+ * GET /api/auth/me
+ */
+router.get("/me", verifyToken, (req, res) => {
+  const userId = req.user.id;
+
+  db.get(
+    `
+    SELECT id, username, account, account_type, member_level, created_at
+    FROM users
+    WHERE id = ?
+    LIMIT 1
+    `,
+    [userId],
+    (err, user) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: "用户信息查询失败"
+        });
+      }
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "用户不存在"
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "获取用户信息成功",
+        user: {
+          id: user.id,
+          username: user.username,
+          account: user.account,
+          accountType: user.account_type,
+          memberLevel: user.member_level,
+          createdAt: user.created_at,
+          walletBalance: 0,
+          subscriptionStatus: "free",
+          subscriptionExpireAt: null
+        }
+      });
+    }
+  );
+});
 module.exports = router;
