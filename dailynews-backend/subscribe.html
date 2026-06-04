@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>会员订阅 - Daily News</title>
+  <style>
+    body {
+      margin: 0;
+      background: #07111f;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .header {
+      background: #101c2e;
+      padding: 18px 30px;
+      border-bottom: 1px solid #1f3f66;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .back-btn {
+      background: #2b5f9e;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0d2b52, #123f78);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 28px;
+      box-shadow: 0 0 22px rgba(0, 120, 255, 0.25);
+    }
+
+    .hero h2 {
+      color: #ffd700;
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .plan {
+      background: #101c2e;
+      border: 1px solid #1f3f66;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 0 15px rgba(0, 80, 180, 0.15);
+      position: relative;
+    }
+
+    .plan.vip {
+      border: 2px solid #ffd700;
+    }
+
+    .badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: #ffd700;
+      color: #111;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .plan h3 {
+      color: #8fc7ff;
+      margin-top: 0;
+      font-size: 22px;
+    }
+
+    .price {
+      font-size: 30px;
+      color: #ffffff;
+      font-weight: bold;
+      margin: 18px 0;
+    }
+
+    .price span {
+      font-size: 14px;
+      color: #8fb8e8;
+      font-weight: normal;
+    }
+
+    .feature {
+      margin: 12px 0;
+      color: #d7e7ff;
+      line-height: 1.5;
+    }
+
+    .subscribe-btn {
+      width: 100%;
+      margin-top: 18px;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #0077ff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .subscribe-btn:hover {
+      background: #005fd1;
+    }
+
+    .free-btn {
+      background: #444;
+    }
+
+    .free-btn:hover {
+      background: #555;
+    }
+
+    .note {
+      margin-top: 30px;
+      background: #101c2e;
+      border: 1px solid #1f3f66;
+      border-radius: 12px;
+      padding: 20px;
+      color: #d7e7ff;
+      line-height: 1.7;
+    }
+
+    #message {
+      margin-top: 18px;
+      color: #ffd700;
+      font-weight: bold;
+    }
+
+    @media (max-width: 900px) {
+      .plans {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Daily News 会员订阅</h1>
+    <button class="back-btn" onclick="goBack()">返回我的 MY</button>
+  </div>
+
+  <div class="container">
+    <div class="hero">
+      <h2>升级会员，解锁 AI 聚合分析能力</h2>
+      <p>选择适合你的会员套餐，后续可以接入 Stripe、PayPal、Visa 或本地支付接口。</p>
+    </div>
+
+    <div class="plans">
+      <div class="plan">
+        <h3>免费会员</h3>
+        <div class="price">SGD 0 <span>/ 永久</span></div>
+        <div class="feature">✓ 查看基础新闻内容</div>
+        <div class="feature">✓ 使用基础 AI 新闻摘要</div>
+        <div class="feature">✓ 进入我的 MY 页面</div>
+        <div class="feature">✕ 高级财经数据总结</div>
+        <div class="feature">✕ VIP 深度报告</div>
+        <button class="subscribe-btn free-btn" onclick="selectPlan('free')">
+          当前基础套餐
+        </button>
+      </div>
+
+      <div class="plan vip">
+        <div class="badge">推荐</div>
+        <h3>VIP 月费会员</h3>
+        <div class="price">SGD 9.90 <span>/ 月</span></div>
+        <div class="feature">✓ 查看全部 AI 新闻汇总</div>
+        <div class="feature">✓ AI 数据总结</div>
+        <div class="feature">✓ 财经日历重点提醒</div>
+        <div class="feature">✓ 科技与财经专题</div>
+        <div class="feature">✓ VIP 专属内容入口</div>
+        <button class="subscribe-btn" onclick="selectPlan('vip_monthly')">
+          升级月费 VIP
+        </button>
+      </div>
+
+      <div class="plan">
+        <h3>VIP 年费会员</h3>
+        <div class="price">SGD 99 <span>/ 年</span></div>
+        <div class="feature">✓ 包含月费会员全部权益</div>
+        <div class="feature">✓ 年费价格更优惠</div>
+        <div class="feature">✓ 年度 AI 深度报告</div>
+        <div class="feature">✓ 高级数据分析入口</div>
+        <div class="feature">✓ 后续推广奖励优先开放</div>
+        <button class="subscribe-btn" onclick="selectPlan('vip_yearly')">
+          升级年费 VIP
+        </button>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>当前版本说明：</strong><br />
+      这个页面目前是会员订阅前端展示页面，支付接口还没有正式接入。  
+      下一步可以增加后端订阅订单表、支付订单状态、会员等级更新，以及 Stripe / PayPal 支付跳转。
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <script>
+    function checkLogin() {
+      const token = localStorage.getItem("dailynews_token");
+
+      if (!token) {
+        alert("请先登录后再订阅会员");
+        window.location.href = "login.html";
+      }
+    }
+
+    function selectPlan(plan) {
+      const planMap = {
+        free: "免费会员",
+        vip_monthly: "VIP 月费会员 SGD 9.90/月",
+        vip_yearly: "VIP 年费会员 SGD 99/年"
+      };
+
+      document.getElementById("message").innerText =
+        "你选择了：" + planMap[plan] + "。支付接口将在下一步开发。";
+
+      console.log("Selected plan:", plan);
+    }
+
+    function goBack() {
+      window.location.href = "my.html";
+    }
+
+    checkLogin();
+  </script>
+</body>
+</html>
