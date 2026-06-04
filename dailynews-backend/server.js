@@ -6,6 +6,7 @@ const cors = require("cors");
 require("./db");
 
 const authRoutes = require("./routes/authRoute");
+const walletRoutes = require("./routes/walletRoute");
 
 console.log("authRoutes type:", typeof authRoutes);
 
@@ -19,6 +20,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/wallet", walletRoutes);
 
 const PORT = process.env.PORT || 5000;
 
