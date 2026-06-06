@@ -61,6 +61,42 @@ db.serialize(() => {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS subscription_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      plan_type TEXT NOT NULL,
+      plan_name TEXT NOT NULL,
+      amount REAL NOT NULL,
+      currency TEXT DEFAULT 'SGD',
+      status TEXT DEFAULT 'pending',
+      payment_method TEXT DEFAULT 'wallet',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      paid_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+  
+  db.run(`
+  CREATE TABLE IF NOT EXISTS payment_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    provider TEXT DEFAULT 'stripe',
+    provider_session_id TEXT,
+    amount REAL NOT NULL,
+    currency TEXT DEFAULT 'SGD',
+    status TEXT DEFAULT 'pending',
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    paid_at DATETIME,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
+  // 给 users 表补充 VIP 字段；如果字段已存在，SQLite 会报错，这里忽略即可。
+  db.run(`ALTER TABLE users ADD COLUMN vip_expire_at DATETIME`, () => {});
+  db.run(`ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'free'`, () => {});
 });
 
 module.exports = db;

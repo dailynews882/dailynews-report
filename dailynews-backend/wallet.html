@@ -189,7 +189,7 @@
 
       <div class="action-row">
         <button class="wallet-btn" onclick="rechargeDemo()">模拟充值 SGD 10</button>
-        <button class="wallet-btn" onclick="showComingSoon('充值功能')">真实充值</button>
+        <button class="wallet-btn" onclick="createStripeTopup()">真实充值</button>
         <button class="wallet-btn withdraw-btn" onclick="showComingSoon('提现功能')">申请提现</button>
       </div>
 
@@ -266,6 +266,7 @@
   <script>
   const API_AUTH = "http://localhost:5000/api/auth";
   const API_WALLET = "http://localhost:5000/api/wallet";
+  const API_PAYMENT = "http://localhost:5000/api/payment";
 
   async function loadWalletPage() {
     const token = localStorage.getItem("dailynews_token");
@@ -409,43 +410,92 @@
   }
 
   async function rechargeDemo() {
-    const token = localStorage.getItem("dailynews_token");
+  const token = localStorage.getItem("dailynews_token");
 
-    if (!token) {
-      alert("请先登录");
-      window.location.href = "login.html";
+  if (!token) {
+    alert("请先登录");
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_WALLET}/recharge-demo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        amount: 10
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      document.getElementById("message").innerText =
+        data.message || "模拟充值失败";
       return;
     }
 
-    try {
-      const res = await fetch(`${API_WALLET}/recharge-demo`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          amount: 10
-        })
-      });
+    document.getElementById("message").innerText = data.message;
 
-      const data = await res.json();
+    await loadWalletPage();
+  } catch (error) {
+    document.getElementById("message").innerText =
+      "模拟充值失败，请确认后端是否启动";
+  }
+}
 
-      if (!data.success) {
-        document.getElementById("message").innerText =
-          data.message || "模拟充值失败";
-        return;
-      }
+async function createStripeTopup() {
+  const token = localStorage.getItem("dailynews_token");
 
-      document.getElementById("message").innerText = data.message;
-
-      await loadWalletPage();
-    } catch (error) {
-      document.getElementById("message").innerText =
-        "模拟充值失败，请确认后端是否启动";
-    }
+  if (!token) {
+    alert("请先登录");
+    window.location.href = "login.html";
+    return;
   }
 
+  const amountInput = prompt("请输入充值金额，例如 10、20、50：", "10");
+  const amount = Number(amountInput);
+
+  if (!amount || amount <= 0) {
+    document.getElementById("message").innerText = "充值金额无效";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_PAYMENT}/create-wallet-topup-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        amount
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      const errorText =
+       (data.message || "创建支付订单失败") +
+       (data.error ? "：" + data.error : "");
+
+      document.getElementById("message").innerText = errorText;
+
+      alert(errorText);
+
+      return;
+    }
+
+    window.location.href = data.checkoutUrl;
+  } catch (error) {
+    document.getElementById("message").innerText =
+      "创建支付订单失败，请确认后端是否启动";
+  }
+}
   function showComingSoon(name) {
     document.getElementById("message").innerText =
       name + "将在下一步接入真实支付接口和审核流程。";
