@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>提现管理 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <h2>Daily News</h2>
+      <p>后台管理系统</p>
+
+      <nav>
+        <a href="admin.html">后台首页</a>
+        <a href="admin-users.html">用户管理</a>
+        <a href="admin-wallet.html">钱包管理</a>
+        <a href="admin-subscriptions.html">订阅管理</a>
+        <a href="admin-withdrawals.html" class="active">提现管理</a>
+      </nav>
+
+      <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>提现管理</h1>
+        <span>审核用户提现申请、处理付款状态</span>
+      </header>
+
+      <section class="dashboard-cards">
+        <div class="dashboard-card">
+          <h3>提现总金额</h3>
+          <p>$860</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>待审核</h3>
+          <p>5</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>已批准</h3>
+          <p>12</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>已拒绝</h3>
+          <p>2</p>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <h2>提现申请记录</h2>
+          <button class="small-btn">导出记录</button>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>提现ID</th>
+              <th>用户</th>
+              <th>提现金额</th>
+              <th>提现方式</th>
+              <th>账户信息</th>
+              <th>申请时间</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>WD202606001</td>
+              <td>user001</td>
+              <td>$50.00</td>
+              <td>银行卡</td>
+              <td>DBS **** 2388</td>
+              <td>2026-06-03 09:20</td>
+              <td><span class="status normal">待审核</span></td>
+              <td>
+                <button class="table-btn success">批准</button>
+                <button class="table-btn danger">拒绝</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>WD202606002</td>
+              <td>user002</td>
+              <td>$120.00</td>
+              <td>PayNow</td>
+              <td>+65 **** 8899</td>
+              <td>2026-06-03 10:05</td>
+              <td><span class="status vip">已批准</span></td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>WD202606003</td>
+              <td>user003</td>
+              <td>$30.00</td>
+              <td>银行卡</td>
+              <td>OCBC **** 6721</td>
+              <td>2026-06-03 10:40</td>
+              <td><span class="status banned">已拒绝</span></td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>WD202606004</td>
+              <td>user004</td>
+              <td>$80.00</td>
+              <td>PayNow</td>
+              <td>+65 **** 1266</td>
+              <td>2026-06-03 11:15</td>
+              <td><span class="status normal">待审核</span></td>
+              <td>
+                <button class="table-btn success">批准</button>
+                <button class="table-btn danger">拒绝</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

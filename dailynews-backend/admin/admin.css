@@ -1,0 +1,272 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  background: #07111f;
+  color: #ffffff;
+}
+
+.admin-login-body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #123b70, #050b14 70%);
+}
+
+.admin-login-box {
+  width: 360px;
+  padding: 35px;
+  border-radius: 16px;
+  background: rgba(8, 20, 40, 0.95);
+  box-shadow: 0 0 25px rgba(0, 180, 255, 0.35);
+  text-align: center;
+}
+
+.admin-login-box h1 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #ffd76a;
+}
+
+.admin-login-box p {
+  margin-bottom: 25px;
+  color: #b8d8ff;
+}
+
+.admin-login-box input {
+  width: 100%;
+  padding: 13px;
+  margin-bottom: 15px;
+  border: 1px solid #1f6fbf;
+  border-radius: 8px;
+  background: #0b1b30;
+  color: #ffffff;
+  outline: none;
+}
+
+.admin-login-box input::placeholder {
+  color: #7892b0;
+}
+
+.admin-login-box button {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #008cff, #00d4ff);
+  color: #ffffff;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.admin-login-box button:hover {
+  opacity: 0.9;
+}
+
+.login-msg {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #ff7777;
+}
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #06101f;
+}
+
+.admin-sidebar {
+  width: 240px;
+  background: #081b33;
+  padding: 25px 20px;
+  box-shadow: 3px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.admin-sidebar h2 {
+  color: #ffd76a;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.admin-sidebar p {
+  color: #8fb7df;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.admin-sidebar nav a {
+  display: block;
+  padding: 13px 15px;
+  margin-bottom: 10px;
+  color: #d8ecff;
+  text-decoration: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-sidebar nav a:hover,
+.admin-sidebar nav a.active {
+  background: linear-gradient(90deg, #007bff, #00c8ff);
+  color: #ffffff;
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: 30px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #ff4d4d;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 30px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.admin-header h1 {
+  font-size: 28px;
+  color: #ffffff;
+}
+
+.admin-header span {
+  color: #9fc9f5;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.dashboard-card {
+  background: #0b213d;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 0 18px rgba(0, 140, 255, 0.15);
+  border: 1px solid rgba(0, 180, 255, 0.2);
+}
+
+.dashboard-card h3 {
+  color: #b8d8ff;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.dashboard-card p {
+  font-size: 30px;
+  font-weight: bold;
+  color: #ffd76a;
+}
+
+.admin-panel {
+  background: #0b213d;
+  padding: 25px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 180, 255, 0.2);
+}
+
+.admin-panel h2 {
+  color: #ffd76a;
+  margin-bottom: 12px;
+}
+
+.admin-panel p {
+  color: #c8ddf5;
+  line-height: 1.7;
+}
+.panel-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.small-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #008cff, #00d4ff);
+  color: #ffffff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #dbeeff;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(120, 180, 240, 0.18);
+  text-align: left;
+}
+
+.admin-table th {
+  color: #ffd76a;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-table tr:hover {
+  background: rgba(0, 150, 255, 0.06);
+}
+
+.status {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status.vip {
+  background: rgba(255, 215, 106, 0.18);
+  color: #ffd76a;
+}
+
+.status.normal {
+  background: rgba(0, 200, 255, 0.15);
+  color: #6edcff;
+}
+
+.status.banned {
+  background: rgba(255, 77, 77, 0.15);
+  color: #ff7777;
+}
+
+.table-btn {
+  padding: 6px 10px;
+  margin-right: 6px;
+  border: none;
+  border-radius: 6px;
+  background: #1f7edb;
+  color: white;
+  cursor: pointer;
+}
+
+.table-btn.danger {
+  background: #e64646;
+}
+
+.table-btn.success {
+  background: #18a058;
+}

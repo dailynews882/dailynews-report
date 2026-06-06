@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>订阅管理 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <h2>Daily News</h2>
+      <p>后台管理系统</p>
+
+      <nav>
+        <a href="admin.html">后台首页</a>
+        <a href="admin-users.html">用户管理</a>
+        <a href="admin-wallet.html">钱包管理</a>
+        <a href="admin-subscriptions.html" class="active">订阅管理</a>
+        <a href="admin-withdrawals.html">提现管理</a>
+      </nav>
+
+      <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>订阅管理</h1>
+        <span>管理VIP会员套餐、订阅状态和到期时间</span>
+      </header>
+
+      <section class="dashboard-cards">
+        <div class="dashboard-card">
+          <h3>VIP总数</h3>
+          <p>36</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>月度会员</h3>
+          <p>18</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>年度会员</h3>
+          <p>12</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>即将到期</h3>
+          <p>6</p>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <h2>订阅记录</h2>
+          <button class="small-btn">新增订阅</button>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>订阅ID</th>
+              <th>用户</th>
+              <th>套餐类型</th>
+              <th>支付金额</th>
+              <th>开始时间</th>
+              <th>到期时间</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>VIP202606001</td>
+              <td>user001</td>
+              <td>月度VIP</td>
+              <td>$9.90</td>
+              <td>2026-06-01</td>
+              <td>2026-07-01</td>
+              <td><span class="status vip">生效中</span></td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn danger">取消</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>VIP202606002</td>
+              <td>user002</td>
+              <td>年度VIP</td>
+              <td>$99.00</td>
+              <td>2026-06-02</td>
+              <td>2027-06-02</td>
+              <td><span class="status vip">生效中</span></td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn danger">取消</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>VIP202606003</td>
+              <td>user003</td>
+              <td>月度VIP</td>
+              <td>$9.90</td>
+              <td>2026-05-01</td>
+              <td>2026-06-01</td>
+              <td><span class="status banned">已过期</span></td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn success">续费</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>VIP202606004</td>
+              <td>user004</td>
+              <td>高级AI会员</td>
+              <td>$19.90</td>
+              <td>2026-06-03</td>
+              <td>2026-07-03</td>
+              <td><span class="status normal">试用中</span></td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn success">转正式</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

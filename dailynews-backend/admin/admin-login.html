@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>后台管理员登录 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-login-body">
+
+  <div class="admin-login-box">
+    <h1>Daily News 后台管理</h1>
+    <p>管理员登录</p>
+
+    <input type="text" id="adminUsername" placeholder="请输入管理员账号" />
+    <input type="password" id="adminPassword" placeholder="请输入管理员密码" />
+
+    <button onclick="adminLogin()">登录后台</button>
+
+    <div id="loginMsg" class="login-msg"></div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

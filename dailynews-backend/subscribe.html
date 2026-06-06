@@ -227,33 +227,83 @@
   </div>
 
   <script>
-    function checkLogin() {
-      const token = localStorage.getItem("dailynews_token");
+  const API_SUBSCRIPTION = "http://localhost:5000/api/subscription";
 
-      if (!token) {
-        alert("请先登录后再订阅会员");
-        window.location.href = "login.html";
-      }
+  function checkLogin() {
+    const token = localStorage.getItem("dailynews_token");
+
+    if (!token) {
+      alert("请先登录后再订阅会员");
+      window.location.href = "login.html";
+    }
+  }
+
+  async function selectPlan(planType) {
+    const token = localStorage.getItem("dailynews_token");
+
+    if (!token) {
+      alert("请先登录");
+      window.location.href = "login.html";
+      return;
     }
 
-    function selectPlan(plan) {
-      const planMap = {
-        free: "免费会员",
-        vip_monthly: "VIP 月费会员 SGD 9.90/月",
-        vip_yearly: "VIP 年费会员 SGD 99/年"
-      };
+    const planMap = {
+      free: "免费会员",
+      vip_monthly: "VIP 月费会员 SGD 9.90/月",
+      vip_yearly: "VIP 年费会员 SGD 99/年"
+    };
+
+    if (planType === "free") {
+      document.getElementById("message").innerText =
+        "你当前正在使用免费会员套餐。";
+      return;
+    }
+
+    const confirmBuy = confirm(
+      `确认使用钱包余额购买：${planMap[planType]} 吗？`
+    );
+
+    if (!confirmBuy) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_SUBSCRIPTION}/buy-with-wallet`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          planType
+        })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        document.getElementById("message").innerText =
+          data.message || "购买失败";
+        return;
+      }
 
       document.getElementById("message").innerText =
-        "你选择了：" + planMap[plan] + "。支付接口将在下一步开发。";
+        data.message + "，即将返回我的 MY 页面。";
 
-      console.log("Selected plan:", plan);
+      setTimeout(() => {
+        window.location.href = "my.html";
+      }, 1200);
+    } catch (error) {
+      document.getElementById("message").innerText =
+        "购买失败，请确认后端是否启动";
     }
+  }
 
-    function goBack() {
-      window.location.href = "my.html";
-    }
+  function goBack() {
+    window.location.href = "my.html";
+  }
 
-    checkLogin();
-  </script>
+  checkLogin();
+</script>
 </body>
 </html>

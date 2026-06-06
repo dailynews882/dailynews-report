@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户管理 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <h2>Daily News</h2>
+      <p>后台管理系统</p>
+
+      <nav>
+        <a href="admin.html">后台首页</a>
+        <a href="admin-users.html" class="active">用户管理</a>
+        <a href="admin-wallet.html">钱包管理</a>
+        <a href="admin-subscriptions.html">订阅管理</a>
+        <a href="admin-withdrawals.html">提现管理</a>
+      </nav>
+
+      <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>用户管理</h1>
+        <span>管理网站注册用户</span>
+      </header>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <h2>用户列表</h2>
+          <button class="small-btn">添加用户</button>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>用户ID</th>
+              <th>用户名</th>
+              <th>邮箱</th>
+              <th>会员状态</th>
+              <th>钱包余额</th>
+              <th>注册时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1001</td>
+              <td>user001</td>
+              <td>user001@email.com</td>
+              <td><span class="status vip">VIP</span></td>
+              <td>$88.00</td>
+              <td>2026-06-01</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn danger">封号</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>1002</td>
+              <td>user002</td>
+              <td>user002@email.com</td>
+              <td><span class="status normal">普通用户</span></td>
+              <td>$12.50</td>
+              <td>2026-06-02</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn danger">封号</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>1003</td>
+              <td>user003</td>
+              <td>user003@email.com</td>
+              <td><span class="status banned">已封禁</span></td>
+              <td>$0.00</td>
+              <td>2026-06-03</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn success">解封</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

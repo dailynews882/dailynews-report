@@ -369,9 +369,19 @@ router.get("/me", verifyToken, (req, res) => {
 
   db.get(
     `
-    SELECT id, username, account, account_type, member_level, created_at
-    FROM users
-    WHERE id = ?
+    SELECT 
+      u.id, 
+      u.username, 
+      u.account, 
+      u.account_type, 
+      u.member_level, 
+      u.subscription_status,
+      u.vip_expire_at,
+      u.created_at,
+      w.balance
+    FROM users u
+    LEFT JOIN wallets w ON u.id = w.user_id
+    WHERE u.id = ?
     LIMIT 1
     `,
     [userId],
@@ -398,11 +408,11 @@ router.get("/me", verifyToken, (req, res) => {
           username: user.username,
           account: user.account,
           accountType: user.account_type,
-          memberLevel: user.member_level,
+          memberLevel: user.member_level || "free",
           createdAt: user.created_at,
-          walletBalance: 0,
-          subscriptionStatus: "free",
-          subscriptionExpireAt: null
+          walletBalance: Number(user.balance || 0),
+          subscriptionStatus: user.subscription_status || "free",
+          subscriptionExpireAt: user.vip_expire_at || null
         }
       });
     }

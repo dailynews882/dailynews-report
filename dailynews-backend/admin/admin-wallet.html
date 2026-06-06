@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>钱包管理 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <h2>Daily News</h2>
+      <p>后台管理系统</p>
+
+      <nav>
+        <a href="admin.html">后台首页</a>
+        <a href="admin-users.html">用户管理</a>
+        <a href="admin-wallet.html" class="active">钱包管理</a>
+        <a href="admin-subscriptions.html">订阅管理</a>
+        <a href="admin-withdrawals.html">提现管理</a>
+      </nav>
+
+      <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>钱包管理</h1>
+        <span>管理用户充值、余额和交易记录</span>
+      </header>
+
+      <section class="dashboard-cards">
+        <div class="dashboard-card">
+          <h3>总充值金额</h3>
+          <p>$2,580</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>今日充值</h3>
+          <p>$320</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>钱包总余额</h3>
+          <p>$1,460</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>待确认充值</h3>
+          <p>3</p>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <h2>充值记录</h2>
+          <button class="small-btn">导出记录</button>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>订单号</th>
+              <th>用户</th>
+              <th>充值金额</th>
+              <th>支付方式</th>
+              <th>状态</th>
+              <th>充值时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>PAY202606001</td>
+              <td>user001</td>
+              <td>$50.00</td>
+              <td>Stripe</td>
+              <td><span class="status vip">成功</span></td>
+              <td>2026-06-03 10:20</td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>PAY202606002</td>
+              <td>user002</td>
+              <td>$20.00</td>
+              <td>Stripe</td>
+              <td><span class="status normal">处理中</span></td>
+              <td>2026-06-03 10:35</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn success">确认</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>PAY202606003</td>
+              <td>user003</td>
+              <td>$100.00</td>
+              <td>银行卡</td>
+              <td><span class="status banned">失败</span></td>
+              <td>2026-06-03 11:00</td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>PAY202606004</td>
+              <td>user004</td>
+              <td>$150.00</td>
+              <td>Stripe</td>
+              <td><span class="status vip">成功</span></td>
+              <td>2026-06-03 11:25</td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
