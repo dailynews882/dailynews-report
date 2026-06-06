@@ -19,65 +19,124 @@
       </header>
 
       <section class="admin-panel">
-        <div class="panel-title-row">
-          <h2>用户列表</h2>
-          <button class="small-btn">添加用户</button>
-        </div>
+  <div class="panel-title-row">
+    <h2>用户列表</h2>
+    <button class="small-btn" onclick="openAddUserModal()">添加用户</button>
+  </div>
 
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>用户ID</th>
-              <th>用户名</th>
-              <th>邮箱</th>
-              <th>会员状态</th>
-              <th>钱包余额</th>
-              <th>注册时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1001</td>
-              <td>user001</td>
-              <td>user001@email.com</td>
-              <td><span class="status vip">VIP</span></td>
-              <td>$88.00</td>
-              <td>2026-06-01</td>
-              <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">封号</button>
-              </td>
-            </tr>
+  <div class="table-tools">
+    <input
+      type="text"
+      id="userSearchInput"
+      placeholder="搜索用户名或邮箱"
+      onkeyup="filterUsers()"
+    />
 
-            <tr>
-              <td>1002</td>
-              <td>user002</td>
-              <td>user002@email.com</td>
-              <td><span class="status normal">普通用户</span></td>
-              <td>$12.50</td>
-              <td>2026-06-02</td>
-              <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">封号</button>
-              </td>
-            </tr>
+    <select id="userStatusFilter" onchange="filterUsers()">
+      <option value="all">全部状态</option>
+      <option value="vip">VIP会员</option>
+      <option value="normal">普通用户</option>
+      <option value="banned">已封禁</option>
+    </select>
+  </div>
 
-            <tr>
-              <td>1003</td>
-              <td>user003</td>
-              <td>user003@email.com</td>
-              <td><span class="status banned">已封禁</span></td>
-              <td>$0.00</td>
-              <td>2026-06-03</td>
-              <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">解封</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+  <table class="admin-table" id="usersTable">
+    <thead>
+      <tr>
+        <th>用户ID</th>
+        <th>用户名</th>
+        <th>邮箱</th>
+        <th>会员状态</th>
+        <th>钱包余额</th>
+        <th>注册时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr data-status="vip">
+        <td>1001</td>
+        <td>user001</td>
+        <td>user001@email.com</td>
+        <td><span class="status vip">VIP</span></td>
+        <td>$88.00</td>
+        <td>2026-06-01</td>
+        <td>
+          <button class="table-btn" onclick="viewUser('1001', 'user001', 'user001@email.com', 'VIP', '$88.00', '2026-06-01')">查看</button>
+          <button class="table-btn danger" onclick="banUser('user001')">封号</button>
+        </td>
+      </tr>
+
+      <tr data-status="normal">
+        <td>1002</td>
+        <td>user002</td>
+        <td>user002@email.com</td>
+        <td><span class="status normal">普通用户</span></td>
+        <td>$12.50</td>
+        <td>2026-06-02</td>
+        <td>
+          <button class="table-btn" onclick="viewUser('1002', 'user002', 'user002@email.com', '普通用户', '$12.50', '2026-06-02')">查看</button>
+          <button class="table-btn danger" onclick="banUser('user002')">封号</button>
+        </td>
+      </tr>
+
+      <tr data-status="banned">
+        <td>1003</td>
+        <td>user003</td>
+        <td>user003@email.com</td>
+        <td><span class="status banned">已封禁</span></td>
+        <td>$0.00</td>
+        <td>2026-06-03</td>
+        <td>
+          <button class="table-btn" onclick="viewUser('1003', 'user003', 'user003@email.com', '已封禁', '$0.00', '2026-06-03')">查看</button>
+          <button class="table-btn success" onclick="unbanUser('user003')">解封</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="modal-overlay" id="userModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="userModalTitle">用户详情</h2>
+      <button onclick="closeUserModal()">×</button>
+    </div>
+
+    <div class="modal-content" id="userModalContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addUserModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>添加用户</h2>
+      <button onclick="closeAddUserModal()">×</button>
+    </div>
+
+    <div class="modal-content">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="newUsername" placeholder="请输入用户名" />
+      </div>
+
+      <div class="form-group">
+        <label>邮箱</label>
+        <input type="email" id="newUserEmail" placeholder="请输入邮箱" />
+      </div>
+
+      <div class="form-group">
+        <label>会员状态</label>
+        <select id="newUserStatus">
+          <option value="普通用户">普通用户</option>
+          <option value="VIP">VIP</option>
+        </select>
+      </div>
+
+      <button class="small-btn full-btn" onclick="saveNewUser()">保存用户</button>
+    </div>
+  </div>
+</div>
     </main>
 
   </div>

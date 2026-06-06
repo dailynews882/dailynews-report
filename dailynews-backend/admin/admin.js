@@ -108,3 +108,116 @@ function adminLogout() {
 function saveSettings() {
   alert("系统设置已保存！（当前为前端演示，后期接入数据库）");
 }
+// ===============================
+// 用户管理：搜索和筛选
+// ===============================
+function filterUsers() {
+  const searchInput = document.getElementById("userSearchInput");
+  const statusFilter = document.getElementById("userStatusFilter");
+  const table = document.getElementById("usersTable");
+
+  if (!searchInput || !statusFilter || !table) {
+    return;
+  }
+
+  const keyword = searchInput.value.toLowerCase().trim();
+  const selectedStatus = statusFilter.value;
+  const rows = table.querySelectorAll("tbody tr");
+
+  rows.forEach(function(row) {
+    const rowText = row.innerText.toLowerCase();
+    const rowStatus = row.getAttribute("data-status");
+
+    const matchKeyword = rowText.includes(keyword);
+    const matchStatus = selectedStatus === "all" || rowStatus === selectedStatus;
+
+    row.style.display = matchKeyword && matchStatus ? "" : "none";
+  });
+}
+
+
+// ===============================
+// 用户管理：查看用户详情
+// ===============================
+function viewUser(id, username, email, status, balance, registerTime) {
+  const modal = document.getElementById("userModal");
+  const content = document.getElementById("userModalContent");
+
+  if (!modal || !content) {
+    return;
+  }
+
+  content.innerHTML = `
+    <p><strong>用户ID：</strong>${id}</p>
+    <p><strong>用户名：</strong>${username}</p>
+    <p><strong>邮箱：</strong>${email}</p>
+    <p><strong>会员状态：</strong>${status}</p>
+    <p><strong>钱包余额：</strong>${balance}</p>
+    <p><strong>注册时间：</strong>${registerTime}</p>
+  `;
+
+  modal.style.display = "flex";
+}
+
+function closeUserModal() {
+  const modal = document.getElementById("userModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
+
+// ===============================
+// 用户管理：封号 / 解封
+// ===============================
+function banUser(username) {
+  const confirmBan = confirm("确定要封禁用户：" + username + " 吗？");
+
+  if (confirmBan) {
+    alert("用户 " + username + " 已封禁！（当前为前端演示）");
+  }
+}
+
+function unbanUser(username) {
+  const confirmUnban = confirm("确定要解封用户：" + username + " 吗？");
+
+  if (confirmUnban) {
+    alert("用户 " + username + " 已解封！（当前为前端演示）");
+  }
+}
+
+
+// ===============================
+// 用户管理：添加用户弹窗
+// ===============================
+function openAddUserModal() {
+  const modal = document.getElementById("addUserModal");
+
+  if (modal) {
+    modal.style.display = "flex";
+  }
+}
+
+function closeAddUserModal() {
+  const modal = document.getElementById("addUserModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
+function saveNewUser() {
+  const username = document.getElementById("newUsername").value.trim();
+  const email = document.getElementById("newUserEmail").value.trim();
+  const status = document.getElementById("newUserStatus").value;
+
+  if (!username || !email) {
+    alert("请填写用户名和邮箱");
+    return;
+  }
+
+  alert("新用户已保存！\n用户名：" + username + "\n邮箱：" + email + "\n状态：" + status + "\n\n当前为前端演示，后期接入数据库。");
+
+  closeAddUserModal();
+}

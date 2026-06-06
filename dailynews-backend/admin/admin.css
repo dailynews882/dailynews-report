@@ -368,3 +368,82 @@ body {
 .switch input:checked + .slider:before {
   transform: translateX(28px);
 }
+.table-tools {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+
+.table-tools input,
+.table-tools select,
+.modal-content input,
+.modal-content select {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 180, 255, 0.35);
+  background: #081b33;
+  color: #ffffff;
+  outline: none;
+}
+
+.table-tools input {
+  width: 260px;
+}
+
+.table-tools select {
+  width: 180px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  width: 460px;
+  background: #0b213d;
+  border: 1px solid rgba(0, 180, 255, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 0 25px rgba(0, 180, 255, 0.25);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 18px 22px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  color: #ffd76a;
+}
+
+.modal-header button {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.modal-content {
+  padding: 22px;
+  color: #dbeeff;
+}
+
+.modal-content p {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.full-btn {
+  width: 100%;
+  margin-top: 15px;
+}
