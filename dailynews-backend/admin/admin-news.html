@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>新闻管理 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <h2>Daily News</h2>
+      <p>后台管理系统</p>
+
+      <nav>
+        <a href="admin.html">后台首页</a>
+        <a href="admin-users.html">用户管理</a>
+        <a href="admin-wallet.html">钱包管理</a>
+        <a href="admin-subscriptions.html">订阅管理</a>
+        <a href="admin-withdrawals.html">提现管理</a>
+        <a href="admin-api.html">API管理</a>
+        <a href="admin-news.html" class="active">新闻管理</a>
+      </nav>
+
+      <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>新闻管理</h1>
+        <span>管理新闻聚合、分类、AI摘要和发布状态</span>
+      </header>
+
+      <section class="dashboard-cards">
+        <div class="dashboard-card">
+          <h3>新闻总数</h3>
+          <p>1,268</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>今日新增</h3>
+          <p>86</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>AI已摘要</h3>
+          <p>720</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>待审核</h3>
+          <p>18</p>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <h2>新闻列表</h2>
+          <button class="small-btn">新增新闻</button>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>新闻ID</th>
+              <th>标题</th>
+              <th>分类</th>
+              <th>来源</th>
+              <th>AI摘要</th>
+              <th>状态</th>
+              <th>发布时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>N202606001</td>
+              <td>全球AI行业迎来新一轮投资热潮</td>
+              <td>科技</td>
+              <td>Reuters</td>
+              <td><span class="status vip">已生成</span></td>
+              <td><span class="status vip">已发布</span></td>
+              <td>2026-06-06 09:30</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn">编辑</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>N202606002</td>
+              <td>美股科技板块盘前走强</td>
+              <td>财经</td>
+              <td>CNBC</td>
+              <td><span class="status vip">已生成</span></td>
+              <td><span class="status normal">待审核</span></td>
+              <td>2026-06-06 10:05</td>
+              <td>
+                <button class="table-btn success">发布</button>
+                <button class="table-btn">编辑</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>N202606003</td>
+              <td>中东局势变化推动原油价格波动</td>
+              <td>国际</td>
+              <td>BBC</td>
+              <td><span class="status normal">生成中</span></td>
+              <td><span class="status normal">草稿</span></td>
+              <td>2026-06-06 10:40</td>
+              <td>
+                <button class="table-btn success">生成摘要</button>
+                <button class="table-btn">编辑</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>N202606004</td>
+              <td>新加坡金融科技生态继续扩大</td>
+              <td>新加坡</td>
+              <td>Straits Times</td>
+              <td><span class="status banned">未生成</span></td>
+              <td><span class="status banned">未发布</span></td>
+              <td>2026-06-06 11:15</td>
+              <td>
+                <button class="table-btn success">生成摘要</button>
+                <button class="table-btn danger">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
