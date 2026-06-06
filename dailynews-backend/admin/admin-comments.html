@@ -12,6 +12,16 @@
 
     <aside class="admin-sidebar" id="adminSidebar"></aside>
 
+    <div class="modal-overlay" id="commentModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2>评论详情</h2>
+          <button onclick="closeCommentModal()">×</button>
+        </div>
+
+        <div class="modal-content" id="commentModalContent"></div>
+    </div>
+  </div>
     <main class="admin-main">
       <header class="admin-header">
         <h1>评论管理</h1>
@@ -45,8 +55,23 @@
           <h2>评论列表</h2>
           <button class="small-btn">导出评论</button>
         </div>
+        <div class="table-tools">
+  <input
+    type="text"
+    id="commentSearchInput"
+    placeholder="搜索用户、新闻标题或评论内容"
+    onkeyup="filterComments()"
+  />
 
-        <table class="admin-table">
+  <select id="commentStatusFilter" onchange="filterComments()">
+    <option value="all">全部状态</option>
+    <option value="approved">已通过</option>
+    <option value="pending">待审核</option>
+    <option value="violation">疑似违规</option>
+  </select>
+</div>
+
+        <table class="admin-table" id="commentsTable">
           <thead>
             <tr>
               <th>评论ID</th>
@@ -60,7 +85,7 @@
           </thead>
 
           <tbody>
-            <tr>
+            <tr data-status="approved">
               <td>C202606001</td>
               <td>user001</td>
               <td>全球AI行业迎来新一轮投资热潮</td>
@@ -68,12 +93,12 @@
               <td><span class="status vip">已通过</span></td>
               <td>2026-06-06 09:30</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">删除</button>
+                <button class="table-btn" onclick="viewCommentFromRow(this)">查看</button>
+                <button class="table-btn danger" onclick="deleteComment(this)">删除</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="pending">
               <td>C202606002</td>
               <td>user002</td>
               <td>美股科技板块盘前走强</td>
@@ -81,12 +106,12 @@
               <td><span class="status normal">待审核</span></td>
               <td>2026-06-06 10:15</td>
               <td>
-                <button class="table-btn success">通过</button>
-                <button class="table-btn danger">拒绝</button>
+                <button class="table-btn success" onclick="approveComment(this)">通过</button>
+                <button class="table-btn danger" onclick="rejectComment(this)">拒绝</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="violation">
               <td>C202606003</td>
               <td>user003</td>
               <td>新加坡金融科技生态继续扩大</td>
@@ -94,12 +119,12 @@
               <td><span class="status banned">疑似违规</span></td>
               <td>2026-06-06 10:45</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">删除</button>
+                <button class="table-btn" onclick="viewCommentFromRow(this)">查看</button>
+                <button class="table-btn danger" onclick="deleteComment(this)">删除</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="approved">
               <td>C202606004</td>
               <td>user004</td>
               <td>中东局势变化推动原油价格波动</td>
@@ -107,8 +132,8 @@
               <td><span class="status vip">已通过</span></td>
               <td>2026-06-06 11:20</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">删除</button>
+                <button class="table-btn" onclick="viewCommentFromRow(this)">查看</button>
+                <button class="table-btn danger" onclick="deleteComment(this)">删除</button>
               </td>
             </tr>
           </tbody>

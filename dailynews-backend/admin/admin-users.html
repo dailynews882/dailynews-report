@@ -63,7 +63,7 @@
         <td>2026-06-01</td>
         <td>
           <button class="table-btn" onclick="viewUser('1001', 'user001', 'user001@email.com', 'VIP', '$88.00', '2026-06-01')">查看</button>
-          <button class="table-btn danger" onclick="banUser('user001')">封号</button>
+          <button class="table-btn danger" onclick="banUser('user001', this)">封号</button>
         </td>
       </tr>
 
@@ -76,7 +76,7 @@
         <td>2026-06-02</td>
         <td>
           <button class="table-btn" onclick="viewUser('1002', 'user002', 'user002@email.com', '普通用户', '$12.50', '2026-06-02')">查看</button>
-          <button class="table-btn danger" onclick="banUser('user002')">封号</button>
+          <button class="table-btn danger" onclick="banUser('user002', this)">封号</button>
         </td>
       </tr>
 
@@ -89,7 +89,7 @@
         <td>2026-06-03</td>
         <td>
           <button class="table-btn" onclick="viewUser('1003', 'user003', 'user003@email.com', '已封禁', '$0.00', '2026-06-03')">查看</button>
-          <button class="table-btn success" onclick="unbanUser('user003')">解封</button>
+          <button class="table-btn success" onclick="unbanUser('user003', this)">解封</button>
         </td>
       </tr>
     </tbody>
