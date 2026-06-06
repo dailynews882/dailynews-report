@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>评论管理 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>评论管理</h1>
+        <span>管理用户评论、审核内容和处理违规评论</span>
+      </header>
+
+      <section class="dashboard-cards">
+        <div class="dashboard-card">
+          <h3>评论总数</h3>
+          <p>326</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>今日新增</h3>
+          <p>24</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>待审核</h3>
+          <p>8</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>违规评论</h3>
+          <p>3</p>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <h2>评论列表</h2>
+          <button class="small-btn">导出评论</button>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>评论ID</th>
+              <th>用户</th>
+              <th>新闻标题</th>
+              <th>评论内容</th>
+              <th>状态</th>
+              <th>评论时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>C202606001</td>
+              <td>user001</td>
+              <td>全球AI行业迎来新一轮投资热潮</td>
+              <td>这篇新闻分析得很清楚。</td>
+              <td><span class="status vip">已通过</span></td>
+              <td>2026-06-06 09:30</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn danger">删除</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>C202606002</td>
+              <td>user002</td>
+              <td>美股科技板块盘前走强</td>
+              <td>这个走势值得继续观察。</td>
+              <td><span class="status normal">待审核</span></td>
+              <td>2026-06-06 10:15</td>
+              <td>
+                <button class="table-btn success">通过</button>
+                <button class="table-btn danger">拒绝</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>C202606003</td>
+              <td>user003</td>
+              <td>新加坡金融科技生态继续扩大</td>
+              <td>内容疑似广告，需要审核。</td>
+              <td><span class="status banned">疑似违规</span></td>
+              <td>2026-06-06 10:45</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn danger">删除</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>C202606004</td>
+              <td>user004</td>
+              <td>中东局势变化推动原油价格波动</td>
+              <td>希望后面能增加更多财经分析。</td>
+              <td><span class="status vip">已通过</span></td>
+              <td>2026-06-06 11:20</td>
+              <td>
+                <button class="table-btn">查看</button>
+                <button class="table-btn danger">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
