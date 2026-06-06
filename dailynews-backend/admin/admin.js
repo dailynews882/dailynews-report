@@ -51,3 +51,6 @@ function adminLogout() {
   localStorage.removeItem("adminLoggedIn");
   window.location.href = "./admin-login.html";
 }
+function saveSettings() {
+  alert("系统设置已保存！（当前为前端演示，后期接入数据库）");
+}

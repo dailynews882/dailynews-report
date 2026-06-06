@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>操作日志 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <h2>Daily News</h2>
+      <p>后台管理系统</p>
+
+      <nav>
+        <a href="admin.html">后台首页</a>
+        <a href="admin-users.html">用户管理</a>
+        <a href="admin-wallet.html">钱包管理</a>
+        <a href="admin-subscriptions.html">订阅管理</a>
+        <a href="admin-withdrawals.html">提现管理</a>
+        <a href="admin-api.html">API管理</a>
+        <a href="admin-news.html">新闻管理</a>
+        <a href="admin-settings.html">系统设置</a>
+        <a href="admin-logs.html" class="active">操作日志</a>
+      </nav>
+
+      <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>操作日志</h1>
+        <span>记录管理员登录、审核、修改和系统操作</span>
+      </header>
+
+      <section class="dashboard-cards">
+        <div class="dashboard-card">
+          <h3>今日日志</h3>
+          <p>28</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>登录记录</h3>
+          <p>6</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>重要操作</h3>
+          <p>12</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>异常记录</h3>
+          <p>1</p>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <h2>后台操作记录</h2>
+          <button class="small-btn">导出日志</button>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>日志ID</th>
+              <th>管理员</th>
+              <th>操作类型</th>
+              <th>操作内容</th>
+              <th>IP地址</th>
+              <th>状态</th>
+              <th>操作时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>LOG202606001</td>
+              <td>admin</td>
+              <td>登录后台</td>
+              <td>管理员成功登录后台系统</td>
+              <td>127.0.0.1</td>
+              <td><span class="status vip">成功</span></td>
+              <td>2026-06-06 09:10</td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>LOG202606002</td>
+              <td>admin</td>
+              <td>审核提现</td>
+              <td>批准用户 user001 的提现申请</td>
+              <td>127.0.0.1</td>
+              <td><span class="status vip">成功</span></td>
+              <td>2026-06-06 09:35</td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>LOG202606003</td>
+              <td>admin</td>
+              <td>新闻管理</td>
+              <td>发布新闻：美股科技板块盘前走强</td>
+              <td>127.0.0.1</td>
+              <td><span class="status vip">成功</span></td>
+              <td>2026-06-06 10:05</td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>LOG202606004</td>
+              <td>admin</td>
+              <td>API测试</td>
+              <td>测试钱包充值API失败</td>
+              <td>127.0.0.1</td>
+              <td><span class="status banned">异常</span></td>
+              <td>2026-06-06 10:35</td>
+              <td>
+                <button class="table-btn danger">排查</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>LOG202606005</td>
+              <td>admin</td>
+              <td>系统设置</td>
+              <td>修改网站VIP价格和AI分析次数</td>
+              <td>127.0.0.1</td>
+              <td><span class="status normal">已记录</span></td>
+              <td>2026-06-06 11:20</td>
+              <td>
+                <button class="table-btn">查看</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
