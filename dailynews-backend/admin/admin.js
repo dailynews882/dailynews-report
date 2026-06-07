@@ -825,3 +825,168 @@ window.convertSubscription = function (buttonElement) {
 window.exportSubscriptionRecords = function () {
   alert("订阅记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
 };
+// ===============================
+// 提现管理：搜索和筛选
+// ===============================
+window.filterWithdrawalRecords = function () {
+  const searchInput = document.getElementById("withdrawalSearchInput");
+  const statusFilter = document.getElementById("withdrawalStatusFilter");
+  const table = document.getElementById("withdrawalTable");
+
+  if (!searchInput || !statusFilter || !table) {
+    return;
+  }
+
+  const keyword = searchInput.value.toLowerCase().trim();
+  const selectedStatus = statusFilter.value;
+  const rows = table.querySelectorAll("tbody tr");
+
+  rows.forEach(function (row) {
+    const rowText = row.innerText.toLowerCase();
+    const rowStatus = row.getAttribute("data-status");
+
+    const matchKeyword = rowText.includes(keyword);
+    const matchStatus = selectedStatus === "all" || rowStatus === selectedStatus;
+
+    row.style.display = matchKeyword && matchStatus ? "" : "none";
+  });
+};
+
+
+// ===============================
+// 提现管理：查看提现详情
+// ===============================
+window.viewWithdrawalFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const withdrawalId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+  const amount = row.children[2].innerText;
+  const method = row.children[3].innerText;
+  const account = row.children[4].innerText;
+  const applyTime = row.children[5].innerText;
+  const status = row.children[6].innerText;
+
+  const modal = document.getElementById("withdrawalModal");
+  const content = document.getElementById("withdrawalModalContent");
+
+  if (!modal || !content) {
+    alert("提现详情弹窗代码缺失，请检查 withdrawalModal 是否存在");
+    return;
+  }
+
+  content.innerHTML = `
+    <p><strong>提现ID：</strong>${withdrawalId}</p>
+    <p><strong>用户：</strong>${username}</p>
+    <p><strong>提现金额：</strong>${amount}</p>
+    <p><strong>提现方式：</strong>${method}</p>
+    <p><strong>账户信息：</strong>${account}</p>
+    <p><strong>申请时间：</strong>${applyTime}</p>
+    <p><strong>状态：</strong>${status}</p>
+    <p><strong>说明：</strong>当前为前端演示数据，后期接入真实钱包余额、提现审核和付款流水。</p>
+  `;
+
+  modal.style.display = "flex";
+};
+
+
+// ===============================
+// 提现管理：关闭详情弹窗
+// ===============================
+window.closeWithdrawalModal = function () {
+  const modal = document.getElementById("withdrawalModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+};
+
+
+// ===============================
+// 提现管理：批准提现
+// ===============================
+window.approveWithdrawal = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const withdrawalId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+  const amount = row.children[2].innerText;
+
+  const confirmApprove = confirm(
+    "确定要批准这笔提现吗？\n\n提现ID：" +
+      withdrawalId +
+      "\n用户：" +
+      username +
+      "\n金额：" +
+      amount
+  );
+
+  if (!confirmApprove) {
+    return;
+  }
+
+  row.setAttribute("data-status", "approved");
+
+  row.children[6].innerHTML = '<span class="status vip">已批准</span>';
+
+  row.children[7].innerHTML = `
+    <button class="table-btn" onclick="viewWithdrawalFromRow(this)">查看</button>
+  `;
+
+  alert("提现申请已批准！");
+};
+
+
+// ===============================
+// 提现管理：拒绝提现
+// ===============================
+window.rejectWithdrawal = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const withdrawalId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+  const amount = row.children[2].innerText;
+
+  const confirmReject = confirm(
+    "确定要拒绝这笔提现吗？\n\n提现ID：" +
+      withdrawalId +
+      "\n用户：" +
+      username +
+      "\n金额：" +
+      amount
+  );
+
+  if (!confirmReject) {
+    return;
+  }
+
+  row.setAttribute("data-status", "rejected");
+
+  row.children[6].innerHTML = '<span class="status banned">已拒绝</span>';
+
+  row.children[7].innerHTML = `
+    <button class="table-btn" onclick="viewWithdrawalFromRow(this)">查看</button>
+  `;
+
+  alert("提现申请已拒绝！");
+};
+
+
+// ===============================
+// 提现管理：导出记录
+// ===============================
+window.exportWithdrawalRecords = function () {
+  alert("提现记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
+};
