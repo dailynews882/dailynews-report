@@ -169,33 +169,57 @@
           </div>
 
           <div class="modal-content">
-            <div class="form-group">
-              <label>新闻标题</label>
-              <input type="text" id="newNewsTitle" placeholder="请输入新闻标题" />
-            </div>
+  <div class="form-group">
+    <label>新闻标题</label>
+    <input type="text" id="newNewsTitle" placeholder="请输入新闻标题" />
+  </div>
 
-            <div class="form-group">
-              <label>新闻分类</label>
-              <input type="text" id="newNewsCategory" placeholder="例如：科技 / 财经 / 国际" />
-            </div>
+  <div class="form-group">
+    <label>新闻分类</label>
+    <input type="text" id="newNewsCategory" placeholder="例如：科技 / 财经 / 国际" />
+  </div>
 
-            <div class="form-group">
-              <label>新闻来源</label>
-              <input type="text" id="newNewsSource" placeholder="例如：Reuters / CNBC / BBC" />
-            </div>
+  <div class="form-group">
+    <label>新闻来源</label>
+    <input type="text" id="newNewsSource" placeholder="例如：Reuters / CNBC / BBC" />
+  </div>
 
-            <div class="form-group">
-              <label>发布状态</label>
-              <select id="newNewsStatus">
-                <option value="draft">草稿</option>
-                <option value="pending">待审核</option>
-                <option value="published">已发布</option>
-                <option value="unpublished">未发布</option>
-              </select>
-            </div>
+  <div class="form-group">
+    <label>发布状态</label>
+    <select id="newNewsStatus">
+      <option value="draft">草稿</option>
+      <option value="pending">待审核</option>
+      <option value="published">已发布</option>
+      <option value="unpublished">未发布</option>
+    </select>
+  </div>
 
-            <button class="small-btn full-btn" onclick="saveNewNews()">保存新闻</button>
-          </div>
+  <div class="form-group">
+    <label>新闻正文编辑器</label>
+
+    <div class="editor-toolbar">
+      <button type="button" onclick="formatNewsContent('bold')">加粗</button>
+      <button type="button" onclick="formatNewsContent('italic')">斜体</button>
+      <button type="button" onclick="formatNewsContent('underline')">下划线</button>
+      <button type="button" onclick="formatNewsContent('formatBlock', 'h2')">标题</button>
+      <button type="button" onclick="formatNewsContent('formatBlock', 'p')">正文</button>
+      <button type="button" onclick="insertNewsImage()">插入图片</button>
+      <button type="button" onclick="insertNewsVideo()">插入视频</button>
+      <button type="button" onclick="insertNewsLink()">插入链接</button>
+      <button type="button" onclick="formatNewsContent('removeFormat')">清除格式</button>
+    </div>
+
+    <div
+      id="newNewsContent"
+      class="news-editor"
+      contenteditable="true"
+    >
+      请在这里输入新闻正文内容……
+    </div>
+  </div>
+
+  <button class="small-btn full-btn" onclick="saveNewNews()">保存新闻</button>
+</div>
         </div>
       </div>
 
@@ -203,6 +227,7 @@
 
   </div>
 
+  <script src="admin-menu.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>
