@@ -43,7 +43,10 @@
       <section class="admin-panel">
         <div class="panel-title-row">
           <h2>API接口列表</h2>
-          <button class="small-btn" onclick="exportApiRecords()">导出API记录</button>
+          <div>
+            <button class="small-btn" onclick="openAddApiModal()">新增API</button>
+            <button class="small-btn" onclick="exportApiRecords()">导出API记录</button>
+          </div>
         </div>
 
         <div class="table-tools">
@@ -155,6 +158,42 @@
         </div>
       </div>
 
+    <div class="modal-overlay" id="addApiModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>新增API接口</h2>
+      <button onclick="closeAddApiModal()">×</button>
+    </div>
+
+    <div class="modal-content">
+      <div class="form-group">
+        <label>API名称</label>
+        <input type="text" id="newApiName" placeholder="例如：国际新闻API" />
+      </div>
+
+      <div class="form-group">
+        <label>接口类型</label>
+        <input type="text" id="newApiType" placeholder="例如：News API / AI API / Payment API" />
+      </div>
+
+      <div class="form-group">
+        <label>请求地址</label>
+        <input type="text" id="newApiUrl" placeholder="例如：/api/world-news" />
+      </div>
+
+      <div class="form-group">
+        <label>接口状态</label>
+        <select id="newApiStatus">
+          <option value="normal">正常</option>
+          <option value="testing">测试中</option>
+          <option value="error">异常</option>
+        </select>
+      </div>
+
+      <button class="small-btn full-btn" onclick="saveNewApi()">保存API</button>
+    </div>
+  </div>
+</div>
     </main>
 
   </div>

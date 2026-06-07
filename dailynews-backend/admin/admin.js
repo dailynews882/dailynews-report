@@ -1166,3 +1166,108 @@ window.fixApiFromRow = function (buttonElement) {
 window.exportApiRecords = function () {
   alert("API记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
 };
+// ===============================
+// API管理：新增API弹窗
+// ===============================
+window.openAddApiModal = function () {
+  const modal = document.getElementById("addApiModal");
+
+  if (modal) {
+    modal.style.display = "flex";
+  }
+};
+
+
+window.closeAddApiModal = function () {
+  const modal = document.getElementById("addApiModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+};
+
+
+// ===============================
+// API管理：保存新增API
+// ===============================
+window.saveNewApi = function () {
+  const nameInput = document.getElementById("newApiName");
+  const typeInput = document.getElementById("newApiType");
+  const urlInput = document.getElementById("newApiUrl");
+  const statusInput = document.getElementById("newApiStatus");
+  const table = document.getElementById("apiTable");
+
+  if (!nameInput || !typeInput || !urlInput || !statusInput || !table) {
+    alert("新增API表单或API表格不存在，请检查页面代码。");
+    return;
+  }
+
+  const apiName = nameInput.value.trim();
+  const apiType = typeInput.value.trim();
+  const apiUrl = urlInput.value.trim();
+  const apiStatus = statusInput.value;
+
+  if (!apiName || !apiType || !apiUrl) {
+    alert("请填写 API名称、接口类型和请求地址");
+    return;
+  }
+
+  const tbody = table.querySelector("tbody");
+
+  let statusText = "正常";
+  let statusClass = "vip";
+  let actionButtons = `
+    <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+    <button class="table-btn success" onclick="testApiFromRow(this)">测试</button>
+  `;
+
+  if (apiStatus === "testing") {
+    statusText = "测试中";
+    statusClass = "normal";
+  }
+
+  if (apiStatus === "error") {
+    statusText = "异常";
+    statusClass = "banned";
+    actionButtons = `
+      <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+      <button class="table-btn danger" onclick="fixApiFromRow(this)">修复</button>
+    `;
+  }
+
+  const now = new Date();
+  const timeText =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0") +
+    " " +
+    String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0");
+
+  const newRow = document.createElement("tr");
+  newRow.setAttribute("data-status", apiStatus);
+
+  newRow.innerHTML = `
+    <td>${apiName}</td>
+    <td>${apiType}</td>
+    <td>${apiUrl}</td>
+    <td><span class="status ${statusClass}">${statusText}</span></td>
+    <td>0</td>
+    <td>${timeText}</td>
+    <td>${actionButtons}</td>
+  `;
+
+  tbody.appendChild(newRow);
+
+  nameInput.value = "";
+  typeInput.value = "";
+  urlInput.value = "";
+  statusInput.value = "normal";
+
+  closeAddApiModal();
+
+  alert("新增API已添加到接口列表！（当前为前端演示，刷新页面后不会永久保存）");
+};
