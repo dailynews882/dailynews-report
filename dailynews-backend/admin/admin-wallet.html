@@ -43,10 +43,26 @@
       <section class="admin-panel">
         <div class="panel-title-row">
           <h2>充值记录</h2>
-          <button class="small-btn">导出记录</button>
+          <button class="small-btn" onclick="exportWalletRecords()">导出记录</button>
         </div>
 
-        <table class="admin-table">
+        <div class="table-tools">
+          <input
+            type="text"
+            id="walletSearchInput"
+            placeholder="搜索订单号、用户或支付方式"
+            onkeyup="filterWalletRecords()"
+          />
+
+          <select id="walletStatusFilter" onchange="filterWalletRecords()">
+            <option value="all">全部状态</option>
+            <option value="success">成功</option>
+            <option value="processing">处理中</option>
+            <option value="failed">失败</option>
+          </select>
+        </div>
+
+        <table class="admin-table" id="walletTable">
           <thead>
             <tr>
               <th>订单号</th>
@@ -60,7 +76,7 @@
           </thead>
 
           <tbody>
-            <tr>
+            <tr data-status="success">
               <td>PAY202606001</td>
               <td>user001</td>
               <td>$50.00</td>
@@ -68,11 +84,11 @@
               <td><span class="status vip">成功</span></td>
               <td>2026-06-03 10:20</td>
               <td>
-                <button class="table-btn">查看</button>
+                <button class="table-btn" onclick="viewWalletRecordFromRow(this)">查看</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="processing">
               <td>PAY202606002</td>
               <td>user002</td>
               <td>$20.00</td>
@@ -80,12 +96,12 @@
               <td><span class="status normal">处理中</span></td>
               <td>2026-06-03 10:35</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">确认</button>
+                <button class="table-btn" onclick="viewWalletRecordFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="confirmWalletRecord(this)">确认</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="failed">
               <td>PAY202606003</td>
               <td>user003</td>
               <td>$100.00</td>
@@ -93,11 +109,11 @@
               <td><span class="status banned">失败</span></td>
               <td>2026-06-03 11:00</td>
               <td>
-                <button class="table-btn">查看</button>
+                <button class="table-btn" onclick="viewWalletRecordFromRow(this)">查看</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="success">
               <td>PAY202606004</td>
               <td>user004</td>
               <td>$150.00</td>
@@ -105,12 +121,23 @@
               <td><span class="status vip">成功</span></td>
               <td>2026-06-03 11:25</td>
               <td>
-                <button class="table-btn">查看</button>
+                <button class="table-btn" onclick="viewWalletRecordFromRow(this)">查看</button>
               </td>
             </tr>
           </tbody>
         </table>
       </section>
+
+      <div class="modal-overlay" id="walletModal">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2>充值订单详情</h2>
+            <button onclick="closeWalletModal()">×</button>
+          </div>
+
+          <div class="modal-content" id="walletModalContent"></div>
+        </div>
+      </div>
 
     </main>
 

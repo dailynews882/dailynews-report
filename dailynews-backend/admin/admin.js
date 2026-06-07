@@ -491,3 +491,129 @@ window.deleteComment = function (buttonElement) {
 
   alert("评论已删除！");
 };
+// ===============================
+// 钱包管理：搜索和筛选
+// ===============================
+window.filterWalletRecords = function () {
+  const searchInput = document.getElementById("walletSearchInput");
+  const statusFilter = document.getElementById("walletStatusFilter");
+  const table = document.getElementById("walletTable");
+
+  if (!searchInput || !statusFilter || !table) {
+    return;
+  }
+
+  const keyword = searchInput.value.toLowerCase().trim();
+  const selectedStatus = statusFilter.value;
+  const rows = table.querySelectorAll("tbody tr");
+
+  rows.forEach(function (row) {
+    const rowText = row.innerText.toLowerCase();
+    const rowStatus = row.getAttribute("data-status");
+
+    const matchKeyword = rowText.includes(keyword);
+    const matchStatus = selectedStatus === "all" || rowStatus === selectedStatus;
+
+    row.style.display = matchKeyword && matchStatus ? "" : "none";
+  });
+};
+
+
+// ===============================
+// 钱包管理：查看充值订单详情
+// ===============================
+window.viewWalletRecordFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const orderId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+  const amount = row.children[2].innerText;
+  const paymentMethod = row.children[3].innerText;
+  const status = row.children[4].innerText;
+  const rechargeTime = row.children[5].innerText;
+
+  const modal = document.getElementById("walletModal");
+  const content = document.getElementById("walletModalContent");
+
+  if (!modal || !content) {
+    alert("充值订单详情弹窗代码缺失，请检查 walletModal 是否存在");
+    return;
+  }
+
+  content.innerHTML = `
+    <p><strong>订单号：</strong>${orderId}</p>
+    <p><strong>用户：</strong>${username}</p>
+    <p><strong>充值金额：</strong>${amount}</p>
+    <p><strong>支付方式：</strong>${paymentMethod}</p>
+    <p><strong>状态：</strong>${status}</p>
+    <p><strong>充值时间：</strong>${rechargeTime}</p>
+    <p><strong>说明：</strong>当前为前端演示数据，后期接入数据库和真实支付订单。</p>
+  `;
+
+  modal.style.display = "flex";
+};
+
+
+// ===============================
+// 钱包管理：关闭详情弹窗
+// ===============================
+window.closeWalletModal = function () {
+  const modal = document.getElementById("walletModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+};
+
+
+// ===============================
+// 钱包管理：确认充值
+// ===============================
+window.confirmWalletRecord = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const orderId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+  const amount = row.children[2].innerText;
+
+  const confirmPay = confirm(
+    "确定要确认这笔充值吗？\n\n订单号：" +
+      orderId +
+      "\n用户：" +
+      username +
+      "\n金额：" +
+      amount
+  );
+
+  if (!confirmPay) {
+    return;
+  }
+
+  row.setAttribute("data-status", "success");
+
+  const statusCell = row.children[4];
+  statusCell.innerHTML = '<span class="status vip">成功</span>';
+
+  const actionCell = row.children[6];
+  actionCell.innerHTML = `
+    <button class="table-btn" onclick="viewWalletRecordFromRow(this)">查看</button>
+  `;
+
+  alert("充值订单已确认成功！");
+};
+
+
+// ===============================
+// 钱包管理：导出记录
+// ===============================
+window.exportWalletRecords = function () {
+  alert("充值记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
+};
