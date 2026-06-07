@@ -617,3 +617,211 @@ window.confirmWalletRecord = function (buttonElement) {
 window.exportWalletRecords = function () {
   alert("充值记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
 };
+// ===============================
+// 订阅管理：搜索和筛选
+// ===============================
+window.filterSubscriptionRecords = function () {
+  const searchInput = document.getElementById("subscriptionSearchInput");
+  const statusFilter = document.getElementById("subscriptionStatusFilter");
+  const table = document.getElementById("subscriptionTable");
+
+  if (!searchInput || !statusFilter || !table) {
+    return;
+  }
+
+  const keyword = searchInput.value.toLowerCase().trim();
+  const selectedStatus = statusFilter.value;
+  const rows = table.querySelectorAll("tbody tr");
+
+  rows.forEach(function (row) {
+    const rowText = row.innerText.toLowerCase();
+    const rowStatus = row.getAttribute("data-status");
+
+    const matchKeyword = rowText.includes(keyword);
+    const matchStatus = selectedStatus === "all" || rowStatus === selectedStatus;
+
+    row.style.display = matchKeyword && matchStatus ? "" : "none";
+  });
+};
+
+
+// ===============================
+// 订阅管理：查看订阅详情
+// ===============================
+window.viewSubscriptionFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const subscriptionId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+  const planType = row.children[2].innerText;
+  const amount = row.children[3].innerText;
+  const startTime = row.children[4].innerText;
+  const endTime = row.children[5].innerText;
+  const status = row.children[6].innerText;
+
+  const modal = document.getElementById("subscriptionModal");
+  const content = document.getElementById("subscriptionModalContent");
+
+  if (!modal || !content) {
+    alert("订阅详情弹窗代码缺失，请检查 subscriptionModal 是否存在");
+    return;
+  }
+
+  content.innerHTML = `
+    <p><strong>订阅ID：</strong>${subscriptionId}</p>
+    <p><strong>用户：</strong>${username}</p>
+    <p><strong>套餐类型：</strong>${planType}</p>
+    <p><strong>支付金额：</strong>${amount}</p>
+    <p><strong>开始时间：</strong>${startTime}</p>
+    <p><strong>到期时间：</strong>${endTime}</p>
+    <p><strong>状态：</strong>${status}</p>
+    <p><strong>说明：</strong>当前为前端演示数据，后期接入数据库和真实订阅订单。</p>
+  `;
+
+  modal.style.display = "flex";
+};
+
+
+// ===============================
+// 订阅管理：关闭详情弹窗
+// ===============================
+window.closeSubscriptionModal = function () {
+  const modal = document.getElementById("subscriptionModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+};
+
+
+// ===============================
+// 订阅管理：取消订阅
+// ===============================
+window.cancelSubscription = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const subscriptionId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+
+  const confirmCancel = confirm(
+    "确定要取消这条订阅吗？\n\n订阅ID：" +
+      subscriptionId +
+      "\n用户：" +
+      username
+  );
+
+  if (!confirmCancel) {
+    return;
+  }
+
+  row.setAttribute("data-status", "cancelled");
+
+  row.children[6].innerHTML = '<span class="status banned">已取消</span>';
+
+  row.children[7].innerHTML = `
+    <button class="table-btn" onclick="viewSubscriptionFromRow(this)">查看</button>
+    <button class="table-btn success" onclick="renewSubscription(this)">重新开通</button>
+  `;
+
+  alert("订阅已取消！");
+};
+
+
+// ===============================
+// 订阅管理：续费订阅
+// ===============================
+window.renewSubscription = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const subscriptionId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+
+  const confirmRenew = confirm(
+    "确定要为该用户续费吗？\n\n订阅ID：" +
+      subscriptionId +
+      "\n用户：" +
+      username
+  );
+
+  if (!confirmRenew) {
+    return;
+  }
+
+  const today = new Date();
+  const startDate = today.toISOString().slice(0, 10);
+
+  const endDateObj = new Date(today);
+  endDateObj.setMonth(endDateObj.getMonth() + 1);
+  const endDate = endDateObj.toISOString().slice(0, 10);
+
+  row.setAttribute("data-status", "active");
+
+  row.children[4].innerText = startDate;
+  row.children[5].innerText = endDate;
+  row.children[6].innerHTML = '<span class="status vip">生效中</span>';
+
+  row.children[7].innerHTML = `
+    <button class="table-btn" onclick="viewSubscriptionFromRow(this)">查看</button>
+    <button class="table-btn danger" onclick="cancelSubscription(this)">取消</button>
+  `;
+
+  alert("订阅已续费并恢复为生效中！");
+};
+
+
+// ===============================
+// 订阅管理：试用转正式
+// ===============================
+window.convertSubscription = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const subscriptionId = row.children[0].innerText;
+  const username = row.children[1].innerText;
+
+  const confirmConvert = confirm(
+    "确定要将该试用会员转为正式会员吗？\n\n订阅ID：" +
+      subscriptionId +
+      "\n用户：" +
+      username
+  );
+
+  if (!confirmConvert) {
+    return;
+  }
+
+  row.setAttribute("data-status", "active");
+
+  row.children[2].innerText = "高级AI正式会员";
+  row.children[6].innerHTML = '<span class="status vip">生效中</span>';
+
+  row.children[7].innerHTML = `
+    <button class="table-btn" onclick="viewSubscriptionFromRow(this)">查看</button>
+    <button class="table-btn danger" onclick="cancelSubscription(this)">取消</button>
+  `;
+
+  alert("试用会员已转为正式会员！");
+};
+
+
+// ===============================
+// 订阅管理：导出记录
+// ===============================
+window.exportSubscriptionRecords = function () {
+  alert("订阅记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
+};

@@ -43,10 +43,27 @@
       <section class="admin-panel">
         <div class="panel-title-row">
           <h2>订阅记录</h2>
-          <button class="small-btn">新增订阅</button>
+          <button class="small-btn" onclick="exportSubscriptionRecords()">导出记录</button>
         </div>
 
-        <table class="admin-table">
+        <div class="table-tools">
+          <input
+            type="text"
+            id="subscriptionSearchInput"
+            placeholder="搜索订阅ID、用户或套餐"
+            onkeyup="filterSubscriptionRecords()"
+          />
+
+          <select id="subscriptionStatusFilter" onchange="filterSubscriptionRecords()">
+            <option value="all">全部状态</option>
+            <option value="active">生效中</option>
+            <option value="expired">已过期</option>
+            <option value="trial">试用中</option>
+            <option value="cancelled">已取消</option>
+          </select>
+        </div>
+
+        <table class="admin-table" id="subscriptionTable">
           <thead>
             <tr>
               <th>订阅ID</th>
@@ -61,7 +78,7 @@
           </thead>
 
           <tbody>
-            <tr>
+            <tr data-status="active">
               <td>VIP202606001</td>
               <td>user001</td>
               <td>月度VIP</td>
@@ -70,12 +87,12 @@
               <td>2026-07-01</td>
               <td><span class="status vip">生效中</span></td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">取消</button>
+                <button class="table-btn" onclick="viewSubscriptionFromRow(this)">查看</button>
+                <button class="table-btn danger" onclick="cancelSubscription(this)">取消</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="active">
               <td>VIP202606002</td>
               <td>user002</td>
               <td>年度VIP</td>
@@ -84,12 +101,12 @@
               <td>2027-06-02</td>
               <td><span class="status vip">生效中</span></td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">取消</button>
+                <button class="table-btn" onclick="viewSubscriptionFromRow(this)">查看</button>
+                <button class="table-btn danger" onclick="cancelSubscription(this)">取消</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="expired">
               <td>VIP202606003</td>
               <td>user003</td>
               <td>月度VIP</td>
@@ -98,12 +115,12 @@
               <td>2026-06-01</td>
               <td><span class="status banned">已过期</span></td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">续费</button>
+                <button class="table-btn" onclick="viewSubscriptionFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="renewSubscription(this)">续费</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="trial">
               <td>VIP202606004</td>
               <td>user004</td>
               <td>高级AI会员</td>
@@ -112,13 +129,24 @@
               <td>2026-07-03</td>
               <td><span class="status normal">试用中</span></td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">转正式</button>
+                <button class="table-btn" onclick="viewSubscriptionFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="convertSubscription(this)">转正式</button>
               </td>
             </tr>
           </tbody>
         </table>
       </section>
+
+      <div class="modal-overlay" id="subscriptionModal">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2>订阅详情</h2>
+            <button onclick="closeSubscriptionModal()">×</button>
+          </div>
+
+          <div class="modal-content" id="subscriptionModalContent"></div>
+        </div>
+      </div>
 
     </main>
 
