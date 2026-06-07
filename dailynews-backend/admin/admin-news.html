@@ -203,19 +203,36 @@
       <button type="button" onclick="formatNewsContent('underline')">下划线</button>
       <button type="button" onclick="formatNewsContent('formatBlock', 'h2')">标题</button>
       <button type="button" onclick="formatNewsContent('formatBlock', 'p')">正文</button>
-      <button type="button" onclick="insertNewsImage()">插入图片</button>
-      <button type="button" onclick="insertNewsVideo()">插入视频</button>
+      <button type="button" onclick="selectNewsImageFile()">插入图片</button>
+      <button type="button" onclick="selectNewsVideoFile()">插入视频</button>
       <button type="button" onclick="insertNewsLink()">插入链接</button>
       <button type="button" onclick="formatNewsContent('removeFormat')">清除格式</button>
     </div>
+
+    <input
+      type="file"
+      id="newsImageFileInput"
+      accept="image/*"
+      style="display: none;"
+      onchange="insertSelectedNewsImage(event)"
+    />
+
+    <input
+      type="file"
+      id="newsVideoFileInput"
+      accept="video/*"
+      style="display: none;"
+      onchange="insertSelectedNewsVideo(event)"
+    />
 
     <div
       id="newNewsContent"
       class="news-editor"
       contenteditable="true"
-    >
+   >
       请在这里输入新闻正文内容……
     </div>
+      
   </div>
 
   <button class="small-btn full-btn" onclick="saveNewNews()">保存新闻</button>

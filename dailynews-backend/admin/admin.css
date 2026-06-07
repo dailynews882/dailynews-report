@@ -621,3 +621,113 @@ body {
   border-radius: 10px;
   margin: 12px 0;
 }
+.news-editor video,
+.news-detail-content video {
+  width: 100%;
+  max-height: 420px;
+  border-radius: 10px;
+  margin: 12px 0;
+  background: #000;
+}
+/* ===============================
+   新闻管理表格状态标签修复
+================================ */
+
+/* 让新闻管理表格更稳定 */
+#newsTable {
+  table-layout: fixed;
+}
+
+/* 调整新闻管理各列宽度 */
+#newsTable th:nth-child(1),
+#newsTable td:nth-child(1) {
+  width: 130px;
+}
+
+#newsTable th:nth-child(2),
+#newsTable td:nth-child(2) {
+  width: 260px;
+}
+
+#newsTable th:nth-child(3),
+#newsTable td:nth-child(3) {
+  width: 100px;
+}
+
+#newsTable th:nth-child(4),
+#newsTable td:nth-child(4) {
+  width: 130px;
+}
+
+#newsTable th:nth-child(5),
+#newsTable td:nth-child(5),
+#newsTable th:nth-child(6),
+#newsTable td:nth-child(6) {
+  width: 120px;
+  white-space: nowrap;
+}
+
+#newsTable th:nth-child(7),
+#newsTable td:nth-child(7) {
+  width: 150px;
+}
+
+#newsTable th:nth-child(8),
+#newsTable td:nth-child(8) {
+  width: 230px;
+}
+
+/* 防止状态标签文字换行 */
+#newsTable .status {
+  display: inline-block;
+  min-width: 72px;
+  text-align: center;
+  white-space: nowrap;
+  padding: 6px 12px;
+}
+
+/* 操作按钮排列更整齐 */
+#newsTable td:last-child {
+  white-space: normal;
+}
+
+#newsTable td:last-child .table-btn {
+  margin-bottom: 6px;
+}
+/* ===============================
+   修复左侧菜单被表格挤压变窄
+================================ */
+
+.admin-sidebar {
+  width: 240px;
+  min-width: 240px;
+  flex-shrink: 0;
+}
+
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* 左侧菜单文字不强制挤压 */
+.admin-sidebar h2,
+.admin-sidebar p,
+.admin-sidebar nav a {
+  white-space: normal;
+}
+
+/* 让菜单按钮保持舒适宽度 */
+.admin-sidebar nav a {
+  word-break: keep-all;
+  line-height: 1.4;
+}
+
+/* 新闻表格只在右侧内容区横向滚动，不挤压左侧菜单 */
+.admin-panel {
+  overflow-x: auto;
+}
+
+#newsTable {
+  min-width: 1300px;
+}
