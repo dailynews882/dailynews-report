@@ -43,10 +43,37 @@
       <section class="admin-panel">
         <div class="panel-title-row">
           <h2>新闻列表</h2>
-          <button class="small-btn">新增新闻</button>
+          <div>
+            <button class="small-btn" onclick="openAddNewsModal()">新增新闻</button>
+            <button class="small-btn" onclick="exportNewsRecords()">导出新闻</button>
+          </div>
         </div>
 
-        <table class="admin-table">
+        <div class="table-tools">
+          <input
+            type="text"
+            id="newsSearchInput"
+            placeholder="搜索新闻标题、分类或来源"
+            onkeyup="filterNewsRecords()"
+          />
+
+          <select id="newsStatusFilter" onchange="filterNewsRecords()">
+            <option value="all">全部发布状态</option>
+            <option value="published">已发布</option>
+            <option value="pending">待审核</option>
+            <option value="draft">草稿</option>
+            <option value="unpublished">未发布</option>
+          </select>
+
+          <select id="newsAiFilter" onchange="filterNewsRecords()">
+            <option value="all">全部AI状态</option>
+            <option value="generated">已生成</option>
+            <option value="generating">生成中</option>
+            <option value="not_generated">未生成</option>
+          </select>
+        </div>
+
+        <table class="admin-table" id="newsTable">
           <thead>
             <tr>
               <th>新闻ID</th>
@@ -61,7 +88,7 @@
           </thead>
 
           <tbody>
-            <tr>
+            <tr data-status="published" data-ai="generated">
               <td>N202606001</td>
               <td>全球AI行业迎来新一轮投资热潮</td>
               <td>科技</td>
@@ -70,12 +97,12 @@
               <td><span class="status vip">已发布</span></td>
               <td>2026-06-06 09:30</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn">编辑</button>
+                <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+                <button class="table-btn" onclick="editNewsFromRow(this)">编辑</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="pending" data-ai="generated">
               <td>N202606002</td>
               <td>美股科技板块盘前走强</td>
               <td>财经</td>
@@ -84,12 +111,13 @@
               <td><span class="status normal">待审核</span></td>
               <td>2026-06-06 10:05</td>
               <td>
-                <button class="table-btn success">发布</button>
-                <button class="table-btn">编辑</button>
+                <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="publishNewsFromRow(this)">发布</button>
+                <button class="table-btn" onclick="editNewsFromRow(this)">编辑</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="draft" data-ai="generating">
               <td>N202606003</td>
               <td>中东局势变化推动原油价格波动</td>
               <td>国际</td>
@@ -98,12 +126,13 @@
               <td><span class="status normal">草稿</span></td>
               <td>2026-06-06 10:40</td>
               <td>
-                <button class="table-btn success">生成摘要</button>
-                <button class="table-btn">编辑</button>
+                <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="generateNewsSummary(this)">生成摘要</button>
+                <button class="table-btn" onclick="editNewsFromRow(this)">编辑</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="unpublished" data-ai="not_generated">
               <td>N202606004</td>
               <td>新加坡金融科技生态继续扩大</td>
               <td>新加坡</td>
@@ -112,13 +141,63 @@
               <td><span class="status banned">未发布</span></td>
               <td>2026-06-06 11:15</td>
               <td>
-                <button class="table-btn success">生成摘要</button>
-                <button class="table-btn danger">删除</button>
+                <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="generateNewsSummary(this)">生成摘要</button>
+                <button class="table-btn danger" onclick="deleteNewsFromRow(this)">删除</button>
               </td>
             </tr>
           </tbody>
         </table>
       </section>
+
+      <div class="modal-overlay" id="newsModal">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2>新闻详情</h2>
+            <button onclick="closeNewsModal()">×</button>
+          </div>
+
+          <div class="modal-content" id="newsModalContent"></div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="addNewsModal">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2>新增新闻</h2>
+            <button onclick="closeAddNewsModal()">×</button>
+          </div>
+
+          <div class="modal-content">
+            <div class="form-group">
+              <label>新闻标题</label>
+              <input type="text" id="newNewsTitle" placeholder="请输入新闻标题" />
+            </div>
+
+            <div class="form-group">
+              <label>新闻分类</label>
+              <input type="text" id="newNewsCategory" placeholder="例如：科技 / 财经 / 国际" />
+            </div>
+
+            <div class="form-group">
+              <label>新闻来源</label>
+              <input type="text" id="newNewsSource" placeholder="例如：Reuters / CNBC / BBC" />
+            </div>
+
+            <div class="form-group">
+              <label>发布状态</label>
+              <select id="newNewsStatus">
+                <option value="draft">草稿</option>
+                <option value="pending">待审核</option>
+                <option value="published">已发布</option>
+                <option value="unpublished">未发布</option>
+              </select>
+            </div>
+
+            <button class="small-btn full-btn" onclick="saveNewNews()">保存新闻</button>
+          </div>
+        </div>
+      </div>
 
     </main>
 

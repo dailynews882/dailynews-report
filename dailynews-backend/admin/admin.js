@@ -1271,3 +1271,316 @@ window.saveNewApi = function () {
 
   alert("新增API已添加到接口列表！（当前为前端演示，刷新页面后不会永久保存）");
 };
+// ===============================
+// 新闻管理：搜索和筛选
+// ===============================
+window.filterNewsRecords = function () {
+  const searchInput = document.getElementById("newsSearchInput");
+  const statusFilter = document.getElementById("newsStatusFilter");
+  const aiFilter = document.getElementById("newsAiFilter");
+  const table = document.getElementById("newsTable");
+
+  if (!searchInput || !statusFilter || !aiFilter || !table) {
+    return;
+  }
+
+  const keyword = searchInput.value.toLowerCase().trim();
+  const selectedStatus = statusFilter.value;
+  const selectedAi = aiFilter.value;
+  const rows = table.querySelectorAll("tbody tr");
+
+  rows.forEach(function (row) {
+    const rowText = row.innerText.toLowerCase();
+    const rowStatus = row.getAttribute("data-status");
+    const rowAi = row.getAttribute("data-ai");
+
+    const matchKeyword = rowText.includes(keyword);
+    const matchStatus = selectedStatus === "all" || rowStatus === selectedStatus;
+    const matchAi = selectedAi === "all" || rowAi === selectedAi;
+
+    row.style.display = matchKeyword && matchStatus && matchAi ? "" : "none";
+  });
+};
+
+
+// ===============================
+// 新闻管理：查看新闻详情
+// ===============================
+window.viewNewsFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const newsId = row.children[0].innerText;
+  const title = row.children[1].innerText;
+  const category = row.children[2].innerText;
+  const source = row.children[3].innerText;
+  const aiStatus = row.children[4].innerText;
+  const publishStatus = row.children[5].innerText;
+  const publishTime = row.children[6].innerText;
+
+  const modal = document.getElementById("newsModal");
+  const content = document.getElementById("newsModalContent");
+
+  if (!modal || !content) {
+    alert("新闻详情弹窗代码缺失，请检查 newsModal 是否存在");
+    return;
+  }
+
+  content.innerHTML = `
+    <p><strong>新闻ID：</strong>${newsId}</p>
+    <p><strong>标题：</strong>${title}</p>
+    <p><strong>分类：</strong>${category}</p>
+    <p><strong>来源：</strong>${source}</p>
+    <p><strong>AI摘要：</strong>${aiStatus}</p>
+    <p><strong>发布状态：</strong>${publishStatus}</p>
+    <p><strong>发布时间：</strong>${publishTime}</p>
+    <p><strong>说明：</strong>当前为前端演示数据，后期可接入真实新闻数据库和AI摘要接口。</p>
+  `;
+
+  modal.style.display = "flex";
+};
+
+
+window.closeNewsModal = function () {
+  const modal = document.getElementById("newsModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+};
+
+
+// ===============================
+// 新闻管理：发布新闻
+// ===============================
+window.publishNewsFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const title = row.children[1].innerText;
+
+  if (!confirm("确定要发布这条新闻吗？\n\n" + title)) {
+    return;
+  }
+
+  row.setAttribute("data-status", "published");
+  row.children[5].innerHTML = '<span class="status vip">已发布</span>';
+
+  const now = new Date();
+  const timeText =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0") +
+    " " +
+    String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0");
+
+  row.children[6].innerText = timeText;
+
+  row.children[7].innerHTML = `
+    <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+    <button class="table-btn" onclick="editNewsFromRow(this)">编辑</button>
+  `;
+
+  alert("新闻已发布！");
+};
+
+
+// ===============================
+// 新闻管理：生成AI摘要
+// ===============================
+window.generateNewsSummary = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const title = row.children[1].innerText;
+
+  if (!confirm("确定要为这条新闻生成AI摘要吗？\n\n" + title)) {
+    return;
+  }
+
+  row.setAttribute("data-ai", "generated");
+  row.children[4].innerHTML = '<span class="status vip">已生成</span>';
+
+  row.children[7].innerHTML = `
+    <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+    <button class="table-btn success" onclick="publishNewsFromRow(this)">发布</button>
+    <button class="table-btn" onclick="editNewsFromRow(this)">编辑</button>
+  `;
+
+  alert("AI摘要已生成！（当前为前端演示）");
+};
+
+
+// ===============================
+// 新闻管理：删除新闻
+// ===============================
+window.deleteNewsFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const title = row.children[1].innerText;
+
+  if (!confirm("确定要删除这条新闻吗？\n\n" + title)) {
+    return;
+  }
+
+  row.remove();
+
+  alert("新闻已删除！");
+};
+
+
+// ===============================
+// 新闻管理：编辑新闻
+// ===============================
+window.editNewsFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const title = row.children[1].innerText;
+
+  alert("编辑新闻功能已触发：\n\n" + title + "\n\n当前为前端演示，后期可做编辑弹窗。");
+};
+
+
+// ===============================
+// 新闻管理：新增新闻弹窗
+// ===============================
+window.openAddNewsModal = function () {
+  const modal = document.getElementById("addNewsModal");
+
+  if (modal) {
+    modal.style.display = "flex";
+  }
+};
+
+
+window.closeAddNewsModal = function () {
+  const modal = document.getElementById("addNewsModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+};
+
+
+// ===============================
+// 新闻管理：保存新增新闻
+// ===============================
+window.saveNewNews = function () {
+  const titleInput = document.getElementById("newNewsTitle");
+  const categoryInput = document.getElementById("newNewsCategory");
+  const sourceInput = document.getElementById("newNewsSource");
+  const statusInput = document.getElementById("newNewsStatus");
+  const table = document.getElementById("newsTable");
+
+  if (!titleInput || !categoryInput || !sourceInput || !statusInput || !table) {
+    alert("新增新闻表单或新闻表格不存在，请检查页面代码。");
+    return;
+  }
+
+  const title = titleInput.value.trim();
+  const category = categoryInput.value.trim();
+  const source = sourceInput.value.trim();
+  const statusValue = statusInput.value;
+
+  if (!title || !category || !source) {
+    alert("请填写新闻标题、分类和来源");
+    return;
+  }
+
+  const tbody = table.querySelector("tbody");
+  const newsId = "N" + Date.now().toString().slice(-9);
+
+  let statusText = "草稿";
+  let statusClass = "normal";
+
+  if (statusValue === "published") {
+    statusText = "已发布";
+    statusClass = "vip";
+  } else if (statusValue === "pending") {
+    statusText = "待审核";
+    statusClass = "normal";
+  } else if (statusValue === "unpublished") {
+    statusText = "未发布";
+    statusClass = "banned";
+  }
+
+  const now = new Date();
+  const timeText =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0") +
+    " " +
+    String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0");
+
+  let actionButtons = `
+    <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+    <button class="table-btn success" onclick="generateNewsSummary(this)">生成摘要</button>
+    <button class="table-btn danger" onclick="deleteNewsFromRow(this)">删除</button>
+  `;
+
+  if (statusValue === "published") {
+    actionButtons = `
+      <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
+      <button class="table-btn" onclick="editNewsFromRow(this)">编辑</button>
+    `;
+  }
+
+  const newRow = document.createElement("tr");
+  newRow.setAttribute("data-status", statusValue);
+  newRow.setAttribute("data-ai", "not_generated");
+
+  newRow.innerHTML = `
+    <td>${newsId}</td>
+    <td>${title}</td>
+    <td>${category}</td>
+    <td>${source}</td>
+    <td><span class="status banned">未生成</span></td>
+    <td><span class="status ${statusClass}">${statusText}</span></td>
+    <td>${timeText}</td>
+    <td>${actionButtons}</td>
+  `;
+
+  tbody.appendChild(newRow);
+
+  titleInput.value = "";
+  categoryInput.value = "";
+  sourceInput.value = "";
+  statusInput.value = "draft";
+
+  closeAddNewsModal();
+
+  alert("新增新闻已添加到列表！（当前为前端演示，刷新页面后不会永久保存）");
+};
+
+
+// ===============================
+// 新闻管理：导出新闻
+// ===============================
+window.exportNewsRecords = function () {
+  alert("新闻记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
+};
