@@ -43,10 +43,26 @@
       <section class="admin-panel">
         <div class="panel-title-row">
           <h2>API接口列表</h2>
-          <button class="small-btn">新增API</button>
+          <button class="small-btn" onclick="exportApiRecords()">导出API记录</button>
         </div>
 
-        <table class="admin-table">
+        <div class="table-tools">
+          <input
+            type="text"
+            id="apiSearchInput"
+            placeholder="搜索API名称、类型或请求地址"
+            onkeyup="filterApiRecords()"
+          />
+
+          <select id="apiStatusFilter" onchange="filterApiRecords()">
+            <option value="all">全部状态</option>
+            <option value="normal">正常</option>
+            <option value="testing">测试中</option>
+            <option value="error">异常</option>
+          </select>
+        </div>
+
+        <table class="admin-table" id="apiTable">
           <thead>
             <tr>
               <th>API名称</th>
@@ -60,7 +76,7 @@
           </thead>
 
           <tbody>
-            <tr>
+            <tr data-status="normal">
               <td>新闻聚合API</td>
               <td>News API</td>
               <td>/api/news</td>
@@ -68,12 +84,12 @@
               <td>520</td>
               <td>2026-06-06 10:20</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">测试</button>
+                <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="testApiFromRow(this)">测试</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="normal">
               <td>AI摘要分析API</td>
               <td>AI API</td>
               <td>/api/ai/analyze</td>
@@ -81,12 +97,12 @@
               <td>360</td>
               <td>2026-06-06 10:22</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">测试</button>
+                <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="testApiFromRow(this)">测试</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="testing">
               <td>Stripe支付API</td>
               <td>Payment API</td>
               <td>/api/payment</td>
@@ -94,12 +110,12 @@
               <td>42</td>
               <td>2026-06-06 10:25</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">测试</button>
+                <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="testApiFromRow(this)">测试</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="normal">
               <td>用户登录API</td>
               <td>User API</td>
               <td>/api/auth/login</td>
@@ -107,12 +123,12 @@
               <td>180</td>
               <td>2026-06-06 10:30</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn success">测试</button>
+                <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+                <button class="table-btn success" onclick="testApiFromRow(this)">测试</button>
               </td>
             </tr>
 
-            <tr>
+            <tr data-status="error">
               <td>钱包充值API</td>
               <td>Wallet API</td>
               <td>/api/wallet/recharge</td>
@@ -120,13 +136,24 @@
               <td>18</td>
               <td>2026-06-06 10:35</td>
               <td>
-                <button class="table-btn">查看</button>
-                <button class="table-btn danger">修复</button>
+                <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+                <button class="table-btn danger" onclick="fixApiFromRow(this)">修复</button>
               </td>
             </tr>
           </tbody>
         </table>
       </section>
+
+      <div class="modal-overlay" id="apiModal">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2>API接口详情</h2>
+            <button onclick="closeApiModal()">×</button>
+          </div>
+
+          <div class="modal-content" id="apiModalContent"></div>
+        </div>
+      </div>
 
     </main>
 

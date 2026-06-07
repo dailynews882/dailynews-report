@@ -990,3 +990,179 @@ window.rejectWithdrawal = function (buttonElement) {
 window.exportWithdrawalRecords = function () {
   alert("提现记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
 };
+// ===============================
+// API管理：搜索和筛选
+// ===============================
+window.filterApiRecords = function () {
+  const searchInput = document.getElementById("apiSearchInput");
+  const statusFilter = document.getElementById("apiStatusFilter");
+  const table = document.getElementById("apiTable");
+
+  if (!searchInput || !statusFilter || !table) {
+    return;
+  }
+
+  const keyword = searchInput.value.toLowerCase().trim();
+  const selectedStatus = statusFilter.value;
+  const rows = table.querySelectorAll("tbody tr");
+
+  rows.forEach(function (row) {
+    const rowText = row.innerText.toLowerCase();
+    const rowStatus = row.getAttribute("data-status");
+
+    const matchKeyword = rowText.includes(keyword);
+    const matchStatus = selectedStatus === "all" || rowStatus === selectedStatus;
+
+    row.style.display = matchKeyword && matchStatus ? "" : "none";
+  });
+};
+
+
+// ===============================
+// API管理：查看详情
+// ===============================
+window.viewApiFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const apiName = row.children[0].innerText;
+  const apiType = row.children[1].innerText;
+  const apiUrl = row.children[2].innerText;
+  const status = row.children[3].innerText;
+  const todayCalls = row.children[4].innerText;
+  const lastCheck = row.children[5].innerText;
+
+  const modal = document.getElementById("apiModal");
+  const content = document.getElementById("apiModalContent");
+
+  if (!modal || !content) {
+    alert("API详情弹窗代码缺失，请检查 apiModal 是否存在");
+    return;
+  }
+
+  content.innerHTML = `
+    <p><strong>API名称：</strong>${apiName}</p>
+    <p><strong>接口类型：</strong>${apiType}</p>
+    <p><strong>请求地址：</strong>${apiUrl}</p>
+    <p><strong>当前状态：</strong>${status}</p>
+    <p><strong>今日调用：</strong>${todayCalls}</p>
+    <p><strong>最后检测：</strong>${lastCheck}</p>
+    <p><strong>说明：</strong>当前为前端演示数据，后期可接入真实接口健康检测。</p>
+  `;
+
+  modal.style.display = "flex";
+};
+
+
+// ===============================
+// API管理：关闭详情弹窗
+// ===============================
+window.closeApiModal = function () {
+  const modal = document.getElementById("apiModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+};
+
+
+// ===============================
+// API管理：测试接口
+// ===============================
+window.testApiFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const apiName = row.children[0].innerText;
+  const apiUrl = row.children[2].innerText;
+
+  alert(
+    "正在测试接口：\n\nAPI名称：" +
+      apiName +
+      "\n请求地址：" +
+      apiUrl +
+      "\n\n测试结果：连接正常！（当前为前端演示）"
+  );
+
+  row.setAttribute("data-status", "normal");
+  row.children[3].innerHTML = '<span class="status vip">正常</span>';
+
+  const now = new Date();
+  const timeText =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0") +
+    " " +
+    String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0");
+
+  row.children[5].innerText = timeText;
+};
+
+
+// ===============================
+// API管理：修复异常接口
+// ===============================
+window.fixApiFromRow = function (buttonElement) {
+  const row = buttonElement.closest("tr");
+
+  if (!row) {
+    return;
+  }
+
+  const apiName = row.children[0].innerText;
+  const apiUrl = row.children[2].innerText;
+
+  const confirmFix = confirm(
+    "确定要修复该异常接口吗？\n\nAPI名称：" +
+      apiName +
+      "\n请求地址：" +
+      apiUrl
+  );
+
+  if (!confirmFix) {
+    return;
+  }
+
+  row.setAttribute("data-status", "normal");
+
+  row.children[3].innerHTML = '<span class="status vip">正常</span>';
+
+  const now = new Date();
+  const timeText =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0") +
+    " " +
+    String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0");
+
+  row.children[5].innerText = timeText;
+
+  row.children[6].innerHTML = `
+    <button class="table-btn" onclick="viewApiFromRow(this)">查看</button>
+    <button class="table-btn success" onclick="testApiFromRow(this)">测试</button>
+  `;
+
+  alert("接口已修复，状态已恢复正常！");
+};
+
+
+// ===============================
+// API管理：导出记录
+// ===============================
+window.exportApiRecords = function () {
+  alert("API记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
+};
