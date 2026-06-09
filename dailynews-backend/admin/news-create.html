@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DailyNews 后台 - 新增新闻</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 30px;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #111827;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #38bdf8;
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #cbd5e1;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 15px;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .content-box {
+      min-height: 240px;
+    }
+
+    .row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .row > div {
+      flex: 1;
+    }
+
+    .vip-line {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vip-line input {
+      width: auto;
+    }
+
+    button {
+      margin-top: 24px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    #newsMessage {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #020617;
+      color: #facc15;
+      min-height: 20px;
+    }
+
+    .tip {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>新增新闻</h1>
+
+    <p class="tip">
+      这个页面用于测试：后台新增新闻 → POST 到 http://localhost:5000/api/news → 保存进 dailynews.db
+    </p>
+
+    <form id="newsForm">
+      <label for="newsTitle">新闻标题 *</label>
+      <input id="newsTitle" type="text" placeholder="请输入新闻标题" required />
+
+      <div class="row">
+        <div>
+          <label for="newsCategory">新闻分类</label>
+          <select id="newsCategory">
+            <option value="general">综合新闻</option>
+            <option value="world">国际新闻</option>
+            <option value="finance">财经新闻</option>
+            <option value="technology">科技新闻</option>
+            <option value="ai">AI 新闻</option>
+            <option value="singapore">新加坡新闻</option>
+            <option value="china">中国新闻</option>
+            <option value="usa">美国新闻</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="newsStatus">发布状态</label>
+          <select id="newsStatus">
+            <option value="published">已发布</option>
+            <option value="draft">草稿</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="newsSummary">新闻摘要</label>
+      <textarea id="newsSummary" placeholder="请输入新闻摘要"></textarea>
+
+      <label for="newsContent">新闻正文 *</label>
+      <textarea id="newsContent" class="content-box" placeholder="请输入新闻正文内容" required></textarea>
+
+      <label for="newsImageUrl">封面图片链接</label>
+      <input id="newsImageUrl" type="text" placeholder="例如：https://example.com/news.jpg" />
+
+      <label for="newsVideoUrl">视频链接</label>
+      <input id="newsVideoUrl" type="text" placeholder="例如：https://example.com/video.mp4" />
+
+      <label for="newsSource">新闻来源</label>
+      <input id="newsSource" type="text" placeholder="例如：DailyNews / Reuters / CNN" />
+
+      <label for="newsAuthor">作者</label>
+      <input id="newsAuthor" type="text" value="DailyNews Admin" />
+
+      <div class="vip-line">
+        <input id="newsIsVip" type="checkbox" />
+        <span>设置为 VIP 新闻</span>
+      </div>
+
+      <button type="submit">发布新闻</button>
+    </form>
+
+    <div id="newsMessage"></div>
+  </div>
+
+  <script src="./news-create.js"></script>
+</body>
+</html>

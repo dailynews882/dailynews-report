@@ -94,6 +94,25 @@ db.serialize(() => {
   )
 `);
 
+  db.run(`
+  CREATE TABLE IF NOT EXISTS news (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    category TEXT DEFAULT 'general',
+    summary TEXT,
+    content TEXT NOT NULL,
+    image_url TEXT,
+    video_url TEXT,
+    source TEXT,
+    author TEXT DEFAULT 'DailyNews Admin',
+    status TEXT DEFAULT 'published',
+    is_vip INTEGER DEFAULT 0,
+    views INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
   // 给 users 表补充 VIP 字段；如果字段已存在，SQLite 会报错，这里忽略即可。
   db.run(`ALTER TABLE users ADD COLUMN vip_expire_at DATETIME`, () => {});
   db.run(`ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'free'`, () => {});

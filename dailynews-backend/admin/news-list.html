@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DailyNews 后台 - 新闻管理列表</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #111827;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      color: #38bdf8;
+      font-size: 34px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 9px 15px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-block;
+    }
+
+    .btn-add {
+      background: #2563eb;
+    }
+
+    .btn-add:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-refresh {
+      background: #475569;
+    }
+
+    .btn-refresh:hover {
+      background: #334155;
+    }
+
+    .btn-edit {
+      background: #16a34a;
+      margin-right: 6px;
+    }
+
+    .btn-edit:hover {
+      background: #15803d;
+    }
+
+    .btn-delete {
+      background: #dc2626;
+    }
+
+    .btn-delete:hover {
+      background: #b91c1c;
+    }
+
+    #newsMessage {
+      margin-bottom: 16px;
+      color: #facc15;
+      font-size: 16px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid #334155;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1100px;
+      border-collapse: collapse;
+      background: #020617;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #334155;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #1e293b;
+      color: #93c5fd;
+      font-weight: bold;
+    }
+
+    tr:hover {
+      background: #1e293b;
+    }
+
+    .title-cell {
+      max-width: 280px;
+      line-height: 1.5;
+      color: #e5e7eb;
+      font-weight: bold;
+    }
+
+    .summary-cell {
+      max-width: 360px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .status-published {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .status-draft {
+      color: #facc15;
+      font-weight: bold;
+    }
+
+    .vip {
+      color: #f97316;
+      font-weight: bold;
+    }
+
+    .normal {
+      color: #94a3b8;
+    }
+
+    .actions {
+      white-space: nowrap;
+    }
+
+    .empty-row {
+      text-align: center;
+      color: #94a3b8;
+      padding: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <h1>新闻管理列表</h1>
+
+      <div class="btn-group">
+        <button class="btn btn-refresh" onclick="loadNewsList()">刷新</button>
+        <a class="btn btn-add" href="./news-create.html">新增新闻</a>
+      </div>
+    </div>
+
+    <div id="newsMessage">正在加载新闻列表...</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>标题</th>
+            <th>分类</th>
+            <th>摘要</th>
+            <th>状态</th>
+            <th>VIP</th>
+            <th>浏览量</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+
+        <tbody id="newsTableBody">
+          <tr>
+            <td colspan="9" class="empty-row">正在加载数据...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="./news-list.js"></script>
+</body>
+</html>
