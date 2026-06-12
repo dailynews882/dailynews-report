@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 require("./db");
 
@@ -21,10 +22,18 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname)));
 
 app.get("/", (req, res) => {
   res.send("Daily News Backend API is running.");
+});
+
+app.get("/index.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.get("/home", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.use("/api/auth", authRoutes);

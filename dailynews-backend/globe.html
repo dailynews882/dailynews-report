@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>3D World News Globe</title>
+
+    <script>
+        window.CESIUM_BASE_URL = "https://cdn.jsdelivr.net/npm/cesium@1.116.0/Build/Cesium/";
+    </script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.116.0/Build/Cesium/Widgets/widgets.css" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #020617;
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+        }
+
+        #cesiumContainer {
+            width: 100vw;
+            height: 100vh;
+            background: #020617;
+        }
+
+        #newsPanel {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 390px;
+            max-height: calc(100vh - 60px);
+            overflow-y: auto;
+            background: rgba(2, 6, 23, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.75);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.45);
+            color: #e0f2fe;
+            border-radius: 18px;
+            padding: 22px;
+            z-index: 10;
+            backdrop-filter: blur(12px);
+        }
+
+        #countryTitle {
+            margin: 0 0 8px;
+            font-size: 24px;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        #countryDesc {
+            margin: 0 0 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(125, 211, 252, 0.25);
+            color: #7dd3fc;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .news-card {
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.78);
+        }
+
+        .news-card h3 {
+            margin: 0 0 8px;
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1.35;
+        }
+
+        .news-card p {
+            margin: 0 0 8px;
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .news-card a {
+            color: #38bdf8;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .news-card a:hover {
+            text-decoration: underline;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 20;
+            color: #e0f2fe;
+            text-decoration: none;
+            border: 1px solid rgba(56, 189, 248, 0.6);
+            background: rgba(2, 6, 23, 0.78);
+            padding: 10px 16px;
+            border-radius: 999px;
+            font-size: 14px;
+            box-shadow: 0 0 18px rgba(14, 165, 233, 0.35);
+        }
+
+        .back-btn:hover {
+            background: rgba(14, 165, 233, 0.25);
+        }
+
+        #errorBox {
+            position: absolute;
+            left: 30px;
+            bottom: 30px;
+            max-width: 560px;
+            background: rgba(127, 29, 29, 0.92);
+            color: #fee2e2;
+            border: 1px solid #f87171;
+            border-radius: 12px;
+            padding: 14px;
+            z-index: 99;
+            display: none;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            #newsPanel {
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+                top: auto;
+                width: auto;
+                max-height: 45vh;
+            }
+
+            .back-btn {
+                top: 20px;
+                left: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a class="back-btn" href="index.html">← Back Home</a>
+
+    <div id="cesiumContainer"></div>
+
+    <div id="newsPanel">
+        <h2 id="countryTitle">3D 世界新闻地图</h2>
+        <p id="countryDesc">
+            点击地球上的国家，右侧会显示对应国家的英文名、中文名和新闻测试内容。
+        </p>
+
+        <div id="newsList">
+            <div class="news-card">
+                <h3>测试状态</h3>
+                <p>如果你能看到 3D 地球和蓝色国家边界，说明 Cesium 已经运行成功。</p>
+                <a href="#">Read more →</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="errorBox"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.116.0/Build/Cesium/Cesium.js"></script>
+
+    <script>
+        function showError(message) {
+            const errorBox = document.getElementById("errorBox");
+            errorBox.style.display = "block";
+            errorBox.innerHTML = message;
+        }
+
+        try {
+            if (typeof Cesium === "undefined") {
+                showError("Cesium 没有加载成功。可能是网络无法访问 CDN。");
+                throw new Error("Cesium is undefined");
+            }
+
+            const viewer = new Cesium.Viewer("cesiumContainer", {
+                animation: false,
+                timeline: false,
+                baseLayerPicker: false,
+                geocoder: false,
+                homeButton: false,
+                sceneModePicker: false,
+                navigationHelpButton: false,
+                fullscreenButton: false,
+                infoBox: false,
+                selectionIndicator: false,
+
+                baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+                    Cesium.TileMapServiceImageryProvider.fromUrl(
+                        Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")
+                    )
+                ),
+
+                terrainProvider: new Cesium.EllipsoidTerrainProvider()
+            });
+
+            viewer.scene.rethrowRenderErrors = false;
+
+            viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#020617");
+            viewer.scene.skyBox.show = false;
+            viewer.scene.sun.show = false;
+            viewer.scene.moon.show = false;
+            viewer.scene.globe.enableLighting = false;
+
+            viewer.camera.setView({
+                destination: Cesium.Cartesian3.fromDegrees(103.8, 1.35, 18000000)
+            });
+
+            let countriesGeoJson = null;
+
+            fetch("countries.geojson")
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("countries.geojson 没有找到，请确认它和 globe.html 在同一个文件夹。");
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    countriesGeoJson = data;
+                    console.log("国家点击识别数据加载成功:", data.features.length);
+                })
+                .catch(function (error) {
+                    showError("国家点击识别数据加载失败：<br>" + error.message);
+                    console.error(error);
+                });
+
+
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+            handler.setInputAction(function (movement) {
+                const cartesian = viewer.camera.pickEllipsoid(
+                    movement.position,
+                    viewer.scene.globe.ellipsoid
+                );
+
+                if (!cartesian) {
+                    console.log("没有点到地球");
+                    return;
+                }
+
+                const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                console.log("点击经纬度:", longitude, latitude);
+
+                if (!countriesGeoJson) {
+                    console.log("国家 GeoJSON 数据还没有加载完成");
+                    return;
+                }
+
+                const feature = findCountryByLonLat(longitude, latitude);
+
+                if (!feature) {
+                    console.log("没有找到对应国家");
+                    showCountryNews({
+                        code: "WORLD",
+                        en: "Global / Ocean",
+                        zh: "全球 / 海洋"
+                    });
+                    return;
+                }
+
+                const props = feature.properties;
+
+                const en =
+                    props.ADMIN ||
+                    props.NAME ||
+                    props.NAME_EN ||
+                    props.name ||
+                    "Unknown";
+
+                const code =
+                    props.ISO_A2 ||
+                    props.ADM0_A3 ||
+                    props.ISO_A3 ||
+                    "WORLD";
+
+                const zh = getChineseCountryName(code, en);
+
+                console.log("识别到国家:", en, code, zh);
+
+                showCountryNews({
+                    code: code,
+                    en: en,
+                    zh: zh
+                });
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            function findCountryByLonLat(lon, lat) {
+                if (!countriesGeoJson || !countriesGeoJson.features) {
+                    return null;
+                }
+
+                for (let i = 0; i < countriesGeoJson.features.length; i++) {
+                    const feature = countriesGeoJson.features[i];
+
+                    if (!feature.geometry) {
+                        continue;
+                    }
+
+                    const geometry = feature.geometry;
+
+                    if (geometry.type === "Polygon") {
+                        if (pointInPolygon([lon, lat], geometry.coordinates)) {
+                            return feature;
+                        }
+                    }
+
+                    if (geometry.type === "MultiPolygon") {
+                        for (let j = 0; j < geometry.coordinates.length; j++) {
+                            if (pointInPolygon([lon, lat], geometry.coordinates[j])) {
+                                return feature;
+                            }
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            function pointInPolygon(point, polygonCoordinates) {
+                const outerRing = polygonCoordinates[0];
+
+                if (!pointInRing(point, outerRing)) {
+                    return false;
+                }
+
+                for (let i = 1; i < polygonCoordinates.length; i++) {
+                    if (pointInRing(point, polygonCoordinates[i])) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            function pointInRing(point, ring) {
+                const x = point[0];
+                const y = point[1];
+
+                let inside = false;
+
+                for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                    const xi = ring[i][0];
+                    const yi = ring[i][1];
+                    const xj = ring[j][0];
+                    const yj = ring[j][1];
+
+                    const intersect =
+                        yi > y !== yj > y &&
+                        x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+
+                    if (intersect) {
+                        inside = !inside;
+                    }
+                }
+
+                return inside;
+            }
+
+            function getChineseCountryName(code, en) {
+                const names = {
+                    SG: "新加坡",
+                    SGP: "新加坡",
+                    CN: "中国",
+                    CHN: "中国",
+                    US: "美国",
+                    USA: "美国",
+                    MY: "马来西亚",
+                    MYS: "马来西亚",
+                    JP: "日本",
+                    JPN: "日本",
+                    KR: "韩国",
+                    KOR: "韩国",
+                    TH: "泰国",
+                    THA: "泰国",
+                    ID: "印度尼西亚",
+                    IDN: "印度尼西亚",
+                    VN: "越南",
+                    VNM: "越南",
+                    PH: "菲律宾",
+                    PHL: "菲律宾",
+                    IN: "印度",
+                    IND: "印度",
+                    AU: "澳大利亚",
+                    AUS: "澳大利亚",
+                    GB: "英国",
+                    GBR: "英国",
+                    FR: "法国",
+                    FRA: "法国",
+                    DE: "德国",
+                    DEU: "德国",
+                    IT: "意大利",
+                    ITA: "意大利",
+                    ES: "西班牙",
+                    ESP: "西班牙",
+                    CA: "加拿大",
+                    CAN: "加拿大",
+                    BR: "巴西",
+                    BRA: "巴西",
+                    RU: "俄罗斯",
+                    RUS: "俄罗斯",
+                    SA: "沙特阿拉伯",
+                    SAU: "沙特阿拉伯",
+                    AE: "阿联酋",
+                    ARE: "阿联酋",
+                    EG: "埃及",
+                    EGY: "埃及",
+                    ZA: "南非",
+                    ZAF: "南非",
+                    TR: "土耳其",
+                    TUR: "土耳其",
+                    PK: "巴基斯坦",
+                    PAK: "巴基斯坦",
+                    BD: "孟加拉国",
+                    BGD: "孟加拉国",
+                    LK: "斯里兰卡",
+                    LKA: "斯里兰卡",
+                    IR: "伊朗",
+                    IRN: "伊朗",
+                    IQ: "伊拉克",
+                    IRQ: "伊拉克"
+                };
+
+                return names[code] || en;
+            }
+
+            function showCountryNews(country) {
+                document.getElementById("countryTitle").textContent =
+                    country.en + " / " + country.zh;
+
+                document.getElementById("countryDesc").textContent =
+                    "Country Code: " + country.code;
+
+                const newsList = getDemoNews(country.code, country.en, country.zh);
+
+                document.getElementById("newsList").innerHTML = newsList
+                    .map(function (item) {
+                        return `
+              <div class="news-card">
+                <h3>${item.title}</h3>
+                <p>${item.summary}</p>
+                <a href="${item.url}" target="_blank">Read more →</a>
+              </div>
+            `;
+                    })
+                    .join("");
+            }
+
+            function getDemoNews(code, en, zh) {
+                const newsData = {
+                    SG: [
+                        {
+                            title: "Singapore technology sector attracts new investment",
+                            summary: "新加坡科技行业继续吸引区域资本和国际企业关注。",
+                            url: "#"
+                        },
+                        {
+                            title: "Singapore strengthens its role as Asian financial hub",
+                            summary: "新加坡继续强化其亚洲金融中心和区域贸易枢纽地位。",
+                            url: "#"
+                        }
+                    ],
+                    CN: [
+                        {
+                            title: "China focuses on AI, chips and advanced manufacturing",
+                            summary: "中国继续推动人工智能、半导体和先进制造相关产业发展。",
+                            url: "#"
+                        }
+                    ],
+                    US: [
+                        {
+                            title: "US markets watch inflation and technology earnings",
+                            summary: "美国市场继续关注通胀、利率和大型科技公司的财报表现。",
+                            url: "#"
+                        }
+                    ],
+                    MY: [
+                        {
+                            title: "Malaysia infrastructure and tourism gain regional attention",
+                            summary: "马来西亚基础设施、旅游和制造业持续受到区域关注。",
+                            url: "#"
+                        }
+                    ],
+                    JP: [
+                        {
+                            title: "Japan technology and semiconductor sector remains active",
+                            summary: "日本半导体、机器人和高端制造产业继续保持活跃。",
+                            url: "#"
+                        }
+                    ],
+                    TH: [
+                        {
+                            title: "Thailand tourism recovery supports local economy",
+                            summary: "泰国旅游业复苏继续支撑当地消费和服务业。",
+                            url: "#"
+                        }
+                    ],
+                    AU: [
+                        {
+                            title: "Australia resources and energy sector in focus",
+                            summary: "澳大利亚资源、矿业和能源行业继续受到国际市场关注。",
+                            url: "#"
+                        }
+                    ],
+                    IN: [
+                        {
+                            title: "India technology and economy update",
+                            summary: "印度科技、经济和制造业新闻测试内容。",
+                            url: "#"
+                        }
+                    ]
+                };
+
+                return (
+                    newsData[code] || [
+                        {
+                            title: en + " latest news",
+                            summary:
+                                zh +
+                                " 新闻模块测试。后续可以接入真实新闻 API 或你的 24H NEWS 数据库。",
+                            url: "#"
+                        }
+                    ]
+                );
+            }
+        } catch (error) {
+            showError(
+                "页面运行出错：<br>" +
+                error.message +
+                "<br><br>请按 F12 打开 Console，把红色错误截图发给我。"
+            );
+            console.error(error);
+        }
+    </script>
+</body>
+
+</html>
