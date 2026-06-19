@@ -544,3 +544,100 @@ a {
 .home-news-read:hover {
   background: #1d4ed8;
 }
+/* ==============================
+   首页右上角登录、注册按钮
+============================== */
+
+.auth-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 4px;
+}
+
+.auth-link {
+    min-width: 76px;
+    height: 34px;
+    padding: 0 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+/* 登录按钮 */
+.auth-login {
+    color: #ffffff;
+    border: 1px solid rgba(96, 165, 250, 0.75);
+    background: rgba(15, 23, 42, 0.65);
+}
+
+.auth-login:hover {
+    color: #ffffff;
+    border-color: #60a5fa;
+    background: rgba(37, 99, 235, 0.32);
+    transform: translateY(-1px);
+}
+
+/* 注册按钮 */
+.auth-register {
+    color: #ffffff;
+    border: 1px solid #1677ff;
+    background: #1677ff;
+}
+
+.auth-register:hover {
+    color: #ffffff;
+    border-color: #0f62d6;
+    background: #0f62d6;
+    transform: translateY(-1px);
+}
+
+/* 用户已经登录后的会员中心按钮 */
+.auth-profile {
+    color: #ffffff;
+    border: 1px solid #10b981;
+    background: rgba(16, 185, 129, 0.22);
+}
+
+.auth-profile:hover {
+    background: rgba(16, 185, 129, 0.38);
+}
+
+/* 退出登录按钮 */
+.auth-logout {
+    min-width: auto;
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    background: transparent;
+}
+
+.auth-logout:hover {
+    color: #ffffff;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* 手机端适配 */
+@media (max-width: 900px) {
+    .auth-actions {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+    }
+
+    .auth-link {
+        min-width: 92px;
+    }
+}

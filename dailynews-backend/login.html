@@ -2,120 +2,385 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
   <title>会员登录 - Daily News</title>
+
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background: #07111f;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 40px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 30px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(
+          circle at top,
+          #12315b 0%,
+          #07111f 45%,
+          #040a12 100%
+        );
+      color: #ffffff;
+      font-family:
+        Arial,
+        "Microsoft YaHei",
+        sans-serif;
     }
 
     .box {
-      width: 380px;
-      margin: auto;
-      background: #101c2e;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 120, 255, 0.3);
+      width: 100%;
+      max-width: 420px;
+      padding: 32px;
+      background: rgba(16, 28, 46, 0.96);
+      border: 1px solid rgba(72, 145, 255, 0.35);
+      border-radius: 14px;
+      box-shadow: 0 0 30px rgba(0, 120, 255, 0.22);
+    }
+
+    .logo {
+      margin-bottom: 8px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      margin: 0 0 26px;
+      text-align: center;
+      color: #9fb5d2;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      margin-bottom: 7px;
+      color: #c9d8eb;
+      font-size: 14px;
     }
 
     input {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 6px;
+      padding: 13px 14px;
       border: 1px solid #2b5f9e;
+      border-radius: 7px;
+      outline: none;
       background: #07111f;
-      color: white;
-      box-sizing: border-box;
+      color: #ffffff;
+      font-size: 15px;
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: #3d9bff;
+      box-shadow: 0 0 0 3px rgba(61, 155, 255, 0.16);
+    }
+
+    input::placeholder {
+      color: #6f829d;
     }
 
     button {
       width: 100%;
-      padding: 12px;
-      margin-top: 10px;
+      margin-top: 24px;
+      padding: 13px;
       border: none;
-      border-radius: 6px;
+      border-radius: 7px;
       background: #0077ff;
-      color: white;
+      color: #ffffff;
       font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
+      transition:
+        background 0.2s,
+        opacity 0.2s;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background: #005fd1;
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
     #message {
-      margin-top: 15px;
-      color: #ffd700;
+      min-height: 24px;
+      margin-top: 16px;
+      padding: 0;
+      border-radius: 6px;
+      text-align: center;
       line-height: 1.6;
-      word-break: break-all;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    #message.success {
+      padding: 10px;
+      background: rgba(25, 180, 90, 0.13);
+      color: #72e69e;
+    }
+
+    #message.error {
+      padding: 10px;
+      background: rgba(235, 75, 75, 0.13);
+      color: #ff9292;
+    }
+
+    .links {
+      margin-top: 22px;
+      text-align: center;
+      color: #9fb5d2;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .links a {
+      color: #55aaff;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      margin: 0 8px;
+      color: #50647f;
     }
   </style>
 </head>
+
 <body>
   <div class="box">
-    <h2>Daily News 会员登录</h2>
+    <div class="logo">Daily News</div>
 
-    <input id="account" placeholder="会员名 / 邮箱 / 手机号码" />
-    <input id="password" type="password" placeholder="请输入密码" />
+    <p class="subtitle">
+      登录您的会员账户
+    </p>
 
-    <button onclick="login()">登录</button>
+    <form id="loginForm">
+      <label for="account">
+        会员名、邮箱或手机号码
+      </label>
 
-    <div id="message"></div>
+      <input
+        id="account"
+        name="account"
+        type="text"
+        autocomplete="username"
+        placeholder="请输入会员名、邮箱或手机号码"
+        maxlength="100"
+        required
+      />
+
+      <label for="password">
+        密码
+      </label>
+
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        placeholder="请输入密码"
+        maxlength="32"
+        required
+      />
+
+      <button
+        id="loginButton"
+        type="submit"
+      >
+        登录
+      </button>
+    </form>
+
+    <div
+      id="message"
+      role="status"
+      aria-live="polite"
+    ></div>
+
+    <div class="links">
+      还没有账号？
+      <a href="register.html">
+        立即注册
+      </a>
+
+      <span class="divider">|</span>
+
+      <a href="index.html">
+        返回首页
+      </a>
+    </div>
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000/api/auth";
+    /*
+     * 使用 Node 服务器打开页面时：
+     * http://localhost:5000/login.html
+     * API 使用 /api/auth
+     *
+     * 如果暂时使用 Live Server，例如5500端口，
+     * 自动请求 localhost:5000 后端。
+     */
+    const isLiveServer =
+      window.location.hostname === "127.0.0.1" ||
+      (
+        window.location.hostname === "localhost" &&
+        window.location.port !== "5000"
+      );
 
-    function showMessage(text) {
-      document.getElementById("message").innerText = text;
+    const API_BASE = isLiveServer
+      ? "http://localhost:5000/api/auth"
+      : "/api/auth";
+
+    const loginForm =
+      document.getElementById("loginForm");
+
+    const loginButton =
+      document.getElementById("loginButton");
+
+    const messageElement =
+      document.getElementById("message");
+
+    function showMessage(text, type = "") {
+      messageElement.textContent = text;
+      messageElement.className = type;
+    }
+
+    function setLoading(isLoading) {
+      loginButton.disabled = isLoading;
+      loginButton.textContent = isLoading
+        ? "正在登录..."
+        : "登录";
     }
 
     async function login() {
-      const account = document.getElementById("account").value.trim();
-      const password = document.getElementById("password").value;
+      const account = document
+        .getElementById("account")
+        .value
+        .trim();
+
+      const password = document
+        .getElementById("password")
+        .value;
 
       if (!account || !password) {
-        showMessage("请输入账号和密码");
+        showMessage(
+          "请输入账号和密码",
+          "error"
+        );
         return;
       }
 
+      setLoading(true);
+      showMessage("");
+
       try {
-        const res = await fetch(`${API_BASE}/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            account,
-            password
-          })
-        });
+        const response = await fetch(
+          API_BASE + "/login",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              account,
+              password
+            })
+          }
+        );
 
-        const data = await res.json();
+        let data;
 
-        if (data.success) {
-          localStorage.setItem("dailynews_token", data.token);
-          localStorage.setItem("dailynews_user", JSON.stringify(data.user));
-
-          showMessage(
-            "登录成功！欢迎你：" +
-            data.user.username +
-            "\n会员等级：" +
-            data.user.memberLevel
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          throw new Error(
+            "服务器返回的数据格式不正确"
           );
+        }
 
-          setTimeout(() => {
+        if (!response.ok || !data.success) {
+          showMessage(
+            data.message || "登录失败，请检查账号和密码",
+            "error"
+          );
+          return;
+        }
+
+        if (!data.token || !data.user) {
+          showMessage(
+            "登录成功，但服务器没有返回完整的登录信息",
+            "error"
+          );
+          return;
+        }
+
+        localStorage.setItem(
+          "dailynews_token",
+          data.token
+        );
+
+        localStorage.setItem(
+          "dailynews_user",
+          JSON.stringify(data.user)
+        );
+
+        showMessage(
+          "登录成功，欢迎您：" +
+            data.user.username +
+            "。正在进入会员中心……",
+          "success"
+        );
+
+        window.setTimeout(() => {
           window.location.href = "my.html";
         }, 800);
-          showMessage(data.message);
-        }
       } catch (error) {
-        showMessage("登录失败，请确认后端是否启动");
+        console.error("Login request error:", error);
+
+        showMessage(
+          "无法连接服务器，请确认后端服务器已经启动",
+          "error"
+        );
+      } finally {
+        setLoading(false);
       }
+    }
+
+    loginForm.addEventListener(
+      "submit",
+      function (event) {
+        event.preventDefault();
+        login();
+      }
+    );
+
+    /*
+     * 如果用户已经登录，可以直接进入会员中心。
+     */
+    const existingToken =
+      localStorage.getItem("dailynews_token");
+
+    if (existingToken) {
+      showMessage(
+        "检测到已有登录状态，您可以直接进入会员中心。",
+        "success"
+      );
     }
   </script>
 </body>
