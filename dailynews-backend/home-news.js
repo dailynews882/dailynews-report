@@ -1,4 +1,4 @@
-const HOME_NEWS_API = "http://localhost:5000/api/news";
+const HOME_NEWS_API = "/api/news";
 
 document.addEventListener("DOMContentLoaded", () => {
   loadHomeNews();
