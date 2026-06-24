@@ -4,32 +4,143 @@
 <head>
   <meta charset="UTF-8" />
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>每日新闻 Daily News</title>
 
   <link rel="stylesheet" href="/style.css" />
 
   <style>
-    .auth-actions{display:flex;align-items:center;gap:10px}
-    .auth-link{padding:8px 16px;border:1px solid #38a9ff;border-radius:6px;background:transparent;color:#fff;font:inherit;cursor:pointer}
-    .auth-register{background:#168cff}
-    .auth-modal{display:none;position:fixed;inset:0;z-index:999999;width:100%;height:100%;padding:24px 16px;box-sizing:border-box;overflow-y:auto;background:rgba(0,0,0,.75)}
-    .auth-modal.show{display:flex;align-items:flex-start;justify-content:center}
-    .auth-modal-content{position:relative;width:min(430px,100%);margin:48px auto;padding:32px;box-sizing:border-box;border-radius:14px;background:#fff;color:#222;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-    .auth-modal-content h2{margin:0 0 24px;text-align:center;color:#111}
-    .auth-close{position:absolute;top:10px;right:14px;padding:0;border:0;background:transparent;color:#555;font-size:32px;line-height:1;cursor:pointer}
-    .auth-form-group{margin-bottom:18px}
-    .auth-form-group label{display:block;margin-bottom:7px;color:#333}
-    .auth-form-group input{width:100%;min-height:46px;padding:10px 12px;box-sizing:border-box;border:1px solid #ccc;border-radius:7px;background:#fff;color:#222;font:inherit;outline:none}
-    .auth-form-group input:focus{border-color:#168cff}
-    .auth-submit-btn{width:100%;min-height:46px;border:0;border-radius:7px;background:#168cff;color:#fff;font:inherit;font-weight:600;cursor:pointer}
-    .auth-message{min-height:20px;margin:14px 0 0;text-align:center;color:#d32f2f}
-    .auth-switch-text{margin:20px 0 0;text-align:center;color:#666}
-    .auth-switch-text button{padding:0;border:0;background:transparent;color:#168cff;font:inherit;cursor:pointer}
+    .auth-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .auth-link {
+      padding: 8px 16px;
+      border: 1px solid #38a9ff;
+      border-radius: 6px;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      cursor: pointer
+    }
+
+    .auth-register {
+      background: #168cff
+    }
+
+    .auth-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      width: 100%;
+      height: 100%;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, .75)
+    }
+
+    .auth-modal.show {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center
+    }
+
+    .auth-modal-content {
+      position: relative;
+      width: min(430px, 100%);
+      margin: 48px auto;
+      padding: 32px;
+      box-sizing: border-box;
+      border-radius: 14px;
+      background: #fff;
+      color: #222;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .5)
+    }
+
+    .auth-modal-content h2 {
+      margin: 0 0 24px;
+      text-align: center;
+      color: #111
+    }
+
+    .auth-close {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #555;
+      font-size: 32px;
+      line-height: 1;
+      cursor: pointer
+    }
+
+    .auth-form-group {
+      margin-bottom: 18px
+    }
+
+    .auth-form-group label {
+      display: block;
+      margin-bottom: 7px;
+      color: #333
+    }
+
+    .auth-form-group input {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      background: #fff;
+      color: #222;
+      font: inherit;
+      outline: none
+    }
+
+    .auth-form-group input:focus {
+      border-color: #168cff
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      min-height: 46px;
+      border: 0;
+      border-radius: 7px;
+      background: #168cff;
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .auth-message {
+      min-height: 20px;
+      margin: 14px 0 0;
+      text-align: center;
+      color: #d32f2f
+    }
+
+    .auth-switch-text {
+      margin: 20px 0 0;
+      text-align: center;
+      color: #666
+    }
+
+    .auth-switch-text button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #168cff;
+      font: inherit;
+      cursor: pointer
+    }
 
     .auth-code-row {
       display: flex;
@@ -56,6 +167,36 @@
     .auth-code-btn:disabled {
       background: #9bbfe8;
       cursor: not-allowed;
+    }
+
+    .auth-user-area {
+      display: none;
+      align-items: center;
+      gap: 10px
+    }
+
+    .auth-user-name {
+      display: inline-block;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #fff;
+      font-weight: 600
+    }
+
+    .auth-logout {
+      padding: 8px 14px;
+      border: 1px solid #ff6b6b;
+      border-radius: 6px;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      cursor: pointer
+    }
+
+    .auth-logout:hover {
+      background: rgba(255, 107, 107, .18)
     }
   </style>
 
@@ -88,18 +229,9 @@
 
       <!-- 搜索框 -->
       <div class="search-box">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="search"
-          autocomplete="off"
-        />
+        <input type="text" id="searchInput" placeholder="search" autocomplete="off" />
 
-        <button
-          type="button"
-          id="searchButton"
-          aria-label="搜索"
-        >
+        <button type="button" id="searchButton" aria-label="搜索">
           🔍
         </button>
       </div>
@@ -107,15 +239,11 @@
       <!-- 登录和注册按钮 -->
       <div class="auth-actions" id="authActions">
         <button type="button" id="loginBtn" class="auth-link auth-login">登录</button>
-
-        <button
-          type="button"
-          id="registerBtn"
-          class="auth-link auth-register"
-        >
-          注册
-        </button>
-
+        <button type="button" id="registerBtn" class="auth-link auth-register">注册</button>
+        <div id="authUserArea" class="auth-user-area">
+          <span id="authUserName" class="auth-user-name"></span>
+          <button type="button" id="logoutBtn" class="auth-logout">退出</button>
+        </div>
       </div>
 
       <!-- 语言选择 -->
@@ -178,10 +306,7 @@
       正在加载新闻...
     </div>
 
-    <div
-      id="homeNewsList"
-      class="home-news-list"
-    ></div>
+    <div id="homeNewsList" class="home-news-list"></div>
 
   </section>
 
@@ -191,10 +316,7 @@
   ============================== -->
   <nav class="main-tabs">
 
-    <a
-      class="active"
-      href="#"
-    >
+    <a class="active" href="#">
       实时新闻
     </a>
 
@@ -251,10 +373,7 @@
 
         <span>2026-02-26</span>
 
-        <button
-          type="button"
-          class="filter-active"
-        >
+        <button type="button" class="filter-active">
           全球快讯
         </button>
 
@@ -503,23 +622,11 @@
   <!-- ==============================
        登录弹窗
   ============================== -->
-  <div id="loginModal" class="auth-modal"
-       aria-hidden="true"
-  >
+  <div id="loginModal" class="auth-modal" aria-hidden="true">
 
-    <div
-      class="auth-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="loginModalTitle"
-    >
+    <div class="auth-modal-content" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
 
-      <button
-        type="button"
-        class="auth-close"
-        id="closeLoginModal"
-        aria-label="关闭登录窗口"
-      >
+      <button type="button" class="auth-close" id="closeLoginModal" aria-label="关闭登录窗口">
         &times;
       </button>
 
@@ -535,14 +642,8 @@
             邮箱或手机号码
           </label>
 
-          <input
-            type="text"
-            id="loginAccount"
-            name="account"
-            placeholder="请输入邮箱或手机号码"
-            autocomplete="username"
-            required
-          />
+          <input type="text" id="loginAccount" name="account" placeholder="请输入邮箱或手机号码" autocomplete="username"
+            required />
 
         </div>
 
@@ -553,29 +654,17 @@
             密码
           </label>
 
-          <input
-            type="password"
-            id="loginPassword"
-            name="password"
-            placeholder="请输入密码"
-            autocomplete="current-password"
-            required
-          />
+          <input type="password" id="loginPassword" name="password" placeholder="请输入密码" autocomplete="current-password"
+            required />
 
         </div>
 
 
-        <button
-          type="submit"
-          class="auth-submit-btn"
-        >
+        <button type="submit" class="auth-submit-btn">
           登录
         </button>
 
-        <p
-          id="loginMessage"
-          class="auth-message"
-        ></p>
+        <p id="loginMessage" class="auth-message"></p>
 
       </form>
 
@@ -584,10 +673,7 @@
 
         还没有账号？
 
-        <button
-          type="button"
-          id="switchToRegister"
-        >
+        <button type="button" id="switchToRegister">
           立即注册
         </button>
 
@@ -601,23 +687,11 @@
   <!-- ==============================
        注册弹窗
   ============================== -->
-  <div id="registerModal" class="auth-modal"
-       aria-hidden="true"
-  >
+  <div id="registerModal" class="auth-modal" aria-hidden="true">
 
-    <div
-      class="auth-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="registerModalTitle"
-    >
+    <div class="auth-modal-content" role="dialog" aria-modal="true" aria-labelledby="registerModalTitle">
 
-      <button
-        type="button"
-        class="auth-close"
-        id="closeRegisterModal"
-        aria-label="关闭注册窗口"
-      >
+      <button type="button" class="auth-close" id="closeRegisterModal" aria-label="关闭注册窗口">
         &times;
       </button>
 
@@ -633,14 +707,8 @@
             用户名
           </label>
 
-          <input
-            type="text"
-            id="registerUsername"
-            name="username"
-            placeholder="请输入用户名"
-            autocomplete="username"
-            required
-          />
+          <input type="text" id="registerUsername" name="username" placeholder="请输入用户名" autocomplete="username"
+            required />
 
         </div>
 
@@ -651,14 +719,7 @@
             邮箱地址
           </label>
 
-          <input
-            type="text"
-            id="registerAccount"
-            name="account"
-            placeholder="请输入邮箱地址"
-            autocomplete="email"
-            required
-          />
+          <input type="text" id="registerAccount" name="account" placeholder="请输入邮箱地址" autocomplete="email" required />
 
         </div>
 
@@ -670,22 +731,10 @@
           </label>
 
           <div class="auth-code-row">
-            <input
-              type="text"
-              id="registerOtpCode"
-              name="otpCode"
-              placeholder="请输入6位验证码"
-              inputmode="numeric"
-              maxlength="6"
-              autocomplete="one-time-code"
-              required
-            />
+            <input type="text" id="registerOtpCode" name="otpCode" placeholder="请输入6位验证码" inputmode="numeric"
+              maxlength="6" autocomplete="one-time-code" required />
 
-            <button
-              type="button"
-              id="sendRegisterCodeBtn"
-              class="auth-code-btn"
-            >
+            <button type="button" id="sendRegisterCodeBtn" class="auth-code-btn">
               发送验证码
             </button>
           </div>
@@ -699,14 +748,8 @@
             密码
           </label>
 
-          <input
-            type="password"
-            id="registerPassword"
-            name="password"
-            placeholder="请输入密码"
-            autocomplete="new-password"
-            required
-          />
+          <input type="password" id="registerPassword" name="password" placeholder="请输入密码" autocomplete="new-password"
+            required />
 
         </div>
 
@@ -717,29 +760,17 @@
             确认密码
           </label>
 
-          <input
-            type="password"
-            id="registerConfirmPassword"
-            name="confirmPassword"
-            placeholder="请再次输入密码"
-            autocomplete="new-password"
-            required
-          />
+          <input type="password" id="registerConfirmPassword" name="confirmPassword" placeholder="请再次输入密码"
+            autocomplete="new-password" required />
 
         </div>
 
 
-        <button
-          type="submit"
-          class="auth-submit-btn"
-        >
+        <button type="submit" class="auth-submit-btn">
           注册
         </button>
 
-        <p
-          id="registerMessage"
-          class="auth-message"
-        ></p>
+        <p id="registerMessage" class="auth-message"></p>
 
       </form>
 
@@ -748,10 +779,7 @@
 
         已经有账号？
 
-        <button
-          type="button"
-          id="switchToLogin"
-        >
+        <button type="button" id="switchToLogin">
           返回登录
         </button>
 
@@ -769,327 +797,9 @@
   <script src="/script.js"></script>
   <script src="/home-news.js"></script>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const loginBtn = document.getElementById("loginBtn");
-      const registerBtn = document.getElementById("registerBtn");
-      const loginModal = document.getElementById("loginModal");
-      const registerModal = document.getElementById("registerModal");
-      const closeLoginModal = document.getElementById("closeLoginModal");
-      const closeRegisterModal = document.getElementById("closeRegisterModal");
-      const switchToRegister = document.getElementById("switchToRegister");
-      const switchToLogin = document.getElementById("switchToLogin");
-      const loginForm = document.getElementById("loginForm");
-      const registerForm = document.getElementById("registerForm");
-      const sendRegisterCodeBtn =
-        document.getElementById("sendRegisterCodeBtn");
-
-      function openModal(modal) {
-        if (!modal) return;
-        modal.classList.add("show");
-        modal.setAttribute("aria-hidden", "false");
-        document.body.style.overflow = "hidden";
-      }
-
-      function closeModal(modal) {
-        if (!modal) return;
-        modal.classList.remove("show");
-        modal.setAttribute("aria-hidden", "true");
-
-        if (!document.querySelector(".auth-modal.show")) {
-          document.body.style.overflow = "";
-        }
-      }
-
-      function showMessage(elementId, message, success = false) {
-        const element = document.getElementById(elementId);
-
-        if (!element) return;
-
-        element.textContent = message;
-        element.style.color = success ? "#14833b" : "#d32f2f";
-      }
-
-      function isValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-      }
-
-      loginBtn?.addEventListener("click", function () {
-        closeModal(registerModal);
-        openModal(loginModal);
-      });
-
-      registerBtn?.addEventListener("click", function () {
-        closeModal(loginModal);
-        openModal(registerModal);
-      });
-
-      closeLoginModal?.addEventListener("click", function () {
-        closeModal(loginModal);
-      });
-
-      closeRegisterModal?.addEventListener("click", function () {
-        closeModal(registerModal);
-      });
-
-      switchToRegister?.addEventListener("click", function () {
-        closeModal(loginModal);
-        openModal(registerModal);
-      });
-
-      switchToLogin?.addEventListener("click", function () {
-        closeModal(registerModal);
-        openModal(loginModal);
-      });
-
-      loginModal?.addEventListener("click", function (event) {
-        if (event.target === loginModal) {
-          closeModal(loginModal);
-        }
-      });
-
-      registerModal?.addEventListener("click", function (event) {
-        if (event.target === registerModal) {
-          closeModal(registerModal);
-        }
-      });
-
-      document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") {
-          closeModal(loginModal);
-          closeModal(registerModal);
-        }
-      });
-
-      sendRegisterCodeBtn?.addEventListener("click", async function () {
-        const email = String(
-          document.getElementById("registerAccount")?.value || ""
-        )
-          .trim()
-          .toLowerCase();
-
-        if (!isValidEmail(email)) {
-          showMessage(
-            "registerMessage",
-            "请先输入正确的邮箱地址。"
-          );
-          return;
-        }
-
-        sendRegisterCodeBtn.disabled = true;
-        sendRegisterCodeBtn.textContent = "正在发送...";
-
-        try {
-          const response = await fetch(
-            "/api/auth/email/send-code",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                account: email
-              })
-            }
-          );
-
-          const data = await response.json();
-
-          if (!response.ok || !data.success) {
-            throw new Error(
-              data.message || "验证码发送失败"
-            );
-          }
-
-          showMessage(
-            "registerMessage",
-            data.message || "邮箱验证码已发送。",
-            true
-          );
-
-          let seconds = 60;
-          sendRegisterCodeBtn.textContent =
-            seconds + "秒后重发";
-
-          const timer = window.setInterval(function () {
-            seconds -= 1;
-
-            if (seconds <= 0) {
-              window.clearInterval(timer);
-              sendRegisterCodeBtn.disabled = false;
-              sendRegisterCodeBtn.textContent = "重新发送";
-              return;
-            }
-
-            sendRegisterCodeBtn.textContent =
-              seconds + "秒后重发";
-          }, 1000);
-        } catch (error) {
-          showMessage(
-            "registerMessage",
-            error.message || "验证码发送失败"
-          );
-
-          sendRegisterCodeBtn.disabled = false;
-          sendRegisterCodeBtn.textContent = "发送验证码";
-        }
-      });
-
-      loginForm?.addEventListener("submit", async function (event) {
-        event.preventDefault();
-
-        const account = String(
-          document.getElementById("loginAccount")?.value || ""
-        ).trim();
-
-        const password = String(
-          document.getElementById("loginPassword")?.value || ""
-        );
-
-        showMessage("loginMessage", "正在登录...", true);
-
-        try {
-          const response = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              account,
-              password
-            })
-          });
-
-          const data = await response.json();
-
-          if (!response.ok || !data.success) {
-            throw new Error(data.message || "登录失败");
-          }
-
-          localStorage.setItem("token", data.token);
-          localStorage.setItem(
-            "dailynewsUser",
-            JSON.stringify(data.user)
-          );
-
-          showMessage(
-            "loginMessage",
-            data.message || "登录成功",
-            true
-          );
-
-          window.setTimeout(function () {
-            window.location.reload();
-          }, 800);
-        } catch (error) {
-          showMessage(
-            "loginMessage",
-            error.message || "登录失败"
-          );
-        }
-      });
-
-      registerForm?.addEventListener("submit", async function (event) {
-        event.preventDefault();
-
-        const username = String(
-          document.getElementById("registerUsername")?.value || ""
-        ).trim();
-
-        const email = String(
-          document.getElementById("registerAccount")?.value || ""
-        )
-          .trim()
-          .toLowerCase();
-
-        const code = String(
-          document.getElementById("registerOtpCode")?.value || ""
-        ).trim();
-
-        const password = String(
-          document.getElementById("registerPassword")?.value || ""
-        );
-
-        const confirmPassword = String(
-          document.getElementById(
-            "registerConfirmPassword"
-          )?.value || ""
-        );
-
-        if (!isValidEmail(email)) {
-          showMessage(
-            "registerMessage",
-            "请输入正确的邮箱地址。"
-          );
-          return;
-        }
-
-        if (!/^\d{6}$/.test(code)) {
-          showMessage(
-            "registerMessage",
-            "请输入6位邮箱验证码。"
-          );
-          return;
-        }
-
-        if (password !== confirmPassword) {
-          showMessage(
-            "registerMessage",
-            "两次输入的密码不一致。"
-          );
-          return;
-        }
-
-        showMessage("registerMessage", "正在注册...", true);
-
-        try {
-          const response = await fetch(
-            "/api/auth/email/register",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                username,
-                email,
-                password,
-                code
-              })
-            }
-          );
-
-          const data = await response.json();
-
-          if (!response.ok || !data.success) {
-            throw new Error(data.message || "注册失败");
-          }
-
-          localStorage.setItem("token", data.token);
-          localStorage.setItem(
-            "dailynewsUser",
-            JSON.stringify(data.user)
-          );
-
-          showMessage(
-            "registerMessage",
-            data.message || "注册成功",
-            true
-          );
-
-          window.setTimeout(function () {
-            window.location.reload();
-          }, 1000);
-        } catch (error) {
-          showMessage(
-            "registerMessage",
-            error.message || "注册失败"
-          );
-        }
-      });
-    });
-  </script>
+  <script src="/auth-modal.js"></script>
 
 
 </body>
+
 </html>
