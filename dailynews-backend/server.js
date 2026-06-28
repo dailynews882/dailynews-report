@@ -4,16 +4,46 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
+/*
+
+* 加载并初始化数据库。
+  */
 require("./db");
 
-const authRoutes = require("./routes/authRoute");
-const walletRoutes = require("./routes/walletRoute");
-const subscriptionRoutes = require("./routes/subscriptionRoute");
-const paymentRoutes = require("./routes/paymentRoute");
-const newsRoutes = require("./routes/newsRoute");
+/*
+
+* 加载API路由。
+  */
+const authRoutes =
+  require("./routes/authRoute");
+
+const walletRoutes =
+  require("./routes/walletRoute");
+
+const subscriptionRoutes =
+  require("./routes/subscriptionRoute");
+
+const paymentRoutes =
+  require("./routes/paymentRoute");
+
+const newsRoutes =
+  require("./routes/newsRoute");
 
 const app = express();
 
+/*
+
+* 网站位于Nginx和DigitalOcean代理后面。
+* 启用trust proxy后，可以正确读取访问者IP和HTTPS状态。
+  */
+app.set("trust proxy", 1);
+
+/*
+
+* 跨域设置。
+*
+* 当前允许同源网站和开发环境访问API。
+  */
 app.use(
   cors({
     origin: true,
@@ -21,33 +51,158 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+/*
 
-// 当前前端页面位于 dailynews-backend 根目录
-app.use(express.static(path.join(__dirname, "public")));
+* =====================================
+* Stripe Webhook
+* =====================================
+*
+* 这个路由必须放在express.json()之前。
+*
+* Stripe签名验证必须使用未经JSON解析的
+* 原始请求体Buffer。
+  */
+app.post(
+  "/api/payment/webhook",
+  express.raw({
+    type: "application/json"
+  }),
+  (req, res, next) => {
+    /*
+  
+    * 下一步修改paymentRoute.js后，
+    * paymentRoutes.webhookHandler会正式存在。
+    *
+    * 现在先保留安全检查，
+    * 避免server.js因为旧支付路由而启动失败。
+      */
+    if (
+      typeof paymentRoutes.webhookHandler !==
+      "function"
+    ) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "Stripe Webhook处理程序尚未完成配置"
+      });
+    }
 
-// 后端状态测试
+    return paymentRoutes.webhookHandler(
+      req,
+      res,
+      next
+    );
+  }
+);
+
+/*
+
+* =====================================
+* 普通请求体解析
+* =====================================
+*
+* 必须放在Stripe Webhook路由之后。
+  */
+app.use(
+  express.json({
+    limit: "1mb"
+  })
+);
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "1mb"
+  })
+);
+
+/*
+
+* =====================================
+* 网站静态文件
+* =====================================
+*
+* 浏览器可以直接访问public文件夹里的文件。
+*
+* 例如：
+* public/index.html
+* public/subscribe.html
+* public/wallet.html
+  */
+app.use(
+  express.static(
+    path.join(__dirname, "public")
+  )
+);
+
+/*
+
+* =====================================
+* 后端状态测试接口
+* =====================================
+  */
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
-    message: "Daily News Backend API is running"
+    message:
+      "Daily News Backend API is running",
+    timestamp: new Date().toISOString()
   });
 });
 
-// 首页
+/*
+
+* =====================================
+* 网站首页
+* =====================================
+  */
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(
+    path.join(
+      __dirname,
+      "public",
+      "index.html"
+    )
+  );
 });
 
-// API 路由
-app.use("/api/auth", authRoutes);
-app.use("/api/wallet", walletRoutes);
-app.use("/api/news", newsRoutes);
-app.use("/api/subscription", subscriptionRoutes);
-app.use("/api/payment", paymentRoutes);
+/*
 
-// 404
+* =====================================
+* 普通API路由
+* =====================================
+  */
+app.use(
+  "/api/auth",
+  authRoutes
+);
+
+app.use(
+  "/api/wallet",
+  walletRoutes
+);
+
+app.use(
+  "/api/news",
+  newsRoutes
+);
+
+app.use(
+  "/api/subscription",
+  subscriptionRoutes
+);
+
+app.use(
+  "/api/payment",
+  paymentRoutes
+);
+
+/*
+
+* =====================================
+* 404处理
+* =====================================
+  */
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -55,18 +210,49 @@ app.use((req, res) => {
   });
 });
 
-// 全局错误处理
-app.use((err, req, res, next) => {
-  console.error("Unhandled server error:", err);
+/*
 
-  res.status(500).json({
+* =====================================
+* 全局错误处理
+* =====================================
+  */
+app.use((err, req, res, next) => {
+  console.error(
+    "Unhandled server error:",
+    err
+  );
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  return res.status(500).json({
     success: false,
     message: "服务器内部错误"
   });
 });
 
-const PORT = Number(process.env.PORT) || 5000;
+/*
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+* =====================================
+* 启动服务器
+* =====================================
+  */
+const PORT =
+  Number(process.env.PORT) || 5000;
+
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `Server running on http://localhost:${PORT}`
+    );
+
+    console.log(
+      "Stripe Webhook endpoint:",
+      "/api/payment/webhook"
+    );
+
+  }
+);

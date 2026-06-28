@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>会员订阅 - Daily News</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #07111f;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      padding: 18px 30px;
+      border-bottom: 1px solid #1f3f66;
+      background: #101c2e;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .back-btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #2b5f9e;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .back-btn:hover {
+      background: #3975bd;
+    }
+
+    .container {
+      width: min(1100px, 100%);
+      margin: 35px auto;
+      padding: 0 20px 40px;
+    }
+
+    .hero {
+      margin-bottom: 25px;
+      padding: 30px;
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg,
+          #0d2b52,
+          #123f78);
+      box-shadow:
+        0 0 22px rgba(0, 120, 255, 0.25);
+    }
+
+    .hero h2 {
+      margin: 0 0 12px;
+      color: #ffd700;
+      font-size: 28px;
+    }
+
+    .hero p {
+      margin: 8px 0;
+      color: #d7e7ff;
+      line-height: 1.7;
+    }
+
+    .test-notice {
+      margin-top: 18px;
+      padding: 13px 15px;
+      border: 1px solid #d7aa1f;
+      border-radius: 8px;
+      background: rgba(255, 215, 0, 0.08);
+      color: #ffe889;
+      line-height: 1.6;
+    }
+
+    .status-card {
+      margin-bottom: 25px;
+      padding: 22px;
+      border: 1px solid #1f3f66;
+      border-radius: 14px;
+      background: #101c2e;
+    }
+
+    .status-card h3 {
+      margin: 0 0 18px;
+      color: #8fc7ff;
+      font-size: 21px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .status-item {
+      padding: 15px;
+      border-radius: 9px;
+      background: #0b1728;
+    }
+
+    .status-label {
+      margin-bottom: 8px;
+      color: #8fb8e8;
+      font-size: 14px;
+    }
+
+    .status-value {
+      overflow-wrap: anywhere;
+      color: #ffffff;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .status-active {
+      color: #43e89b;
+    }
+
+    .status-warning {
+      color: #ffd85c;
+    }
+
+    .status-danger {
+      color: #ff7777;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .plan {
+      position: relative;
+      padding: 25px;
+      border: 1px solid #1f3f66;
+      border-radius: 14px;
+      background: #101c2e;
+      box-shadow:
+        0 0 15px rgba(0, 80, 180, 0.15);
+    }
+
+    .plan.vip {
+      border: 2px solid #ffd700;
+    }
+
+    .badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: #ffd700;
+      color: #111111;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .plan h3 {
+      margin: 0;
+      color: #8fc7ff;
+      font-size: 22px;
+    }
+
+    .price {
+      margin: 18px 0;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    .price span {
+      color: #8fb8e8;
+      font-size: 14px;
+      font-weight: normal;
+    }
+
+    .feature {
+      margin: 12px 0;
+      color: #d7e7ff;
+      line-height: 1.5;
+    }
+
+    .subscribe-btn,
+    .manage-btn {
+      width: 100%;
+      min-height: 48px;
+      margin-top: 18px;
+      padding: 12px 15px;
+      border: none;
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .subscribe-btn {
+      background: #0077ff;
+    }
+
+    .subscribe-btn:hover {
+      background: #005fd1;
+    }
+
+    .manage-btn {
+      display: none;
+      background: #7952cc;
+    }
+
+    .manage-btn:hover {
+      background: #6240b1;
+    }
+
+    .free-btn {
+      background: #444444;
+      cursor: default;
+    }
+
+    .free-btn:hover {
+      background: #444444;
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .message {
+      display: none;
+      margin-top: 25px;
+      padding: 17px;
+      border-radius: 9px;
+      line-height: 1.7;
+    }
+
+    .message.info {
+      display: block;
+      border: 1px solid #2a78bd;
+      background: rgba(0, 119, 255, 0.12);
+      color: #bfe0ff;
+    }
+
+    .message.success {
+      display: block;
+      border: 1px solid #279d68;
+      background: rgba(39, 157, 104, 0.12);
+      color: #77f0b3;
+    }
+
+    .message.error {
+      display: block;
+      border: 1px solid #c94f4f;
+      background: rgba(201, 79, 79, 0.12);
+      color: #ffabab;
+    }
+
+    .note {
+      margin-top: 25px;
+      padding: 20px;
+      border: 1px solid #1f3f66;
+      border-radius: 12px;
+      background: #101c2e;
+      color: #d7e7ff;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 850px) {
+
+      .plans,
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <header class="header">
+    <h1>Daily News 会员订阅</h1>
+
+    ```
+    <button type="button" class="back-btn" id="backButton">
+      返回首页
+    </button>
+    ```
+
+  </header>
+
+  <main class="container">
+
+    ```
+    <section class="hero">
+      <h2>升级 VIP，解锁高级新闻服务</h2>
+
+      <p>
+        订阅价格为每月 SGD 9.90。
+        订阅成功后，Stripe 将按照月度账单周期自动续费。
+      </p>
+
+      <p>
+        你可以通过“管理订阅”更新付款方式、
+        查看账单或取消自动续费。
+      </p>
+
+      <div class="test-notice">
+        当前处于 Stripe 沙盒测试阶段，不会处理真实资金。
+        请不要在测试页面填写真实银行卡资料。
+      </div>
+    </section>
+
+    <section class="status-card">
+      <h3>我的会员状态</h3>
+
+      <div class="status-grid">
+
+        <div class="status-item">
+          <div class="status-label">
+            会员等级
+          </div>
+
+          <div class="status-value" id="memberLevel">
+            正在查询...
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-label">
+            订阅状态
+          </div>
+
+          <div class="status-value" id="subscriptionStatus">
+            正在查询...
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-label">
+            当前周期结束时间
+          </div>
+
+          <div class="status-value" id="periodEnd">
+            -
+          </div>
+        </div>
+
+      </div>
+
+      <button type="button" class="manage-btn" id="manageSubscriptionButton">
+        管理订阅和付款方式
+      </button>
+    </section>
+
+    <section class="plans">
+
+      <article class="plan">
+        <h3>免费会员</h3>
+
+        <div class="price">
+          SGD 0
+          <span>/ 永久</span>
+        </div>
+
+        <div class="feature">
+          ✓ 查看基础新闻内容
+        </div>
+
+        <div class="feature">
+          ✓ 使用基础新闻摘要
+        </div>
+
+        <div class="feature">
+          ✓ 浏览公开新闻栏目
+        </div>
+
+        <div class="feature">
+          ✕ VIP 深度分析
+        </div>
+
+        <div class="feature">
+          ✕ 高级财经数据总结
+        </div>
+
+        <button type="button" class="subscribe-btn free-btn" disabled>
+          免费基础套餐
+        </button>
+      </article>
+
+      <article class="plan vip">
+        <div class="badge">
+          推荐
+        </div>
+
+        <h3>VIP 月度会员</h3>
+
+        <div class="price">
+          SGD 9.90
+          <span>/ 每月自动续费</span>
+        </div>
+
+        <div class="feature">
+          ✓ 查看全部 AI 新闻汇总
+        </div>
+
+        <div class="feature">
+          ✓ AI 数据总结
+        </div>
+
+        <div class="feature">
+          ✓ 财经日历重点提醒
+        </div>
+
+        <div class="feature">
+          ✓ 科技与财经专题
+        </div>
+
+        <div class="feature">
+          ✓ VIP 专属内容入口
+        </div>
+
+        <button type="button" class="subscribe-btn" id="subscribeButton">
+          使用 Stripe 订阅 VIP
+        </button>
+      </article>
+
+    </section>
+
+    <div id="message" class="message"></div>
+
+    <section class="note">
+      <strong>订阅说明：</strong>
+      <br />
+
+      1. 该套餐为每月自动续费订阅。
+      <br />
+
+      2. 付款和银行卡资料由 Stripe 支付页面处理。
+      <br />
+
+      3. 取消自动续费后，可以继续使用到当前已付款周期结束。
+      <br />
+
+      4. 如果续费失败，系统会提示你更新付款方式。
+      <br />
+
+      5. 测试阶段产生的订单和余额均为沙盒测试数据。
+    </section>
+    ```
+
+  </main>
+
+  <script>
+    const API_PAYMENT = "/api/payment";
+
+    const subscribeButton =
+      document.getElementById(
+        "subscribeButton"
+      );
+
+    const manageSubscriptionButton =
+      document.getElementById(
+        "manageSubscriptionButton"
+      );
+
+    const memberLevelElement =
+      document.getElementById(
+        "memberLevel"
+      );
+
+    const subscriptionStatusElement =
+      document.getElementById(
+        "subscriptionStatus"
+      );
+
+    const periodEndElement =
+      document.getElementById(
+        "periodEnd"
+      );
+
+    const messageElement =
+      document.getElementById(
+        "message"
+      );
+
+    function getToken() {
+      return localStorage.getItem("token");
+    }
+
+    function showMessage(
+      message,
+      type = "info"
+    ) {
+      messageElement.textContent = message;
+      messageElement.className =
+        `message ${type}`;
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) {
+        return "-";
+      }
+
+      const date = new Date(dateValue);
+
+      if (
+        Number.isNaN(date.getTime())
+      ) {
+        return dateValue;
+      }
+
+      return date.toLocaleString(
+        "zh-CN",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
+    }
+
+    function translateStatus(status) {
+      const statusMap = {
+        free: "免费会员",
+        active: "订阅正常",
+        trialing: "试用中",
+        incomplete: "付款尚未完成",
+        incomplete_expired:
+          "付款页面已经过期",
+        past_due: "续费逾期",
+        unpaid: "账单未付款",
+        canceled: "订阅已结束",
+        paused: "订阅已暂停"
+      };
+
+      return statusMap[status] ||
+        status ||
+        "未订阅";
+    }
+
+    function setStatusStyle(
+      element,
+      status
+    ) {
+      element.classList.remove(
+        "status-active",
+        "status-warning",
+        "status-danger"
+      );
+
+      if (
+        status === "active" ||
+        status === "trialing"
+      ) {
+        element.classList.add(
+          "status-active"
+        );
+        return;
+      }
+
+      if (
+        status === "past_due" ||
+        status === "incomplete"
+      ) {
+        element.classList.add(
+          "status-warning"
+        );
+        return;
+      }
+
+      if (
+        status === "canceled" ||
+        status === "unpaid" ||
+        status === "incomplete_expired"
+      ) {
+        element.classList.add(
+          "status-danger"
+        );
+      }
+    }
+
+    function requireLogin() {
+      const token = getToken();
+
+      if (token) {
+        return token;
+      }
+
+      alert("请先登录后再订阅会员");
+      window.location.href = "/";
+      return null;
+    }
+
+    async function loadSubscriptionStatus() {
+      const token = requireLogin();
+
+      if (!token) {
+        return null;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_PAYMENT}/subscription-status`,
+          {
+            method: "GET",
+            headers: {
+              Authorization:
+                `Bearer ${token}`
+            }
+          }
+        );
+
+        const data = await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+            "订阅状态查询失败"
+          );
+        }
+
+        const subscription =
+          data.subscription;
+
+        const userStatus =
+          data.user?.subscriptionStatus ||
+          "free";
+
+        memberLevelElement.textContent =
+          data.user?.memberLevel === "vip"
+            ? "VIP会员"
+            : "免费会员";
+
+        subscriptionStatusElement.textContent =
+          translateStatus(
+            subscription?.status ||
+            userStatus
+          );
+
+        setStatusStyle(
+          subscriptionStatusElement,
+          subscription?.status ||
+          userStatus
+        );
+
+        periodEndElement.textContent =
+          formatDate(
+            subscription
+              ?.currentPeriodEnd ||
+            data.user?.vipExpireAt
+          );
+
+        if (
+          subscription?.cancelAtPeriodEnd
+        ) {
+          showMessage(
+            "你已经取消自动续费，VIP可以使用到当前周期结束。",
+            "info"
+          );
+        }
+
+        if (
+          subscription?.customerId
+        ) {
+          manageSubscriptionButton.style.display =
+            "block";
+        } else {
+          manageSubscriptionButton.style.display =
+            "none";
+        }
+
+        const blockingStatuses = [
+          "active",
+          "trialing",
+          "past_due",
+          "incomplete"
+        ];
+
+        if (
+          subscription &&
+          blockingStatuses.includes(
+            subscription.status
+          )
+        ) {
+          subscribeButton.disabled = true;
+
+          subscribeButton.textContent =
+            subscription.status === "active"
+              ? "当前已订阅"
+              : "订阅正在处理中";
+        } else {
+          subscribeButton.disabled = false;
+          subscribeButton.textContent =
+            "使用 Stripe 订阅 VIP";
+        }
+
+        return data;
+      } catch (error) {
+        console.error(
+          "订阅状态加载失败：",
+          error
+        );
+
+        memberLevelElement.textContent =
+          "查询失败";
+
+        subscriptionStatusElement.textContent =
+          "查询失败";
+
+        periodEndElement.textContent = "-";
+
+        showMessage(
+          error.message ||
+          "订阅状态查询失败",
+          "error"
+        );
+
+        return null;
+      }
+    }
+
+    async function createSubscription() {
+      const token = requireLogin();
+
+      if (!token) {
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "确认订阅 DailyNews VIP 月度会员吗？\n\n" +
+        "价格：SGD 9.90/月\n" +
+        "付款后将每月自动续费。"
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      subscribeButton.disabled = true;
+      subscribeButton.textContent =
+        "正在创建支付页面...";
+
+      showMessage(
+        "正在连接 Stripe，请稍候。",
+        "info"
+      );
+
+      try {
+        const response = await fetch(
+          `${API_PAYMENT}` +
+          `/create-subscription-session`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              planType: "vip_monthly"
+            })
+          }
+        );
+
+        const data = await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+            "Stripe订阅页面创建失败"
+          );
+        }
+
+        if (!data.checkoutUrl) {
+          throw new Error(
+            "服务器没有返回Stripe支付地址"
+          );
+        }
+
+        window.location.href =
+          data.checkoutUrl;
+      } catch (error) {
+        console.error(
+          "创建Stripe订阅失败：",
+          error
+        );
+
+        showMessage(
+          error.message ||
+          "创建Stripe订阅失败",
+          "error"
+        );
+
+        subscribeButton.disabled = false;
+        subscribeButton.textContent =
+          "使用 Stripe 订阅 VIP";
+      }
+    }
+
+    async function openCustomerPortal() {
+      const token = requireLogin();
+
+      if (!token) {
+        return;
+      }
+
+      manageSubscriptionButton.disabled =
+        true;
+
+      manageSubscriptionButton.textContent =
+        "正在打开订阅管理页面...";
+
+      try {
+        const response = await fetch(
+          `${API_PAYMENT}` +
+          `/create-customer-portal-session`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`
+            }
+          }
+        );
+
+        const data = await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+            "订阅管理页面创建失败"
+          );
+        }
+
+        if (!data.portalUrl) {
+          throw new Error(
+            "服务器没有返回订阅管理地址"
+          );
+        }
+
+        window.location.href =
+          data.portalUrl;
+      } catch (error) {
+        console.error(
+          "打开订阅管理页面失败：",
+          error
+        );
+
+        showMessage(
+          error.message ||
+          "订阅管理页面创建失败",
+          "error"
+        );
+
+        manageSubscriptionButton.disabled =
+          false;
+
+        manageSubscriptionButton.textContent =
+          "管理订阅和付款方式";
+      }
+    }
+
+    async function pollSubscriptionStatus() {
+      let attempts = 0;
+      const maximumAttempts = 10;
+
+      showMessage(
+        "Stripe已返回网站，正在等待服务器确认付款结果。",
+        "info"
+      );
+
+      const timer = window.setInterval(
+        async function () {
+          attempts += 1;
+
+          const data =
+            await loadSubscriptionStatus();
+
+          const status =
+            data?.subscription?.status;
+
+          if (
+            status === "active" ||
+            status === "trialing"
+          ) {
+            window.clearInterval(timer);
+
+            showMessage(
+              "付款已经确认，VIP会员已成功开通。",
+              "success"
+            );
+
+            return;
+          }
+
+          if (
+            attempts >= maximumAttempts
+          ) {
+            window.clearInterval(timer);
+
+            showMessage(
+              "付款结果仍在处理中。请稍后刷新页面查看会员状态。",
+              "info"
+            );
+          }
+        },
+        2000
+      );
+    }
+
+    function handleReturnParameters() {
+      const parameters =
+        new URLSearchParams(
+          window.location.search
+        );
+
+      const payment =
+        parameters.get("payment");
+
+      if (payment === "success") {
+        pollSubscriptionStatus();
+        return;
+      }
+
+      if (payment === "cancel") {
+        showMessage(
+          "你已经取消本次付款，没有产生新的订阅费用。",
+          "info"
+        );
+      }
+    }
+
+    subscribeButton.addEventListener(
+      "click",
+      createSubscription
+    );
+
+    manageSubscriptionButton.addEventListener(
+      "click",
+      openCustomerPortal
+    );
+
+    document
+      .getElementById("backButton")
+      .addEventListener(
+        "click",
+        function () {
+          window.location.href = "/";
+        }
+      );
+
+    async function initializePage() {
+      const token = requireLogin();
+
+      if (!token) {
+        return;
+      }
+
+      await loadSubscriptionStatus();
+      handleReturnParameters();
+    }
+
+    initializePage();
+  </script>
+
+</body>
+
+</html>
