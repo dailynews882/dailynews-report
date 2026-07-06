@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const loginBtn = document.getElementById("loginBtn");
   const registerBtn = document.getElementById("registerBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const myBtn = document.getElementById("myBtn");
 
   const authUserArea = document.getElementById("authUserArea");
   const authUserName = document.getElementById("authUserName");
@@ -11,26 +12,46 @@ document.addEventListener("DOMContentLoaded", function () {
   const loginModal = document.getElementById("loginModal");
   const registerModal = document.getElementById("registerModal");
 
-  const closeLoginModal = document.getElementById("closeLoginModal");
-  const closeRegisterModal = document.getElementById("closeRegisterModal");
+  const closeLoginModal = document.getElementById(
+    "closeLoginModal"
+  );
 
-  const switchToRegister = document.getElementById("switchToRegister");
-  const switchToLogin = document.getElementById("switchToLogin");
+  const closeRegisterModal = document.getElementById(
+    "closeRegisterModal"
+  );
+
+  const switchToRegister = document.getElementById(
+    "switchToRegister"
+  );
+
+  const switchToLogin = document.getElementById(
+    "switchToLogin"
+  );
 
   const loginForm = document.getElementById("loginForm");
-  const registerForm = document.getElementById("registerForm");
-  const sendRegisterCodeBtn = document.getElementById("sendRegisterCodeBtn");
+  const registerForm = document.getElementById(
+    "registerForm"
+  );
+
+  const sendRegisterCodeBtn = document.getElementById(
+    "sendRegisterCodeBtn"
+  );
 
   function openModal(modal) {
-    if (!modal) return;
+    if (!modal) {
+      return;
+    }
 
     modal.classList.add("show");
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+
   }
 
   function closeModal(modal) {
-    if (!modal) return;
+    if (!modal) {
+      return;
+    }
 
     modal.classList.remove("show");
     modal.setAttribute("aria-hidden", "true");
@@ -38,30 +59,49 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!document.querySelector(".auth-modal.show")) {
       document.body.style.overflow = "";
     }
+
   }
 
-  function showMessage(elementId, message, success = false) {
+  function showMessage(
+    elementId,
+    message,
+    success = false
+  ) {
     const element = document.getElementById(elementId);
 
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     element.textContent = message;
-    element.style.color = success ? "#14833b" : "#d32f2f";
+    element.style.color = success
+      ? "#14833b"
+      : "#d32f2f";
+
   }
 
   function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    return /^[^\s@]+@[^\s@]+.[^\s@]+$/.test(email);
   }
 
   function saveLoginData(token, user) {
     localStorage.setItem("token", token);
-    localStorage.setItem("dailynewsUser", JSON.stringify(user));
+
+    localStorage.setItem(
+      "dailynewsUser",
+      JSON.stringify(user)
+    );
+
   }
 
   function clearLoginData() {
     localStorage.removeItem("token");
     localStorage.removeItem("dailynewsUser");
     localStorage.removeItem("user");
+
+    localStorage.removeItem("dailynews_token");
+    localStorage.removeItem("dailynews_user");
+
   }
 
   function getSavedUser() {
@@ -80,10 +120,13 @@ document.addEventListener("DOMContentLoaded", function () {
       clearLoginData();
       return null;
     }
+
   }
 
   function getDisplayName(user) {
-    if (!user) return "";
+    if (!user) {
+      return "";
+    }
 
     return (
       user.username ||
@@ -92,13 +135,34 @@ document.addEventListener("DOMContentLoaded", function () {
       user.phone ||
       "用户"
     );
+
   }
 
   function showLoggedOutHeader() {
-    if (loginBtn) loginBtn.style.display = "";
-    if (registerBtn) registerBtn.style.display = "";
-    if (authUserArea) authUserArea.style.display = "none";
-    if (authUserName) authUserName.textContent = "";
+    if (loginBtn) {
+      loginBtn.style.display = "";
+    }
+
+    if (registerBtn) {
+      registerBtn.style.display = "";
+    }
+
+    if (authUserArea) {
+      authUserArea.style.display = "none";
+    }
+
+    if (authUserName) {
+      authUserName.textContent = "";
+      authUserName.removeAttribute("title");
+      authUserName.removeAttribute("role");
+      authUserName.removeAttribute("tabindex");
+      authUserName.style.cursor = "";
+    }
+
+    if (myBtn) {
+      myBtn.style.display = "none";
+    }
+
   }
 
   function showLoggedInHeader(user) {
@@ -109,17 +173,43 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    if (loginBtn) loginBtn.style.display = "none";
-    if (registerBtn) registerBtn.style.display = "none";
+    if (loginBtn) {
+      loginBtn.style.display = "none";
+    }
+
+    if (registerBtn) {
+      registerBtn.style.display = "none";
+    }
 
     if (authUserName) {
       authUserName.textContent = displayName;
-      authUserName.title = displayName;
+      authUserName.title = "进入我的账户";
+      authUserName.style.cursor = "pointer";
+      authUserName.setAttribute("role", "button");
+      authUserName.setAttribute("tabindex", "0");
+    }
+
+    if (myBtn) {
+      myBtn.style.display = "";
     }
 
     if (authUserArea) {
       authUserArea.style.display = "flex";
     }
+
+  }
+
+  function goToMyPage() {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      showLoggedOutHeader();
+      openModal(loginModal);
+      return;
+    }
+
+    window.location.href = "/my.html";
+
   }
 
   async function refreshCurrentUser() {
@@ -146,7 +236,9 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "登录状态已经失效");
+        throw new Error(
+          data.message || "登录状态已经失效"
+        );
       }
 
       localStorage.setItem(
@@ -156,283 +248,414 @@ document.addEventListener("DOMContentLoaded", function () {
 
       showLoggedInHeader(data.user);
     } catch (error) {
-      console.warn("恢复登录状态失败：", error.message);
+      console.warn(
+        "恢复登录状态失败：",
+        error.message
+      );
+
       clearLoginData();
       showLoggedOutHeader();
     }
+
   }
 
-  loginBtn?.addEventListener("click", function (event) {
-    event.preventDefault();
-    closeModal(registerModal);
-    openModal(loginModal);
-  });
+  loginBtn?.addEventListener(
+    "click",
+    function (event) {
+      event.preventDefault();
+      closeModal(registerModal);
+      openModal(loginModal);
+    }
+  );
 
-  registerBtn?.addEventListener("click", function (event) {
-    event.preventDefault();
-    closeModal(loginModal);
-    openModal(registerModal);
-  });
+  registerBtn?.addEventListener(
+    "click",
+    function (event) {
+      event.preventDefault();
+      closeModal(loginModal);
+      openModal(registerModal);
+    }
+  );
 
-  logoutBtn?.addEventListener("click", function () {
-    clearLoginData();
-    showLoggedOutHeader();
-    window.location.reload();
-  });
+  logoutBtn?.addEventListener(
+    "click",
+    function () {
+      clearLoginData();
+      showLoggedOutHeader();
+      window.location.href = "/";
+    }
+  );
 
-  closeLoginModal?.addEventListener("click", function () {
-    closeModal(loginModal);
-  });
+  myBtn?.addEventListener(
+    "click",
+    goToMyPage
+  );
 
-  closeRegisterModal?.addEventListener("click", function () {
-    closeModal(registerModal);
-  });
+  authUserName?.addEventListener(
+    "click",
+    goToMyPage
+  );
 
-  switchToRegister?.addEventListener("click", function () {
-    closeModal(loginModal);
-    openModal(registerModal);
-  });
+  authUserName?.addEventListener(
+    "keydown",
+    function (event) {
+      if (
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+        event.preventDefault();
+        goToMyPage();
+      }
+    }
+  );
 
-  switchToLogin?.addEventListener("click", function () {
-    closeModal(registerModal);
-    openModal(loginModal);
-  });
-
-  loginModal?.addEventListener("click", function (event) {
-    if (event.target === loginModal) {
+  closeLoginModal?.addEventListener(
+    "click",
+    function () {
       closeModal(loginModal);
     }
-  });
+  );
 
-  registerModal?.addEventListener("click", function (event) {
-    if (event.target === registerModal) {
+  closeRegisterModal?.addEventListener(
+    "click",
+    function () {
       closeModal(registerModal);
     }
-  });
+  );
 
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
+  switchToRegister?.addEventListener(
+    "click",
+    function () {
       closeModal(loginModal);
+      openModal(registerModal);
+    }
+  );
+
+  switchToLogin?.addEventListener(
+    "click",
+    function () {
       closeModal(registerModal);
+      openModal(loginModal);
     }
-  });
+  );
 
-  sendRegisterCodeBtn?.addEventListener("click", async function () {
-    const email = String(
-      document.getElementById("registerAccount")?.value || ""
-    )
-      .trim()
-      .toLowerCase();
-
-    if (!isValidEmail(email)) {
-      showMessage(
-        "registerMessage",
-        "请先输入正确的邮箱地址。"
-      );
-      return;
-    }
-
-    sendRegisterCodeBtn.disabled = true;
-    sendRegisterCodeBtn.textContent = "正在发送...";
-
-    try {
-      const response = await fetch(
-        "/api/auth/email/send-code",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            account: email
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "验证码发送失败");
-      }
-
-      showMessage(
-        "registerMessage",
-        data.message || "邮箱验证码已发送。",
-        true
-      );
-
-      let seconds = 60;
-      sendRegisterCodeBtn.textContent = seconds + "秒后重发";
-
-      const timer = window.setInterval(function () {
-        seconds -= 1;
-
-        if (seconds <= 0) {
-          window.clearInterval(timer);
-          sendRegisterCodeBtn.disabled = false;
-          sendRegisterCodeBtn.textContent = "重新发送";
-          return;
-        }
-
-        sendRegisterCodeBtn.textContent = seconds + "秒后重发";
-      }, 1000);
-    } catch (error) {
-      showMessage(
-        "registerMessage",
-        error.message || "验证码发送失败"
-      );
-
-      sendRegisterCodeBtn.disabled = false;
-      sendRegisterCodeBtn.textContent = "发送验证码";
-    }
-  });
-
-  loginForm?.addEventListener("submit", async function (event) {
-    event.preventDefault();
-
-    const account = String(
-      document.getElementById("loginAccount")?.value || ""
-    ).trim();
-
-    const password = String(
-      document.getElementById("loginPassword")?.value || ""
-    );
-
-    showMessage("loginMessage", "正在登录...", true);
-
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          account,
-          password
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "登录失败");
-      }
-
-      saveLoginData(data.token, data.user);
-      showLoggedInHeader(data.user);
-
-      showMessage(
-        "loginMessage",
-        data.message || "登录成功",
-        true
-      );
-
-      window.setTimeout(function () {
+  loginModal?.addEventListener(
+    "click",
+    function (event) {
+      if (event.target === loginModal) {
         closeModal(loginModal);
-        window.location.reload();
-      }, 600);
-    } catch (error) {
-      showMessage(
-        "loginMessage",
-        error.message || "登录失败"
-      );
+      }
     }
-  });
+  );
 
-  registerForm?.addEventListener("submit", async function (event) {
-    event.preventDefault();
-
-    const username = String(
-      document.getElementById("registerUsername")?.value || ""
-    ).trim();
-
-    const email = String(
-      document.getElementById("registerAccount")?.value || ""
-    )
-      .trim()
-      .toLowerCase();
-
-    const code = String(
-      document.getElementById("registerOtpCode")?.value || ""
-    ).trim();
-
-    const password = String(
-      document.getElementById("registerPassword")?.value || ""
-    );
-
-    const confirmPassword = String(
-      document.getElementById("registerConfirmPassword")?.value || ""
-    );
-
-    if (!isValidEmail(email)) {
-      showMessage(
-        "registerMessage",
-        "请输入正确的邮箱地址。"
-      );
-      return;
+  registerModal?.addEventListener(
+    "click",
+    function (event) {
+      if (event.target === registerModal) {
+        closeModal(registerModal);
+      }
     }
+  );
 
-    if (!/^\d{6}$/.test(code)) {
-      showMessage(
-        "registerMessage",
-        "请输入6位邮箱验证码。"
-      );
-      return;
+  document.addEventListener(
+    "keydown",
+    function (event) {
+      if (event.key === "Escape") {
+        closeModal(loginModal);
+        closeModal(registerModal);
+      }
     }
+  );
 
-    if (password !== confirmPassword) {
-      showMessage(
-        "registerMessage",
-        "两次输入的密码不一致。"
-      );
-      return;
-    }
+  sendRegisterCodeBtn?.addEventListener(
+    "click",
+    async function () {
+      const email = String(
+        document.getElementById(
+          "registerAccount"
+        )?.value || ""
+      )
+        .trim()
+        .toLowerCase();
 
-    showMessage("registerMessage", "正在注册...", true);
+      if (!isValidEmail(email)) {
+        showMessage(
+          "registerMessage",
+          "请先输入正确的邮箱地址。"
+        );
 
-    try {
-      const response = await fetch(
-        "/api/auth/email/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            username,
-            email,
-            password,
-            code
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "注册失败");
+        return;
       }
 
-      saveLoginData(data.token, data.user);
-      showLoggedInHeader(data.user);
+      sendRegisterCodeBtn.disabled = true;
+      sendRegisterCodeBtn.textContent =
+        "正在发送...";
+
+      try {
+        const response = await fetch(
+          "/api/auth/email/send-code",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              account: email
+            })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.message || "验证码发送失败"
+          );
+        }
+
+        showMessage(
+          "registerMessage",
+          data.message ||
+          "邮箱验证码已发送。",
+          true
+        );
+
+        let seconds = 60;
+
+        sendRegisterCodeBtn.textContent =
+          seconds + "秒后重发";
+
+        const timer = window.setInterval(
+          function () {
+            seconds -= 1;
+
+            if (seconds <= 0) {
+              window.clearInterval(timer);
+
+              sendRegisterCodeBtn.disabled =
+                false;
+
+              sendRegisterCodeBtn.textContent =
+                "重新发送";
+
+              return;
+            }
+
+            sendRegisterCodeBtn.textContent =
+              seconds + "秒后重发";
+          },
+          1000
+        );
+      } catch (error) {
+        showMessage(
+          "registerMessage",
+          error.message || "验证码发送失败"
+        );
+
+        sendRegisterCodeBtn.disabled = false;
+
+        sendRegisterCodeBtn.textContent =
+          "发送验证码";
+      }
+    }
+
+  );
+
+  loginForm?.addEventListener(
+    "submit",
+    async function (event) {
+      event.preventDefault();
+
+      const account = String(
+        document.getElementById(
+          "loginAccount"
+        )?.value || ""
+      ).trim();
+
+      const password = String(
+        document.getElementById(
+          "loginPassword"
+        )?.value || ""
+      );
 
       showMessage(
-        "registerMessage",
-        data.message || "注册成功",
+        "loginMessage",
+        "正在登录...",
         true
       );
 
-      window.setTimeout(function () {
-        closeModal(registerModal);
-        window.location.reload();
-      }, 700);
-    } catch (error) {
+      try {
+        const response = await fetch(
+          "/api/auth/login",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              account,
+              password
+            })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.message || "登录失败"
+          );
+        }
+
+        saveLoginData(data.token, data.user);
+        showLoggedInHeader(data.user);
+
+        showMessage(
+          "loginMessage",
+          data.message || "登录成功",
+          true
+        );
+
+        window.setTimeout(
+          function () {
+            closeModal(loginModal);
+            window.location.reload();
+          },
+          600
+        );
+      } catch (error) {
+        showMessage(
+          "loginMessage",
+          error.message || "登录失败"
+        );
+      }
+    }
+
+  );
+
+  registerForm?.addEventListener(
+    "submit",
+    async function (event) {
+      event.preventDefault();
+
+      const username = String(
+        document.getElementById(
+          "registerUsername"
+        )?.value || ""
+      ).trim();
+
+      const email = String(
+        document.getElementById(
+          "registerAccount"
+        )?.value || ""
+      )
+        .trim()
+        .toLowerCase();
+
+      const code = String(
+        document.getElementById(
+          "registerOtpCode"
+        )?.value || ""
+      ).trim();
+
+      const password = String(
+        document.getElementById(
+          "registerPassword"
+        )?.value || ""
+      );
+
+      const confirmPassword = String(
+        document.getElementById(
+          "registerConfirmPassword"
+        )?.value || ""
+      );
+
+      if (!isValidEmail(email)) {
+        showMessage(
+          "registerMessage",
+          "请输入正确的邮箱地址。"
+        );
+
+        return;
+      }
+
+      if (!/^\d{6}$/.test(code)) {
+        showMessage(
+          "registerMessage",
+          "请输入6位邮箱验证码。"
+        );
+
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showMessage(
+          "registerMessage",
+          "两次输入的密码不一致。"
+        );
+
+        return;
+      }
+
       showMessage(
         "registerMessage",
-        error.message || "注册失败"
+        "正在注册...",
+        true
       );
+
+      try {
+        const response = await fetch(
+          "/api/auth/email/register",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              username,
+              email,
+              password,
+              code
+            })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.message || "注册失败"
+          );
+        }
+
+        saveLoginData(data.token, data.user);
+        showLoggedInHeader(data.user);
+
+        showMessage(
+          "registerMessage",
+          data.message || "注册成功",
+          true
+        );
+
+        window.setTimeout(
+          function () {
+            closeModal(registerModal);
+            window.location.reload();
+          },
+          700
+        );
+      } catch (error) {
+        showMessage(
+          "registerMessage",
+          error.message || "注册失败"
+        );
+      }
     }
-  });
+
+  );
 
   refreshCurrentUser();
 });

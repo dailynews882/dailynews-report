@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>我的账户 - Daily News</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #07111f;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 30px;
+      border-bottom: 1px solid #1f3f66;
+      background: #101c2e;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 22px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-btn {
+      min-height: 42px;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 7px;
+      color: #ffffff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .home-btn {
+      background: #2b5f9e;
+    }
+
+    .home-btn:hover {
+      background: #3975bd;
+    }
+
+    .logout-btn {
+      background: #d93636;
+    }
+
+    .logout-btn:hover {
+      background: #b92929;
+    }
+
+    .container {
+      width: min(1080px, 100%);
+      margin: 30px auto;
+      padding: 0 20px 40px;
+    }
+
+    .welcome {
+      margin-bottom: 24px;
+      padding: 28px;
+      border-radius: 14px;
+      background:
+        linear-gradient(135deg,
+          #0d2b52,
+          #123f78);
+      box-shadow:
+        0 0 20px rgba(0, 120, 255, 0.25);
+    }
+
+    .welcome h2 {
+      margin: 0 0 12px;
+      color: #ffd700;
+      font-size: 28px;
+    }
+
+    .welcome p {
+      margin: 0;
+      color: #d7e7ff;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      padding: 23px;
+      border: 1px solid #1f3f66;
+      border-radius: 12px;
+      background: #101c2e;
+      box-shadow:
+        0 0 15px rgba(0, 80, 180, 0.15);
+    }
+
+    .card h3 {
+      margin: 0 0 18px;
+      color: #8fc7ff;
+      font-size: 20px;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 13px 0;
+      color: #d7e7ff;
+      line-height: 1.6;
+    }
+
+    .label {
+      flex: 0 0 auto;
+      color: #8fb8e8;
+    }
+
+    .value {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      color: #ffffff;
+      font-weight: bold;
+      text-align: right;
+    }
+
+    .value-success {
+      color: #43e89b;
+    }
+
+    .value-warning {
+      color: #ffd85c;
+    }
+
+    .action-btn {
+      width: 100%;
+      min-height: 46px;
+      margin-top: 14px;
+      padding: 11px 16px;
+      border: none;
+      border-radius: 7px;
+      background: #0077ff;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .action-btn:hover {
+      background: #005fd1;
+    }
+
+    .secondary-btn {
+      background: #7952cc;
+    }
+
+    .secondary-btn:hover {
+      background: #6240b1;
+    }
+
+    .message {
+      display: none;
+      margin-top: 22px;
+      padding: 16px;
+      border-radius: 9px;
+      line-height: 1.6;
+    }
+
+    .message.info {
+      display: block;
+      border: 1px solid #2a78bd;
+      background: rgba(0, 119, 255, 0.12);
+      color: #bfe0ff;
+    }
+
+    .message.error {
+      display: block;
+      border: 1px solid #c94f4f;
+      background: rgba(201, 79, 79, 0.12);
+      color: #ffabab;
+    }
+
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .header-btn {
+        flex: 1;
+      }
+
+      .item {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .value {
+        text-align: left;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <header class="header">
+    <h1>Daily News 我的账户</h1>
+
+    <div class="header-actions">
+      <button type="button" class="header-btn home-btn" id="homeButton">
+        返回首页
+      </button>
+
+      <button type="button" class="header-btn logout-btn" id="logoutButton">
+        退出登录
+      </button>
+    </div>
+
+  </header>
+
+  <main class="container">
+
+    <section class="welcome">
+      <h2 id="welcomeText">
+        欢迎回来
+      </h2>
+
+      <p>
+        这里是你的个人账户中心，可以查看个人资料、
+        VIP订阅状态、钱包资料以及账户安全状态。
+      </p>
+    </section>
+
+    <section class="grid">
+
+      <article class="card">
+        <h3>个人资料</h3>
+
+        <div class="item">
+          <span class="label">
+            会员 ID
+          </span>
+
+          <span class="value" id="userId">
+            -
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            用户名
+          </span>
+
+          <span class="value" id="username">
+            -
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            登录账号
+          </span>
+
+          <span class="value" id="account">
+            -
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            账号类型
+          </span>
+
+          <span class="value" id="accountType">
+            -
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            注册时间
+          </span>
+
+          <span class="value" id="createdAt">
+            -
+          </span>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>会员订阅</h3>
+
+        <div class="item">
+          <span class="label">
+            当前等级
+          </span>
+
+          <span class="value" id="memberLevel">
+            -
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            订阅状态
+          </span>
+
+          <span class="value" id="subscriptionStatus">
+            -
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            当前周期结束时间
+          </span>
+
+          <span class="value" id="subscriptionExpireAt">
+            -
+          </span>
+        </div>
+
+        <button type="button" class="action-btn" id="subscriptionButton">
+          查看会员订阅
+        </button>
+      </article>
+
+      <article class="card">
+        <h3>我的钱包</h3>
+
+        <div class="item">
+          <span class="label">
+            钱包余额
+          </span>
+
+          <span class="value" id="walletBalance">
+            SGD 0.00
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            推广奖励
+          </span>
+
+          <span class="value" id="rewardBalance">
+            SGD 0.00
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            累计充值
+          </span>
+
+          <span class="value" id="totalRecharge">
+            SGD 0.00
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            累计消费
+          </span>
+
+          <span class="value" id="totalSpend">
+            SGD 0.00
+          </span>
+        </div>
+
+        <button type="button" class="action-btn" id="walletButton">
+          进入我的钱包
+        </button>
+      </article>
+
+      <article class="card">
+        <h3>账户安全</h3>
+
+        <div class="item">
+          <span class="label">
+            登录状态
+          </span>
+
+          <span class="value value-success">
+            已登录
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            Token 验证
+          </span>
+
+          <span class="value" id="tokenStatus">
+            正在验证
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            邮箱验证
+          </span>
+
+          <span class="value" id="emailVerified">
+            -
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">
+            密码修改
+          </span>
+
+          <span class="value value-warning">
+            后续开放
+          </span>
+        </div>
+
+        <button type="button" class="action-btn secondary-btn" id="manageSubscriptionButton">
+          管理订阅和付款方式
+        </button>
+      </article>
+
+    </section>
+
+    <div id="message" class="message"></div>
+
+  </main>
+
+  <script>
+    const API_AUTH = "/api/auth";
+    const API_WALLET = "/api/wallet";
+    const API_PAYMENT = "/api/payment";
+
+    const messageElement =
+      document.getElementById("message");
+
+    function getToken() {
+      return localStorage.getItem("token");
+    }
+
+    function clearLoginData() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("dailynewsUser");
+      localStorage.removeItem("user");
+
+      localStorage.removeItem("dailynews_token");
+      localStorage.removeItem("dailynews_user");
+    }
+
+    function showMessage(
+      message,
+      type = "info"
+    ) {
+      messageElement.textContent = message;
+      messageElement.className =
+        `message ${type}`;
+    }
+
+    function formatDate(value) {
+      if (!value) {
+        return "-";
+      }
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return String(value);
+      }
+
+      return date.toLocaleString(
+        "zh-CN",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
+    }
+
+    function formatMoney(value) {
+      return `SGD ${Number(value || 0).toFixed(2)}`;
+    }
+
+    function translateAccountType(type) {
+      if (type === "phone") {
+        return "手机号码";
+      }
+
+      if (type === "email") {
+        return "邮箱";
+      }
+
+      return type || "-";
+    }
+
+    function translateMemberLevel(level) {
+      if (String(level).toLowerCase() === "vip") {
+        return "VIP会员";
+      }
+
+      return "免费会员";
+    }
+
+    function translateSubscriptionStatus(status) {
+      const statusMap = {
+        free: "免费会员",
+        active: "订阅正常",
+        trialing: "试用中",
+        incomplete: "付款尚未完成",
+        incomplete_expired: "付款已过期",
+        past_due: "续费逾期",
+        unpaid: "账单未付款",
+        canceled: "订阅已结束",
+        paused: "订阅已暂停"
+      };
+
+      return statusMap[status] ||
+        status ||
+        "免费会员";
+    }
+
+    function requireLogin() {
+      const token = getToken();
+
+      if (token) {
+        return token;
+      }
+
+      alert("请先登录");
+      window.location.href = "/";
+      return null;
+    }
+
+    function setUserProfile(user) {
+      const username =
+        user.username ||
+        user.email ||
+        user.account ||
+        "用户";
+
+      document.getElementById(
+        "welcomeText"
+      ).textContent =
+        `欢迎回来，${username}`;
+
+      document.getElementById(
+        "userId"
+      ).textContent =
+        user.id ?? "-";
+
+      document.getElementById(
+        "username"
+      ).textContent =
+        username;
+
+      document.getElementById(
+        "account"
+      ).textContent =
+        user.account ||
+        user.email ||
+        user.phone ||
+        "-";
+
+      document.getElementById(
+        "accountType"
+      ).textContent =
+        translateAccountType(
+          user.accountType ||
+          user.account_type
+        );
+
+      document.getElementById(
+        "createdAt"
+      ).textContent =
+        formatDate(
+          user.createdAt ||
+          user.created_at
+        );
+
+      document.getElementById(
+        "memberLevel"
+      ).textContent =
+        translateMemberLevel(
+          user.memberLevel ||
+          user.member_level
+        );
+
+      const subscriptionStatus =
+        user.subscriptionStatus ||
+        user.subscription_status ||
+        "free";
+
+      document.getElementById(
+        "subscriptionStatus"
+      ).textContent =
+        translateSubscriptionStatus(
+          subscriptionStatus
+        );
+
+      document.getElementById(
+        "subscriptionExpireAt"
+      ).textContent =
+        formatDate(
+          user.vipExpireAt ||
+          user.vip_expire_at ||
+          user.subscriptionExpireAt
+        );
+
+      document.getElementById(
+        "emailVerified"
+      ).textContent =
+        Number(
+          user.emailVerified ??
+          user.email_verified ??
+          0
+        ) === 1
+          ? "已验证"
+          : "未验证";
+
+      const subscriptionButton =
+        document.getElementById(
+          "subscriptionButton"
+        );
+
+      if (
+        String(
+          user.memberLevel ||
+          user.member_level
+        ).toLowerCase() === "vip"
+      ) {
+        subscriptionButton.textContent =
+          "查看 VIP 订阅状态";
+      } else {
+        subscriptionButton.textContent =
+          "升级 VIP 会员";
+      }
+    }
+
+    function setWalletData(wallet) {
+      document.getElementById(
+        "walletBalance"
+      ).textContent =
+        formatMoney(wallet.balance);
+
+      document.getElementById(
+        "rewardBalance"
+      ).textContent =
+        formatMoney(
+          wallet.rewardBalance ??
+          wallet.reward_balance
+        );
+
+      document.getElementById(
+        "totalRecharge"
+      ).textContent =
+        formatMoney(
+          wallet.totalRecharge ??
+          wallet.total_recharge
+        );
+
+      document.getElementById(
+        "totalSpend"
+      ).textContent =
+        formatMoney(
+          wallet.totalSpend ??
+          wallet.total_spend
+        );
+    }
+
+    async function loadMyProfile() {
+      const token = requireLogin();
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_AUTH}/me`,
+          {
+            method: "GET",
+            headers: {
+              Authorization:
+                `Bearer ${token}`
+            }
+          }
+        );
+
+        const data = await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+            "登录状态已经失效"
+          );
+        }
+
+        const user = data.user || {};
+
+        localStorage.setItem(
+          "dailynewsUser",
+          JSON.stringify(user)
+        );
+
+        setUserProfile(user);
+
+        document.getElementById(
+          "tokenStatus"
+        ).textContent =
+          "验证通过";
+
+        document.getElementById(
+          "tokenStatus"
+        ).classList.add(
+          "value-success"
+        );
+      } catch (error) {
+        console.error(
+          "账户资料加载失败：",
+          error
+        );
+
+        clearLoginData();
+
+        alert(
+          error.message ||
+          "登录状态已经失效"
+        );
+
+        window.location.href = "/";
+        return;
+      }
+
+      try {
+        const walletResponse = await fetch(
+          `${API_WALLET}/me`,
+          {
+            method: "GET",
+            headers: {
+              Authorization:
+                `Bearer ${token}`
+            }
+          }
+        );
+
+        const walletData =
+          await walletResponse.json();
+
+        if (
+          walletResponse.ok &&
+          walletData.success
+        ) {
+          setWalletData(
+            walletData.wallet || {}
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "钱包资料加载失败：",
+          error
+        );
+
+        showMessage(
+          "个人资料已经加载，但钱包资料暂时无法读取。",
+          "info"
+        );
+      }
+    }
+
+    async function openCustomerPortal() {
+      const token = requireLogin();
+
+      if (!token) {
+        return;
+      }
+
+      const button =
+        document.getElementById(
+          "manageSubscriptionButton"
+        );
+
+      button.disabled = true;
+      button.textContent =
+        "正在打开订阅管理页面...";
+
+      try {
+        const response = await fetch(
+          `${API_PAYMENT}/create-customer-portal-session`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`
+            }
+          }
+        );
+
+        const data = await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+            "订阅管理页面创建失败"
+          );
+        }
+
+        if (!data.portalUrl) {
+          throw new Error(
+            "服务器没有返回订阅管理地址"
+          );
+        }
+
+        window.location.href =
+          data.portalUrl;
+      } catch (error) {
+        showMessage(
+          error.message ||
+          "暂时无法打开订阅管理页面",
+          "error"
+        );
+
+        button.disabled = false;
+        button.textContent =
+          "管理订阅和付款方式";
+      }
+    }
+
+    function logout() {
+      clearLoginData();
+      window.location.href = "/";
+    }
+
+    document
+      .getElementById("homeButton")
+      .addEventListener(
+        "click",
+        function () {
+          window.location.href = "/";
+        }
+      );
+
+    document
+      .getElementById("logoutButton")
+      .addEventListener(
+        "click",
+        logout
+      );
+
+    document
+      .getElementById(
+        "subscriptionButton"
+      )
+      .addEventListener(
+        "click",
+        function () {
+          window.location.href =
+            "/subscribe.html";
+        }
+      );
+
+    document
+      .getElementById("walletButton")
+      .addEventListener(
+        "click",
+        function () {
+          window.location.href =
+            "/wallet.html";
+        }
+      );
+
+    document
+      .getElementById(
+        "manageSubscriptionButton"
+      )
+      .addEventListener(
+        "click",
+        openCustomerPortal
+      );
+
+    loadMyProfile();
+  </script>
+
+</body>
+
+</html>
