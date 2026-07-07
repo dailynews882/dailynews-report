@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>我的钱包 - Daily News</title>
+  <style>
+    body {
+      margin: 0;
+      background: #07111f;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .header {
+      background: #101c2e;
+      padding: 18px 30px;
+      border-bottom: 1px solid #1f3f66;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .back-btn {
+      background: #2b5f9e;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .wallet-hero {
+      background: linear-gradient(135deg, #0d2b52, #123f78);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 28px;
+      box-shadow: 0 0 22px rgba(0, 120, 255, 0.25);
+    }
+
+    .wallet-hero h2 {
+      color: #ffd700;
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .balance {
+      font-size: 38px;
+      font-weight: bold;
+      margin-top: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: #101c2e;
+      border: 1px solid #1f3f66;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 0 15px rgba(0, 80, 180, 0.15);
+    }
+
+    .card h3 {
+      color: #8fc7ff;
+      margin-top: 0;
+      font-size: 22px;
+    }
+
+    .item {
+      margin: 12px 0;
+      color: #d7e7ff;
+      line-height: 1.6;
+    }
+
+    .label {
+      color: #8fb8e8;
+    }
+
+    .value {
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .wallet-btn {
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #0077ff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .wallet-btn:hover {
+      background: #005fd1;
+    }
+
+    .withdraw-btn {
+      background: #444;
+    }
+
+    .withdraw-btn:hover {
+      background: #555;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th, td {
+      border-bottom: 1px solid #1f3f66;
+      padding: 12px;
+      text-align: left;
+      color: #d7e7ff;
+    }
+
+    th {
+      color: #8fc7ff;
+    }
+
+    .status-success {
+      color: #3cff9a;
+      font-weight: bold;
+    }
+
+    .status-pending {
+      color: #ffd700;
+      font-weight: bold;
+    }
+
+    #message {
+      margin-top: 18px;
+      color: #ffd700;
+      font-weight: bold;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .action-row {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Daily News 我的钱包</h1>
+    <button class="back-btn" onclick="goBack()">返回我的 MY</button>
+  </div>
+
+  <div class="container">
+    <div class="wallet-hero">
+      <h2 id="welcomeText">我的钱包</h2>
+      <p>这里可以查看钱包余额、充值记录、消费记录、推广奖励和提现状态。</p>
+      <div class="balance" id="walletBalance">SGD 0.00</div>
+
+      <div class="action-row">
+        <button class="wallet-btn" onclick="rechargeDemo()">模拟充值 SGD 10</button>
+        <button class="wallet-btn" onclick="createStripeTopup()">真实充值</button>
+        <button class="wallet-btn withdraw-btn" onclick="showComingSoon('提现功能')">申请提现</button>
+      </div>
+
+      <div id="message"></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>钱包资料</h3>
+        <div class="item">
+          <span class="label">会员名：</span>
+          <span class="value" id="username">-</span>
+        </div>
+        <div class="item">
+          <span class="label">账号：</span>
+          <span class="value" id="account">-</span>
+        </div>
+        <div class="item">
+          <span class="label">会员等级：</span>
+          <span class="value" id="memberLevel">-</span>
+        </div>
+        <div class="item">
+          <span class="label">钱包状态：</span>
+          <span class="value">正常</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>收益与奖励</h3>
+        <div class="item">
+          <span class="label">推广奖励：</span>
+          <span class="value" id="rewardBalance">SGD 0.00</span>
+        </div>
+        <div class="item">
+          <span class="label">累计充值：</span>
+          <span class="value" id="totalRecharge">SGD 0.00</span>
+        </div>
+        <div class="item">
+          <span class="label">累计消费：</span>
+          <span class="value" id="totalSpend">SGD 0.00</span>
+        </div>
+        <div class="item">
+          <span class="label">可提现余额：</span>
+          <span class="value" id="withdrawableBalance">SGD 0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>钱包交易记录</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>类型</th>
+            <th>金额</th>
+            <th>状态</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody id="transactionList">
+          <tr>
+            <td>-</td>
+            <td>暂无记录</td>
+            <td>SGD 0.00</td>
+            <td>-</td>
+            <td>钱包交易功能后续接入数据库</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+  const API_AUTH = "/api/auth";
+  const API_WALLET = "/api/wallet";
+  const API_PAYMENT = "/api/payment";
+
+  async function loadWalletPage() {
+    const token = localStorage.getItem("dailynews_token");
+
+    if (!token) {
+      alert("请先登录");
+      window.location.href = "login.html";
+      return;
+    }
+
+    try {
+      const walletRes = await fetch(`${API_WALLET}/me`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const walletData = await walletRes.json();
+
+      if (!walletData.success) {
+        alert(walletData.message || "登录状态失效，请重新登录");
+        localStorage.removeItem("dailynews_token");
+        localStorage.removeItem("dailynews_user");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const user = walletData.user;
+      const wallet = walletData.wallet;
+
+      document.getElementById("welcomeText").innerText =
+        `我的钱包，${user.username}`;
+
+      document.getElementById("username").innerText = user.username;
+      document.getElementById("account").innerText = user.account;
+      document.getElementById("memberLevel").innerText =
+        user.memberLevel === "free" ? "免费会员" : user.memberLevel;
+
+      document.getElementById("walletBalance").innerText =
+        `SGD ${Number(wallet.balance || 0).toFixed(2)}`;
+
+      document.getElementById("rewardBalance").innerText =
+        `SGD ${Number(wallet.rewardBalance || 0).toFixed(2)}`;
+
+      document.getElementById("totalRecharge").innerText =
+        `SGD ${Number(wallet.totalRecharge || 0).toFixed(2)}`;
+
+      document.getElementById("totalSpend").innerText =
+        `SGD ${Number(wallet.totalSpend || 0).toFixed(2)}`;
+
+      document.getElementById("withdrawableBalance").innerText =
+        `SGD ${Number(wallet.withdrawableBalance || 0).toFixed(2)}`;
+
+      await loadTransactions();
+    } catch (error) {
+      document.getElementById("message").innerText =
+        "加载钱包失败，请确认后端是否启动";
+    }
+  }
+
+  async function loadTransactions() {
+    const token = localStorage.getItem("dailynews_token");
+
+    try {
+      const res = await fetch(`${API_WALLET}/transactions`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        document.getElementById("transactionList").innerHTML = `
+          <tr>
+            <td>-</td>
+            <td>查询失败</td>
+            <td>SGD 0.00</td>
+            <td>-</td>
+            <td>${data.message || "无法获取交易记录"}</td>
+          </tr>
+        `;
+        return;
+      }
+
+      renderTransactions(data.transactions);
+    } catch (error) {
+      document.getElementById("transactionList").innerHTML = `
+        <tr>
+          <td>-</td>
+          <td>查询失败</td>
+          <td>SGD 0.00</td>
+          <td>-</td>
+          <td>请确认后端是否启动</td>
+        </tr>
+      `;
+    }
+  }
+
+  function renderTransactions(transactions) {
+    const transactionList = document.getElementById("transactionList");
+
+    if (!transactions || transactions.length === 0) {
+      transactionList.innerHTML = `
+        <tr>
+          <td>-</td>
+          <td>暂无记录</td>
+          <td>SGD 0.00</td>
+          <td>-</td>
+          <td>暂无钱包交易记录</td>
+        </tr>
+      `;
+      return;
+    }
+
+    transactionList.innerHTML = transactions.map((item) => {
+      const typeText = item.type === "recharge_demo"
+        ? "模拟充值"
+        : item.type;
+
+      const statusClass = item.status === "success"
+        ? "status-success"
+        : "status-pending";
+
+      const statusText = item.status === "success"
+        ? "成功"
+        : item.status;
+
+      return `
+        <tr>
+          <td>${item.created_at || "-"}</td>
+          <td>${typeText}</td>
+          <td>SGD ${Number(item.amount || 0).toFixed(2)}</td>
+          <td class="${statusClass}">${statusText}</td>
+          <td>${item.description || "-"}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  async function rechargeDemo() {
+  const token = localStorage.getItem("dailynews_token");
+
+  if (!token) {
+    alert("请先登录");
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_WALLET}/recharge-demo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        amount: 10
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      document.getElementById("message").innerText =
+        data.message || "模拟充值失败";
+      return;
+    }
+
+    document.getElementById("message").innerText = data.message;
+
+    await loadWalletPage();
+  } catch (error) {
+    document.getElementById("message").innerText =
+      "模拟充值失败，请确认后端是否启动";
+  }
+}
+
+async function createStripeTopup() {
+  const token = localStorage.getItem("dailynews_token");
+
+  if (!token) {
+    alert("请先登录");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const amountInput = prompt("请输入充值金额，例如 10、20、50：", "10");
+  const amount = Number(amountInput);
+
+  if (!amount || amount <= 0) {
+    document.getElementById("message").innerText = "充值金额无效";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_PAYMENT}/create-wallet-topup-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        amount
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      const errorText =
+       (data.message || "创建支付订单失败") +
+       (data.error ? "：" + data.error : "");
+
+      document.getElementById("message").innerText = errorText;
+
+      alert(errorText);
+
+      return;
+    }
+
+    window.location.href = data.checkoutUrl;
+  } catch (error) {
+    document.getElementById("message").innerText =
+      "创建支付订单失败，请确认后端是否启动";
+  }
+}
+  function showComingSoon(name) {
+    document.getElementById("message").innerText =
+      name + "将在下一步接入真实支付接口和审核流程。";
+  }
+
+  function goBack() {
+    window.location.href = "my.html";
+  }
+
+  loadWalletPage();
+</script>
+</body>
+</html>
