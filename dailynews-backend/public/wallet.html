@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
   <title>我的钱包 - Daily News</title>
@@ -131,7 +132,8 @@
       margin-top: 12px;
     }
 
-    th, td {
+    th,
+    td {
       border-bottom: 1px solid #1f3f66;
       padding: 12px;
       text-align: left;
@@ -175,6 +177,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="header">
     <h1>Daily News 我的钱包</h1>
@@ -264,85 +267,85 @@
   </div>
 
   <script>
-  const API_AUTH = "/api/auth";
-  const API_WALLET = "/api/wallet";
-  const API_PAYMENT = "/api/payment";
+    const API_AUTH = "/api/auth";
+    const API_WALLET = "/api/wallet";
+    const API_PAYMENT = "/api/payment";
 
-  async function loadWalletPage() {
-    const token = localStorage.getItem("dailynews_token");
+    async function loadWalletPage() {
+      const token = localStorage.getItem("token");
 
-    if (!token) {
-      alert("请先登录");
-      window.location.href = "login.html";
-      return;
-    }
-
-    try {
-      const walletRes = await fetch(`${API_WALLET}/me`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      const walletData = await walletRes.json();
-
-      if (!walletData.success) {
-        alert(walletData.message || "登录状态失效，请重新登录");
-        localStorage.removeItem("dailynews_token");
-        localStorage.removeItem("dailynews_user");
-        window.location.href = "login.html";
+      if (!token) {
+        alert("请先登录");
+        window.location.href = "index.html";
         return;
       }
 
-      const user = walletData.user;
-      const wallet = walletData.wallet;
+      try {
+        const walletRes = await fetch(`${API_WALLET}/me`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
 
-      document.getElementById("welcomeText").innerText =
-        `我的钱包，${user.username}`;
+        const walletData = await walletRes.json();
 
-      document.getElementById("username").innerText = user.username;
-      document.getElementById("account").innerText = user.account;
-      document.getElementById("memberLevel").innerText =
-        user.memberLevel === "free" ? "免费会员" : user.memberLevel;
-
-      document.getElementById("walletBalance").innerText =
-        `SGD ${Number(wallet.balance || 0).toFixed(2)}`;
-
-      document.getElementById("rewardBalance").innerText =
-        `SGD ${Number(wallet.rewardBalance || 0).toFixed(2)}`;
-
-      document.getElementById("totalRecharge").innerText =
-        `SGD ${Number(wallet.totalRecharge || 0).toFixed(2)}`;
-
-      document.getElementById("totalSpend").innerText =
-        `SGD ${Number(wallet.totalSpend || 0).toFixed(2)}`;
-
-      document.getElementById("withdrawableBalance").innerText =
-        `SGD ${Number(wallet.withdrawableBalance || 0).toFixed(2)}`;
-
-      await loadTransactions();
-    } catch (error) {
-      document.getElementById("message").innerText =
-        "加载钱包失败，请确认后端是否启动";
-    }
-  }
-
-  async function loadTransactions() {
-    const token = localStorage.getItem("dailynews_token");
-
-    try {
-      const res = await fetch(`${API_WALLET}/transactions`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`
+        if (!walletData.success) {
+          alert(walletData.message || "登录状态失效，请重新登录");
+          localStorage.removeItem("token");
+          localStorage.removeItem("dailynewsUser");
+          window.location.href = "index.html";
+          return;
         }
-      });
 
-      const data = await res.json();
+        const user = walletData.user;
+        const wallet = walletData.wallet;
 
-      if (!data.success) {
-        document.getElementById("transactionList").innerHTML = `
+        document.getElementById("welcomeText").innerText =
+          `我的钱包，${user.username}`;
+
+        document.getElementById("username").innerText = user.username;
+        document.getElementById("account").innerText = user.account;
+        document.getElementById("memberLevel").innerText =
+          user.memberLevel === "free" ? "免费会员" : user.memberLevel;
+
+        document.getElementById("walletBalance").innerText =
+          `SGD ${Number(wallet.balance || 0).toFixed(2)}`;
+
+        document.getElementById("rewardBalance").innerText =
+          `SGD ${Number(wallet.rewardBalance || 0).toFixed(2)}`;
+
+        document.getElementById("totalRecharge").innerText =
+          `SGD ${Number(wallet.totalRecharge || 0).toFixed(2)}`;
+
+        document.getElementById("totalSpend").innerText =
+          `SGD ${Number(wallet.totalSpend || 0).toFixed(2)}`;
+
+        document.getElementById("withdrawableBalance").innerText =
+          `SGD ${Number(wallet.withdrawableBalance || 0).toFixed(2)}`;
+
+        await loadTransactions();
+      } catch (error) {
+        document.getElementById("message").innerText =
+          "加载钱包失败，请确认后端是否启动";
+      }
+    }
+
+    async function loadTransactions() {
+      const token = localStorage.getItem("token");
+
+      try {
+        const res = await fetch(`${API_WALLET}/transactions`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          document.getElementById("transactionList").innerHTML = `
           <tr>
             <td>-</td>
             <td>查询失败</td>
@@ -351,12 +354,12 @@
             <td>${data.message || "无法获取交易记录"}</td>
           </tr>
         `;
-        return;
-      }
+          return;
+        }
 
-      renderTransactions(data.transactions);
-    } catch (error) {
-      document.getElementById("transactionList").innerHTML = `
+        renderTransactions(data.transactions);
+      } catch (error) {
+        document.getElementById("transactionList").innerHTML = `
         <tr>
           <td>-</td>
           <td>查询失败</td>
@@ -365,14 +368,14 @@
           <td>请确认后端是否启动</td>
         </tr>
       `;
+      }
     }
-  }
 
-  function renderTransactions(transactions) {
-    const transactionList = document.getElementById("transactionList");
+    function renderTransactions(transactions) {
+      const transactionList = document.getElementById("transactionList");
 
-    if (!transactions || transactions.length === 0) {
-      transactionList.innerHTML = `
+      if (!transactions || transactions.length === 0) {
+        transactionList.innerHTML = `
         <tr>
           <td>-</td>
           <td>暂无记录</td>
@@ -381,23 +384,23 @@
           <td>暂无钱包交易记录</td>
         </tr>
       `;
-      return;
-    }
+        return;
+      }
 
-    transactionList.innerHTML = transactions.map((item) => {
-      const typeText = item.type === "recharge_demo"
-        ? "模拟充值"
-        : item.type;
+      transactionList.innerHTML = transactions.map((item) => {
+        const typeText = item.type === "recharge_demo"
+          ? "模拟充值"
+          : item.type;
 
-      const statusClass = item.status === "success"
-        ? "status-success"
-        : "status-pending";
+        const statusClass = item.status === "success"
+          ? "status-success"
+          : "status-pending";
 
-      const statusText = item.status === "success"
-        ? "成功"
-        : item.status;
+        const statusText = item.status === "success"
+          ? "成功"
+          : item.status;
 
-      return `
+        return `
         <tr>
           <td>${item.created_at || "-"}</td>
           <td>${typeText}</td>
@@ -406,106 +409,107 @@
           <td>${item.description || "-"}</td>
         </tr>
       `;
-    }).join("");
-  }
+      }).join("");
+    }
 
-  async function rechargeDemo() {
-  const token = localStorage.getItem("dailynews_token");
+    async function rechargeDemo() {
+      const token = localStorage.getItem("token");
 
-  if (!token) {
-    alert("请先登录");
-    window.location.href = "login.html";
-    return;
-  }
+      if (!token) {
+        alert("请先登录");
+        window.location.href = "index.html";
+        return;
+      }
 
-  try {
-    const res = await fetch(`${API_WALLET}/recharge-demo`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        amount: 10
-      })
-    });
+      try {
+        const res = await fetch(`${API_WALLET}/recharge-demo`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            amount: 10
+          })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (!data.success) {
+        if (!data.success) {
+          document.getElementById("message").innerText =
+            data.message || "模拟充值失败";
+          return;
+        }
+
+        document.getElementById("message").innerText = data.message;
+
+        await loadWalletPage();
+      } catch (error) {
+        document.getElementById("message").innerText =
+          "模拟充值失败，请确认后端是否启动";
+      }
+    }
+
+    async function createStripeTopup() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("请先登录");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const amountInput = prompt("请输入充值金额，例如 10、20、50：", "10");
+      const amount = Number(amountInput);
+
+      if (!amount || amount <= 0) {
+        document.getElementById("message").innerText = "充值金额无效";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_PAYMENT}/create-wallet-topup-session`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            amount
+          })
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          const errorText =
+            (data.message || "创建支付订单失败") +
+            (data.error ? "：" + data.error : "");
+
+          document.getElementById("message").innerText = errorText;
+
+          alert(errorText);
+
+          return;
+        }
+
+        window.location.href = data.checkoutUrl;
+      } catch (error) {
+        document.getElementById("message").innerText =
+          "创建支付订单失败，请确认后端是否启动";
+      }
+    }
+    function showComingSoon(name) {
       document.getElementById("message").innerText =
-        data.message || "模拟充值失败";
-      return;
+        name + "将在下一步接入真实支付接口和审核流程。";
     }
 
-    document.getElementById("message").innerText = data.message;
-
-    await loadWalletPage();
-  } catch (error) {
-    document.getElementById("message").innerText =
-      "模拟充值失败，请确认后端是否启动";
-  }
-}
-
-async function createStripeTopup() {
-  const token = localStorage.getItem("dailynews_token");
-
-  if (!token) {
-    alert("请先登录");
-    window.location.href = "login.html";
-    return;
-  }
-
-  const amountInput = prompt("请输入充值金额，例如 10、20、50：", "10");
-  const amount = Number(amountInput);
-
-  if (!amount || amount <= 0) {
-    document.getElementById("message").innerText = "充值金额无效";
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_PAYMENT}/create-wallet-topup-session`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        amount
-      })
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-      const errorText =
-       (data.message || "创建支付订单失败") +
-       (data.error ? "：" + data.error : "");
-
-      document.getElementById("message").innerText = errorText;
-
-      alert(errorText);
-
-      return;
+    function goBack() {
+      window.location.href = "my.html";
     }
 
-    window.location.href = data.checkoutUrl;
-  } catch (error) {
-    document.getElementById("message").innerText =
-      "创建支付订单失败，请确认后端是否启动";
-  }
-}
-  function showComingSoon(name) {
-    document.getElementById("message").innerText =
-      name + "将在下一步接入真实支付接口和审核流程。";
-  }
-
-  function goBack() {
-    window.location.href = "my.html";
-  }
-
-  loadWalletPage();
-</script>
+    loadWalletPage();
+  </script>
 </body>
+
 </html>

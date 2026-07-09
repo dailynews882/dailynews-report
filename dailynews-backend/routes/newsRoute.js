@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const jwt = require("jsonwebtoken");
 
 // 获取新闻列表
+
 router.get("/", (req, res) => {
   const sql = `
     SELECT 
@@ -40,6 +42,176 @@ router.get("/", (req, res) => {
 });
 
 // 获取单条新闻详情
+function getTokenFromRequest(req) {
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+  return authHeader.replace("Bearer ", "").trim();
+}
+
+function decodeOptionalUser(req) {
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "dailynews_default_secret"
+    );
+
+    return {
+      id: decoded.id || decoded.userId || decoded.user_id,
+      username: decoded.username || decoded.name || "",
+      email: decoded.email || ""
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function isVipUser(user) {
+  if (!user) {
+    return false;
+  }
+
+  const memberLevel = String(user.member_level || "").toLowerCase();
+  const subscriptionStatus = String(user.subscription_status || "").toLowerCase();
+  const expireAt = user.vip_expire_at ? new Date(user.vip_expire_at) : null;
+  const now = new Date();
+
+  if (memberLevel === "vip") {
+    if (!expireAt || expireAt > now) {
+      return true;
+    }
+  }
+
+  if (subscriptionStatus === "active") {
+    if (!expireAt || expireAt > now) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// 前台新闻详情接口：普通新闻公开，VIP新闻需要VIP会员
+router.get("/public/:id", (req, res) => {
+  const { id } = req.params;
+
+  const updateViewsSql = `
+    UPDATE news
+    SET views = views + 1
+    WHERE id = ?
+  `;
+
+  db.run(updateViewsSql, [id], (updateErr) => {
+    if (updateErr) {
+      console.error("Update news views error:", updateErr.message);
+    }
+
+    const sql = `
+      SELECT *
+      FROM news
+      WHERE id = ?
+    `;
+
+    db.get(sql, [id], (err, news) => {
+      if (err) {
+        console.error("Get public news detail error:", err.message);
+        return res.status(500).json({
+          success: false,
+          message: "新闻详情获取失败"
+        });
+      }
+
+      if (!news) {
+        return res.status(404).json({
+          success: false,
+          message: "新闻不存在"
+        });
+      }
+
+      if (news.status !== "published") {
+        return res.status(403).json({
+          success: false,
+          code: "NEWS_NOT_PUBLISHED",
+          message: "该新闻暂未发布"
+        });
+      }
+
+      if (Number(news.is_vip) !== 1) {
+        return res.json({
+          success: true,
+          data: news
+        });
+      }
+
+      const tokenUser = decodeOptionalUser(req);
+
+      if (!tokenUser || !tokenUser.id) {
+        return res.status(401).json({
+          success: false,
+          code: "LOGIN_REQUIRED",
+          message: "这是一篇VIP专享新闻，请先登录或开通VIP会员。",
+          data: {
+            id: news.id,
+            title: news.title,
+            category: news.category,
+            summary: news.summary,
+            image_url: news.image_url,
+            source: news.source,
+            author: news.author,
+            created_at: news.created_at,
+            is_vip: news.is_vip
+          }
+        });
+      }
+
+      const userSql = `
+        SELECT id, username, email, member_level, subscription_status, vip_expire_at
+        FROM users
+        WHERE id = ?
+      `;
+
+      db.get(userSql, [tokenUser.id], (userErr, user) => {
+        if (userErr) {
+          console.error("Check VIP user error:", userErr.message);
+          return res.status(500).json({
+            success: false,
+            message: "会员状态检查失败"
+          });
+        }
+
+        if (!isVipUser(user)) {
+          return res.status(403).json({
+            success: false,
+            code: "VIP_REQUIRED",
+            message: "这是一篇VIP专享新闻，你当前还不是VIP会员，请升级后阅读完整内容。",
+            data: {
+              id: news.id,
+              title: news.title,
+              category: news.category,
+              summary: news.summary,
+              image_url: news.image_url,
+              source: news.source,
+              author: news.author,
+              created_at: news.created_at,
+              is_vip: news.is_vip
+            }
+          });
+        }
+
+        return res.json({
+          success: true,
+          data: news
+        });
+      });
+    });
+  });
+});
 router.get("/:id", (req, res) => {
   const { id } = req.params;
 
