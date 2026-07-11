@@ -52,11 +52,10 @@ async function loadNewsHome() {
         <div class="news-content">
           <div class="tag-row">
             <span class="news-category">${escapeHtml(news.category || "general")}</span>
-            ${
-              Number(news.is_vip) === 1
-                ? '<span class="vip-tag">VIP</span>'
-                : ''
-            }
+            ${Number(news.is_vip) === 1
+          ? '<span class="vip-tag">VIP</span>'
+          : ''
+        }
           </div>
 
           <h2 class="news-title">
@@ -75,7 +74,7 @@ async function loadNewsHome() {
             浏览量：${news.views || 0}
           </div>
 
-          <a class="read-more" href="./news-detail.html?id=${news.id}">
+          <a class="read-more" href="/news-detail.html?id=${news.id}">
             阅读全文
           </a>
         </div>
