@@ -1,4 +1,4 @@
-const API_NEWS = "/api/news";
+﻿const API_NEWS = "/api/news";
 const FAVORITES_KEY = "dailynewsFavorites";
 const LIKES_KEY = "dailynewsLikes";
 
@@ -43,7 +43,7 @@ async function loadNewsHome() {
     messageBox.innerText = "共加载 " + publishedNews.length + " 条新闻";
 
     publishedNews.forEach((news) => {
-      const detailUrl = `/news-detail.html?id=${news.id}`;
+      const detailUrl = "/news-detail.html?id=" + encodeURIComponent(news.id);
       const fullUrl = window.location.origin + detailUrl;
       const favoriteActive = isFavorite(news.id);
       const likedActive = isLiked(news.id);
@@ -86,56 +86,56 @@ async function loadNewsHome() {
           type="button"
           class="news-action-btn"
           data-action="comment"
-          data-id="${news.id}"
-          data-url="${detailUrl}"
+          data-id="${escapeAttr(news.id)}"
+          data-url="${escapeAttr(detailUrl)}"
         >
-          💬 留言
+          留言
         </button>
 
         <button
           type="button"
           class="news-action-btn"
           data-action="forward"
-          data-id="${news.id}"
-          data-url="${detailUrl}"
+          data-id="${escapeAttr(news.id)}"
+          data-url="${escapeAttr(detailUrl)}"
           data-title="${escapeAttr(news.title || "")}"
         >
-          🔁 转发
+          转发
         </button>
 
         <button
           type="button"
           class="news-action-btn ${likedActive ? "news-action-active" : ""}"
           data-action="like"
-          data-id="${news.id}"
+          data-id="${escapeAttr(news.id)}"
         >
-          ❤ ${likedActive ? "已点赞" : "点赞"}
+          ${likedActive ? "♥ 已点赞" : "♡ 点赞"}
         </button>
 
         <span class="news-action-view">
-          👁 阅读 ${news.views || 0}
+          阅读 ${news.views || 0}
         </span>
 
         <button
           type="button"
           class="news-action-btn ${favoriteActive ? "news-action-active" : ""}"
           data-action="favorite"
-          data-id="${news.id}"
-          data-url="${detailUrl}"
+          data-id="${escapeAttr(news.id)}"
+          data-url="${escapeAttr(detailUrl)}"
           data-title="${escapeAttr(news.title || "")}"
         >
-          ☆ ${favoriteActive ? "已收藏" : "收藏"}
+          ${favoriteActive ? "★ 已收藏" : "☆ 收藏"}
         </button>
 
         <button
           type="button"
           class="news-action-btn"
           data-action="share"
-          data-id="${news.id}"
-          data-url="${detailUrl}"
+          data-id="${escapeAttr(news.id)}"
+          data-url="${escapeAttr(detailUrl)}"
           data-title="${escapeAttr(news.title || "")}"
         >
-          📤 分享
+          分享
         </button>
       </div>
     </div>
@@ -152,6 +152,7 @@ async function loadNewsHome() {
 
 function handleNewsAction(event) {
   const button = event.target.closest("[data-action]");
+
   if (!button) {
     return;
   }
@@ -176,15 +177,15 @@ function handleNewsAction(event) {
   if (action === "like") {
     const liked = toggleLike(newsId);
     button.classList.toggle("news-action-active", liked);
-    button.innerHTML = liked ? "❤ 已点赞" : "❤ 点赞";
+    button.innerHTML = liked ? "♥ 已点赞" : "♡ 点赞";
     return;
   }
 
   if (action === "favorite") {
     const favored = toggleFavorite(newsId, title, fullUrl);
     button.classList.toggle("news-action-active", favored);
-    button.innerHTML = favored ? "☆ 已收藏" : "☆ 收藏";
-    alert(favored ? "已加入收藏，下一步我可以帮你接入“我的收藏”页面。" : "已取消收藏。");
+    button.innerHTML = favored ? "★ 已收藏" : "☆ 收藏";
+    alert(favored ? "已加入收藏，下一步可以接入我的收藏页面。" : "已取消收藏。");
     return;
   }
 
@@ -285,20 +286,33 @@ function copyText(text) {
 }
 
 function escapeHtml(text) {
+  const amp = String.fromCharCode(38);
+  const htmlAmp = String.fromCharCode(38, 97, 109, 112, 59);
+  const htmlLt = String.fromCharCode(38, 108, 116, 59);
+  const htmlGt = String.fromCharCode(38, 103, 116, 59);
+  const htmlQuot = String.fromCharCode(38, 113, 117, 111, 116, 59);
+  const htmlApos = String.fromCharCode(38, 35, 48, 51, 57, 59);
+
   return String(text)
-    .replaceAll("&", "&")
-    .replaceAll("<", "<")
-    .replaceAll(">", ">")
-    .replaceAll('"', """)
-      .replaceAll("'", "'");
+    .replaceAll(amp, htmlAmp)
+    .replaceAll("<", htmlLt)
+    .replaceAll(">", htmlGt)
+    .replaceAll(String.fromCharCode(34), htmlQuot)
+    .replaceAll(String.fromCharCode(39), htmlApos);
 }
 
 function escapeAttr(text) {
+  const amp = String.fromCharCode(38);
+  const htmlAmp = String.fromCharCode(38, 97, 109, 112, 59);
+  const htmlLt = String.fromCharCode(38, 108, 116, 59);
+  const htmlGt = String.fromCharCode(38, 103, 116, 59);
+  const htmlQuot = String.fromCharCode(38, 113, 117, 111, 116, 59);
+
   return String(text)
-    .replaceAll("&", "&")
-    .replaceAll('"', """)
-      .replaceAll("<", "<")
-      .replaceAll(">", ">");
+    .replaceAll(amp, htmlAmp)
+    .replaceAll(String.fromCharCode(34), htmlQuot)
+    .replaceAll("<", htmlLt)
+    .replaceAll(">", htmlGt);
 }
 
 function limitText(text, maxLength) {
@@ -306,5 +320,6 @@ function limitText(text, maxLength) {
   if (str.length <= maxLength) {
     return str;
   }
+
   return str.substring(0, maxLength) + "...";
 }
