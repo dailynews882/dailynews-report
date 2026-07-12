@@ -784,3 +784,89 @@ a {
     color: #168cff;
     cursor: pointer;
 }
+
+/* ==============================
+我的页面 - 收藏新闻
+============================== */
+
+.my-section {
+    margin-top: 24px;
+    padding: 22px;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.92);
+}
+
+.my-section h2 {
+    margin: 0 0 12px;
+    color: #38bdf8;
+    font-size: 22px;
+}
+
+.my-favorites-message {
+    margin: 0 0 14px;
+    color: #facc15;
+    font-size: 14px;
+}
+
+.my-favorites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-favorite-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 10px;
+    background: rgba(2, 6, 23, 0.7);
+}
+
+.my-favorite-info {
+    min-width: 0;
+}
+
+.my-favorite-title {
+    display: block;
+    color: #f8fafc;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.my-favorite-title:hover {
+    color: #60a5fa;
+}
+
+.my-favorite-time {
+    margin-top: 6px;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.my-favorite-remove {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #e2e8f0;
+    cursor: pointer;
+}
+
+.my-favorite-remove:hover {
+    border-color: #f87171;
+    color: #f87171;
+}
+
+@media (max-width: 700px) {
+    .my-favorite-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
