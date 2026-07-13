@@ -28,23 +28,24 @@ function renderMyFavorites() {
         card.className = "my-favorite-card";
 
         card.innerHTML = `
-          <div class="my-favorite-info">
-            <a class="my-favorite-title" href="${escapeAttr(item.url || "#")}">
-              ${escapeHtml(item.title || "未命名新闻")}
-            </a>
-            <div class="my-favorite-time">
-              收藏时间：${formatDate(item.saved_at)}
-            </div>
-          </div>
 
-          <button 
-            type="button" 
-            class="my-favorite-remove"
-            data-id="${escapeAttr(item.id)}"
-          >
-            取消收藏
-          </button>
-        `;
+<div class="my-favorite-main"> <div class="my-favorite-badge"> 收藏 </div>
+<a class="my-favorite-title" href="${escapeAttr(item.url || "#")}">
+  ${escapeHtml(item.title || "未命名新闻")}
+</a>
+
+<div class="my-favorite-time">
+  收藏时间：${formatDate(item.saved_at)}
+</div>
+</div> <div class="my-favorite-actions"> <a class="my-favorite-open" href="${escapeAttr(item.url || "#")}"> 查看详情 </a>
+<button
+  type="button"
+  class="my-favorite-remove"
+  data-id="${escapeAttr(item.id)}"
+>
+  取消收藏
+</button>
+</div> `;
 
         favoritesBox.appendChild(card);
 
