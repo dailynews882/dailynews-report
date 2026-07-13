@@ -202,9 +202,28 @@
     <main class="page">
         <div id="messageBox" class="message">正在加载新闻详情...</div>
         <div id="articleBox"></div>
+        <section class="comments-section">
+            <div class="comments-header">
+                <h2>评论区</h2> <span> 共 <strong id="commentCount">0</strong> 条评论 </span>
+            </div>
+            <form id="commentForm" class="comment-form"> <textarea id="commentInput" class="comment-input" rows="4"
+                    maxlength="300" placeholder="写下你的看法，最多 300 个字..."></textarea>
+                <div class="comment-form-footer">
+                    <p id="commentMessage" class="comment-message">
+                        正在加载评论...
+                    </p>
+
+                    <button type="submit" class="comment-submit-btn">
+                        发布评论
+                    </button>
+                </div>
+            </form>
+            <div id="commentList" class="comment-list"></div>
+        </section>
     </main>
 
     <script src="/news-detail.js"></script>
+    <script src="/news-comments.js?v=1"></script>
 </body>
 
 </html>
