@@ -29,6 +29,8 @@ const paymentRoutes =
 const newsRoutes =
   require("./routes/newsRoute");
 
+const commentRoute = require("./routes/commentRoute");
+
 const app = express();
 
 /*
@@ -172,30 +174,17 @@ app.get("/", (req, res) => {
 * 普通API路由
 * =====================================
   */
-app.use(
-  "/api/auth",
-  authRoutes
-);
+app.use("/api/auth", authRoutes);
 
-app.use(
-  "/api/wallet",
-  walletRoutes
-);
+app.use("/api/wallet", walletRoutes);
 
-app.use(
-  "/api/news",
-  newsRoutes
-);
+app.use("/api/news", newsRoutes);
 
-app.use(
-  "/api/subscription",
-  subscriptionRoutes
-);
+app.use("/api/comments", commentRoute);
 
-app.use(
-  "/api/payment",
-  paymentRoutes
-);
+app.use("/api/subscription", subscriptionRoutes);
+
+app.use("/api/payment", paymentRoutes);
 
 /*
 
