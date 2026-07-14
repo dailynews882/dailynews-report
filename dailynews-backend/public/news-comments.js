@@ -1,4 +1,4 @@
-const COMMENTS_KEY_PREFIX = "dailynewsComments_";
+const COMMENTS_API = "/api/comments";
 
 document.addEventListener("DOMContentLoaded", () => {
     initNewsComments();
@@ -8,17 +8,15 @@ function initNewsComments() {
     const newsId = getNewsIdFromUrl();
     const form = document.getElementById("commentForm");
     const input = document.getElementById("commentInput");
-    const list = document.getElementById("commentList");
     const message = document.getElementById("commentMessage");
-    const count = document.getElementById("commentCount");
 
-    if (!newsId || !form || !input || !list || !message || !count) {
+    if (!newsId || !form || !input || !message) {
         return;
     }
 
-    renderComments(newsId);
+    loadComments(newsId);
 
-    form.addEventListener("submit", function (event) {
+    form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const content = input.value.trim();
@@ -33,26 +31,40 @@ function initNewsComments() {
             return;
         }
 
-        const comments = getComments(newsId);
+        message.innerText = "正在发布评论...";
 
-        comments.unshift({
-            id: Date.now(),
-            content: content,
-            author: getCurrentUserName(),
-            created_at: new Date().toISOString()
-        });
+        try {
+            const response = await fetch(COMMENTS_API, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    news_id: newsId,
+                    author: getCurrentUserName(),
+                    content: content
+                })
+            });
 
-        localStorage.setItem(getCommentsKey(newsId), JSON.stringify(comments));
+            const result = await response.json();
 
-        input.value = "";
-        message.innerText = "评论已发布。";
+            if (!response.ok || !result.success) {
+                message.innerText = result.message || "评论发布失败。";
+                return;
+            }
 
-        renderComments(newsId);
+            input.value = "";
+            message.innerText = "评论已发布。";
 
+            loadComments(newsId);
+        } catch (error) {
+            console.error("Create comment error:", error);
+            message.innerText = "无法连接评论服务，请稍后再试。";
+        }
     });
 }
 
-function renderComments(newsId) {
+async function loadComments(newsId) {
     const list = document.getElementById("commentList");
     const message = document.getElementById("commentMessage");
     const count = document.getElementById("commentCount");
@@ -61,58 +73,62 @@ function renderComments(newsId) {
         return;
     }
 
-    const comments = getComments(newsId);
-
     list.innerHTML = "";
-    count.innerText = comments.length;
+    count.innerText = "0";
+    message.innerText = "正在加载评论...";
 
-    if (comments.length === 0) {
-        message.innerText = "目前还没有评论，欢迎发表第一条评论。";
-        return;
-    }
-
-    message.innerText = "";
-
-    comments.forEach((comment) => {
-        const item = document.createElement("div");
-        item.className = "comment-item";
-
-        const header = document.createElement("div");
-        header.className = "comment-header";
-
-        const author = document.createElement("span");
-        author.className = "comment-author";
-        author.textContent = comment.author || "Daily News 用户";
-
-        const time = document.createElement("span");
-        time.className = "comment-time";
-        time.textContent = formatDate(comment.created_at);
-
-        header.appendChild(author);
-        header.appendChild(time);
-
-        const content = document.createElement("p");
-        content.className = "comment-content";
-        content.textContent = comment.content || "";
-
-        item.appendChild(header);
-        item.appendChild(content);
-
-        list.appendChild(item);
-
-    });
-}
-
-function getComments(newsId) {
     try {
-        return JSON.parse(localStorage.getItem(getCommentsKey(newsId)) || "[]");
-    } catch (error) {
-        return [];
-    }
-}
+        const response = await fetch(COMMENTS_API + "/" + encodeURIComponent(newsId));
+        const result = await response.json();
 
-function getCommentsKey(newsId) {
-    return COMMENTS_KEY_PREFIX + String(newsId);
+        if (!response.ok || !result.success) {
+            message.innerText = result.message || "评论加载失败。";
+            return;
+        }
+
+        const comments = result.data || [];
+
+        count.innerText = comments.length;
+        list.innerHTML = "";
+
+        if (comments.length === 0) {
+            message.innerText = "目前还没有评论，欢迎发表第一条评论。";
+            return;
+        }
+
+        message.innerText = "";
+
+        comments.forEach((comment) => {
+            const item = document.createElement("div");
+            item.className = "comment-item";
+
+            const header = document.createElement("div");
+            header.className = "comment-header";
+
+            const author = document.createElement("span");
+            author.className = "comment-author";
+            author.textContent = comment.author || "Daily News User";
+
+            const time = document.createElement("span");
+            time.className = "comment-time";
+            time.textContent = formatDate(comment.created_at);
+
+            header.appendChild(author);
+            header.appendChild(time);
+
+            const content = document.createElement("p");
+            content.className = "comment-content";
+            content.textContent = comment.content || "";
+
+            item.appendChild(header);
+            item.appendChild(content);
+
+            list.appendChild(item);
+        });
+    } catch (error) {
+        console.error("Load comments error:", error);
+        message.innerText = "无法连接评论服务，请稍后再试。";
+    }
 }
 
 function getNewsIdFromUrl() {
@@ -135,11 +151,10 @@ function getCurrentUserName() {
         if (user.phone) {
             return user.phone;
         }
-
     } catch (error) {
     }
 
-    return "Daily News 用户";
+    return "Daily News User";
 }
 
 function formatDate(value) {
