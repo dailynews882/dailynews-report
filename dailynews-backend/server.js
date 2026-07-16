@@ -138,6 +138,13 @@ app.use(
   )
 );
 
+app.use(
+  "/admin",
+  express.static(
+    path.join(__dirname, "admin")
+  )
+);
+
 /*
 
 * =====================================
