@@ -133,7 +133,7 @@ function createCommentActionButtons(comment) {
         `<button class="table-btn" onclick="viewAdminComment(${comment.id})">查看</button>`
     ];
 
-    if (comment.status !== "published") {
+    if (comment.status === "pending") {
         buttons.push(
             `<button class="table-btn success" onclick="updateAdminCommentStatus(${comment.id}, 'published')">通过</button>`
         );
@@ -160,7 +160,7 @@ function createCommentActionButtons(comment) {
         );
     }
 
-    return buttons.join(" ");
+    return `<div class="action-buttons">${buttons.join("")}</div>`;
 }
 
 function getCommentStatusInfo(status) {

@@ -74,6 +74,7 @@ body {
   font-size: 14px;
   color: #ff7777;
 }
+
 .admin-layout {
   display: flex;
   min-height: 100vh;
@@ -191,6 +192,7 @@ body {
   color: #c8ddf5;
   line-height: 1.7;
 }
+
 .panel-title-row {
   display: flex;
   justify-content: space-between;
@@ -270,6 +272,7 @@ body {
 .table-btn.success {
   background: #18a058;
 }
+
 .settings-form {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -361,13 +364,14 @@ body {
   border-radius: 50%;
 }
 
-.switch input:checked + .slider {
+.switch input:checked+.slider {
   background: linear-gradient(90deg, #008cff, #00d4ff);
 }
 
-.switch input:checked + .slider:before {
+.switch input:checked+.slider:before {
   transform: translateX(28px);
 }
+
 .table-tools {
   display: flex;
   gap: 15px;
@@ -447,6 +451,7 @@ body {
   width: 100%;
   margin-top: 15px;
 }
+
 .editor-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -507,6 +512,7 @@ body {
   max-height: 88vh;
   overflow-y: auto;
 }
+
 .news-detail-content {
   padding: 14px;
   background: #081b33;
@@ -528,6 +534,7 @@ body {
   border-radius: 10px;
   margin: 12px 0;
 }
+
 /* ===============================
    新闻编辑器放大版
 ================================ */
@@ -621,6 +628,7 @@ body {
   border-radius: 10px;
   margin: 12px 0;
 }
+
 .news-editor video,
 .news-detail-content video {
   width: 100%;
@@ -629,6 +637,7 @@ body {
   margin: 12px 0;
   background: #000;
 }
+
 /* ===============================
    新闻管理表格状态标签修复
 ================================ */
@@ -694,6 +703,7 @@ body {
 #newsTable td:last-child .table-btn {
   margin-bottom: 6px;
 }
+
 /* ===============================
    修复左侧菜单被表格挤压变窄
 ================================ */
@@ -730,4 +740,40 @@ body {
 
 #newsTable {
   min-width: 1300px;
+}
+
+.admin-table td:nth-child(5) {
+  white-space: nowrap;
+}
+
+.admin-table td:last-child {
+  white-space: nowrap;
+  min-width: 260px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.action-buttons .table-btn {
+  margin: 0;
+  flex: 0 0 auto;
 }
