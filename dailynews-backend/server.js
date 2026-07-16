@@ -30,6 +30,7 @@ const newsRoutes =
   require("./routes/newsRoute");
 
 const commentRoute = require("./routes/commentRoute");
+const adminCommentRoute = require("./routes/adminCommentRoute");
 
 const app = express();
 
@@ -181,6 +182,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/news", newsRoutes);
 
 app.use("/api/comments", commentRoute);
+app.use("/api/admin/comments", adminCommentRoute);
 
 app.use("/api/subscription", subscriptionRoutes);
 
