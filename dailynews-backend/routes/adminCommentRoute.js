@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { verifyAdminToken } = require("../middleware/adminAuth");
 
 const ALLOWED_STATUSES = [
     "published",
@@ -9,6 +10,8 @@ const ALLOWED_STATUSES = [
     "hidden",
     "deleted"
 ];
+
+router.use(verifyAdminToken);
 
 router.get("/", (req, res) => {
     const status = String(req.query.status || "").trim();

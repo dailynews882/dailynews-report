@@ -1,4 +1,39 @@
 const ADMIN_COMMENTS_API = "/api/admin/comments";
+function getAdminAuthHeaders(includeJson = false) {
+    const adminToken = localStorage.getItem("adminToken");
+
+    const headers = {
+        Accept: "application/json"
+    };
+
+    if (adminToken) {
+        headers.Authorization = `Bearer ${adminToken}`;
+    }
+
+    if (includeJson) {
+        headers["Content-Type"] = "application/json";
+    }
+
+    return headers;
+}
+
+function handleAdminUnauthorized(response, result) {
+    if (response.status !== 401 && response.status !== 403) {
+        return false;
+    }
+
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    localStorage.removeItem("adminLoggedIn");
+
+    alert(
+        result?.message ||
+        "管理员登录已失效，请重新登录。"
+    );
+
+    window.location.href = "./admin-login.html";
+    return true;
+}
 
 let allAdminComments = [];
 
@@ -28,12 +63,14 @@ async function loadAdminComments() {
     try {
         const response = await fetch(ADMIN_COMMENTS_API, {
             method: "GET",
-            headers: {
-                Accept: "application/json"
-            }
+            headers: getAdminAuthHeaders()
         });
 
         const result = await response.json();
+
+        if (handleAdminUnauthorized(response, result)) {
+            return;
+        }
 
         if (!response.ok || !result.success) {
             throw new Error(result.message || "评论加载失败");
@@ -298,15 +335,15 @@ window.updateAdminCommentStatus = async function (
             `${ADMIN_COMMENTS_API}/${commentId}/status`,
             {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json"
-                },
+                headers: getAdminAuthHeaders(true),
                 body: JSON.stringify({ status })
             }
         );
 
         const result = await response.json();
+        if (handleAdminUnauthorized(response, result)) {
+            return;
+        }
 
         if (!response.ok || !result.success) {
             throw new Error(result.message || "评论状态更新失败");
@@ -334,13 +371,15 @@ window.deleteAdminComment = async function (commentId) {
             `${ADMIN_COMMENTS_API}/${commentId}`,
             {
                 method: "DELETE",
-                headers: {
-                    Accept: "application/json"
-                }
+                headers: getAdminAuthHeaders()
             }
         );
 
         const result = await response.json();
+
+        if (handleAdminUnauthorized(response, result)) {
+            return;
+        }
 
         if (!response.ok || !result.success) {
             throw new Error(result.message || "评论删除失败");

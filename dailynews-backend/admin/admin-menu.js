@@ -3,19 +3,6 @@
 // 独立文件，避免 admin.js 报错导致菜单消失
 // ===============================
 
-// 后台登录保护
-(function checkAdminAuth() {
-  const isLoggedIn = localStorage.getItem("adminLoggedIn");
-  const currentPage = window.location.pathname.split("/").pop();
-
-  if (currentPage === "admin-login.html") {
-    return;
-  }
-
-  if (isLoggedIn !== "true") {
-    window.location.href = "./admin-login.html";
-  }
-})();
 
 
 // 渲染后台左侧菜单
@@ -62,10 +49,13 @@ function renderAdminSidebar() {
 
 
 // 退出登录
-function adminLogout() {
+window.adminLogout = function () {
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminUser");
   localStorage.removeItem("adminLoggedIn");
+
   window.location.href = "./admin-login.html";
-}
+};
 
 
 // 页面加载后执行菜单渲染

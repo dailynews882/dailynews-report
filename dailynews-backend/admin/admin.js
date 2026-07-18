@@ -2,16 +2,53 @@
 // 后台登录保护
 // ===============================
 (function checkAdminAuth() {
-  const isLoggedIn = localStorage.getItem("adminLoggedIn");
-  const currentPage = window.location.pathname.split("/").pop();
+  const currentPage = window.location.pathname
+    .split("/")
+    .pop();
 
   if (currentPage === "admin-login.html") {
     return;
   }
 
-  if (isLoggedIn !== "true") {
+  const adminToken = localStorage.getItem("adminToken");
+
+  if (!adminToken) {
     window.location.href = "./admin-login.html";
+    return;
   }
+
+  fetch("/api/admin/auth/verify", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${adminToken}`
+    }
+  })
+    .then(async (response) => {
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || "管理员登录已失效。"
+        );
+      }
+
+      if (result.admin) {
+        localStorage.setItem(
+          "adminUser",
+          JSON.stringify(result.admin)
+        );
+      }
+    })
+    .catch((error) => {
+      console.error("Admin authentication error:", error);
+
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("adminUser");
+      localStorage.removeItem("adminLoggedIn");
+
+      window.location.href = "./admin-login.html";
+    });
 })();
 
 
@@ -46,7 +83,7 @@ function renderAdminSidebar() {
     <nav>
   `;
 
-  menuItems.forEach(function(item) {
+  menuItems.forEach(function (item) {
     const activeClass = currentPage === item.link ? "active" : "";
     menuHtml += `<a href="${item.link}" class="${activeClass}">${item.name}</a>`;
   });
@@ -61,7 +98,7 @@ function renderAdminSidebar() {
 
 
 // 页面加载后自动生成左侧菜单
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   renderAdminSidebar();
 });
 
@@ -69,38 +106,85 @@ document.addEventListener("DOMContentLoaded", function() {
 // ===============================
 // 管理员登录
 // ===============================
-function adminLogin() {
-  const usernameInput = document.getElementById("adminUsername");
-  const passwordInput = document.getElementById("adminPassword");
-  const loginMsg = document.getElementById("loginMsg");
+window.adminLogin = async function () {
+  const usernameInput =
+    document.getElementById("adminUsername");
+  const passwordInput =
+    document.getElementById("adminPassword");
+  const loginMsg =
+    document.getElementById("loginMsg");
 
   if (!usernameInput || !passwordInput || !loginMsg) {
     return;
   }
 
   const username = usernameInput.value.trim();
-  const password = passwordInput.value.trim();
+  const password = passwordInput.value;
 
-  const adminUser = "admin";
-  const adminPass = "123456";
+  loginMsg.innerText = "";
 
-  if (username === adminUser && password === adminPass) {
-    localStorage.setItem("adminLoggedIn", "true");
-    window.location.href = "./admin.html";
-  } else {
-    loginMsg.innerText = "账号或密码错误，请重新输入";
+  if (!username || !password) {
+    loginMsg.innerText = "请输入管理员账号和密码。";
+    return;
   }
-}
+
+  try {
+    const response = await fetch(
+      "/api/admin/auth/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.token) {
+      throw new Error(
+        result.message || "管理员账号或密码错误。"
+      );
+    }
+
+    localStorage.setItem("adminToken", result.token);
+    localStorage.setItem(
+      "adminUser",
+      JSON.stringify(result.admin || {})
+    );
+
+    localStorage.removeItem("adminLoggedIn");
+
+    passwordInput.value = "";
+    window.location.href = "./admin.html";
+  } catch (error) {
+    console.error("Admin login error:", error);
+
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    localStorage.removeItem("adminLoggedIn");
+
+    loginMsg.innerText =
+      error.message || "管理员登录失败，请稍后重试。";
+  }
+};
 
 
 // ===============================
 // 管理员退出登录
 // ===============================
-function adminLogout() {
+window.adminLogout = function () {
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminUser");
   localStorage.removeItem("adminLoggedIn");
-  window.location.href = "./admin-login.html";
-}
 
+  window.location.href = "./admin-login.html";
+};
 
 // ===============================
 // 保存系统设置提示
@@ -124,7 +208,7 @@ function filterUsers() {
   const selectedStatus = statusFilter.value;
   const rows = table.querySelectorAll("tbody tr");
 
-  rows.forEach(function(row) {
+  rows.forEach(function (row) {
     const rowText = row.innerText.toLowerCase();
     const rowStatus = row.getAttribute("data-status");
 
@@ -586,11 +670,11 @@ window.confirmWalletRecord = function (buttonElement) {
 
   const confirmPay = confirm(
     "确定要确认这笔充值吗？\n\n订单号：" +
-      orderId +
-      "\n用户：" +
-      username +
-      "\n金额：" +
-      amount
+    orderId +
+    "\n用户：" +
+    username +
+    "\n金额：" +
+    amount
   );
 
   if (!confirmPay) {
@@ -713,9 +797,9 @@ window.cancelSubscription = function (buttonElement) {
 
   const confirmCancel = confirm(
     "确定要取消这条订阅吗？\n\n订阅ID：" +
-      subscriptionId +
-      "\n用户：" +
-      username
+    subscriptionId +
+    "\n用户：" +
+    username
   );
 
   if (!confirmCancel) {
@@ -750,9 +834,9 @@ window.renewSubscription = function (buttonElement) {
 
   const confirmRenew = confirm(
     "确定要为该用户续费吗？\n\n订阅ID：" +
-      subscriptionId +
-      "\n用户：" +
-      username
+    subscriptionId +
+    "\n用户：" +
+    username
   );
 
   if (!confirmRenew) {
@@ -796,9 +880,9 @@ window.convertSubscription = function (buttonElement) {
 
   const confirmConvert = confirm(
     "确定要将该试用会员转为正式会员吗？\n\n订阅ID：" +
-      subscriptionId +
-      "\n用户：" +
-      username
+    subscriptionId +
+    "\n用户：" +
+    username
   );
 
   if (!confirmConvert) {
@@ -922,11 +1006,11 @@ window.approveWithdrawal = function (buttonElement) {
 
   const confirmApprove = confirm(
     "确定要批准这笔提现吗？\n\n提现ID：" +
-      withdrawalId +
-      "\n用户：" +
-      username +
-      "\n金额：" +
-      amount
+    withdrawalId +
+    "\n用户：" +
+    username +
+    "\n金额：" +
+    amount
   );
 
   if (!confirmApprove) {
@@ -961,11 +1045,11 @@ window.rejectWithdrawal = function (buttonElement) {
 
   const confirmReject = confirm(
     "确定要拒绝这笔提现吗？\n\n提现ID：" +
-      withdrawalId +
-      "\n用户：" +
-      username +
-      "\n金额：" +
-      amount
+    withdrawalId +
+    "\n用户：" +
+    username +
+    "\n金额：" +
+    amount
   );
 
   if (!confirmReject) {
@@ -1084,10 +1168,10 @@ window.testApiFromRow = function (buttonElement) {
 
   alert(
     "正在测试接口：\n\nAPI名称：" +
-      apiName +
-      "\n请求地址：" +
-      apiUrl +
-      "\n\n测试结果：连接正常！（当前为前端演示）"
+    apiName +
+    "\n请求地址：" +
+    apiUrl +
+    "\n\n测试结果：连接正常！（当前为前端演示）"
   );
 
   row.setAttribute("data-status", "normal");
@@ -1124,9 +1208,9 @@ window.fixApiFromRow = function (buttonElement) {
 
   const confirmFix = confirm(
     "确定要修复该异常接口吗？\n\nAPI名称：" +
-      apiName +
-      "\n请求地址：" +
-      apiUrl
+    apiName +
+    "\n请求地址：" +
+    apiUrl
   );
 
   if (!confirmFix) {
