@@ -8,10 +8,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     mapElement.innerHTML = "";
 
     const map = L.map("worldMap", {
-        center: [20, 10],
-        zoom: 2,
+        center: [45, 8],
+        zoom: 1.55,
         minZoom: 1,
         maxZoom: 6,
+        zoomSnap: 0.25,
+        zoomDelta: 0.25,
         zoomControl: true,
         attributionControl: false,
         worldCopyJump: true
@@ -116,13 +118,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         const geoData = await response.json();
 
         geoJsonLayer = L.geoJSON(geoData, {
+            filter: (feature) => {
+                const properties = feature?.properties || {};
+
+                const countryName = String(
+                    properties.NAME_EN ||
+                    properties.ADMIN ||
+                    properties.NAME ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+                return countryName !== "antarctica";
+            },
             style: defaultStyle,
             onEachFeature: selectCountry
         }).addTo(map);
 
-        map.fitBounds(geoJsonLayer.getBounds(), {
-            padding: [10, 10]
-        });
+        map.setView([45, 8], 1.55);
+
     } catch (error) {
         console.error(error);
 
