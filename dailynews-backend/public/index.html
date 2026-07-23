@@ -10,6 +10,8 @@
   <title>每日新闻 Daily News</title>
 
   <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/home-redesign.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     .auth-actions {
@@ -228,110 +230,185 @@
        顶部栏
   ============================== -->
 
-  <header class="top-header">
+  <header class="top-header home-top-header">
+    <div class="home-header-inner">
 
-    <div class="logo-box">
-      <div class="logo">
-        <span>每日新闻</span>
-        <strong>DAILY NEWS</strong>
-      </div>
-    </div>
+      <a class="home-brand" href="/" aria-label="Daily News 首页">
+        <div class="home-brand-logo">
+          <span class="home-brand-cn">每日新闻</span>
+          <strong class="home-brand-en">DAILY NEWS</strong>
+        </div>
 
-    <div class="site-title">
-      <h1>24-hour focus on global hot news</h1>
-      <p>24小时聚焦全球热点新闻</p>
-    </div>
+        <div class="home-brand-title">
+          <h1>24-hour focus on global hot news</h1>
+          <p>24小时聚焦全球热点新闻</p>
+        </div>
+      </a>
 
-    <div class="top-actions">
+      <div class="home-header-actions">
 
-      <!-- 搜索框 -->
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="search" autocomplete="off" />
+        <div class="search-box home-search-box">
+          <input type="text" id="searchInput" placeholder="搜索新闻、国家或关键词" autocomplete="off" />
 
-        <button type="button" id="searchButton" aria-label="搜索">
-          🔍
-        </button>
-      </div>
-
-      <!-- 登录、注册、用户资料 -->
-      <div class="auth-actions" id="authActions">
-        <button type="button" id="loginBtn" class="auth-link auth-login">
-          登录
-        </button>
-
-        <button type="button" id="registerBtn" class="auth-link auth-register">
-          注册
-        </button>
-
-        <div id="authUserArea" class="auth-user-area">
-          <span id="authUserName" class="auth-user-name"></span>
-
-          <button type="button" id="myBtn" class="auth-my" style="display: none;">
-            我的
-          </button>
-
-          <button type="button" id="logoutBtn" class="auth-logout">
-            退出
+          <button type="button" id="searchButton" aria-label="搜索">
+            搜索
           </button>
         </div>
+
+        <div class="auth-actions" id="authActions">
+          <button type="button" id="loginBtn" class="auth-link auth-login">
+            登录
+          </button>
+
+          <button type="button" id="registerBtn" class="auth-link auth-register">
+            注册
+          </button>
+
+          <div id="authUserArea" class="auth-user-area">
+            <span id="authUserName" class="auth-user-name"></span>
+
+            <button type="button" id="myBtn" class="auth-my" style="display: none;">
+              我的
+            </button>
+
+            <button type="button" id="logoutBtn" class="auth-logout">
+              退出
+            </button>
+          </div>
+        </div>
+
+        <div class="home-language-box">
+          <label for="languageSelect">语言</label>
+
+          <select id="languageSelect">
+            <option value="zh">中文</option>
+            <option value="en">ENGLISH</option>
+          </select>
+        </div>
+
       </div>
-
-      <!-- 语言选择 -->
-      <select id="languageSelect">
-        <option value="en">
-          ENGLISH
-        </option>
-
-        <option value="zh">
-          中文
-        </option>
-      </select>
-
-      <span>language</span>
-
     </div>
-
   </header>
 
   <!-- ==============================
        大横幅 Banner
   ============================== -->
 
-  <section class="globe-hero">
+  <section class="global-map-section" aria-labelledby="globalMapTitle">
+    <div class="global-map-inner">
 
-    <iframe class="hero-globe-frame" src="/globe.html" title="3D Globe" loading="eager"></iframe>
+      <div class="global-map-main">
+        <div class="global-map-header">
+          <div>
+            <span class="global-map-kicker">GLOBAL NEWS MAP</span>
+            <h2 id="globalMapTitle">全球新闻地图</h2>
+            <p>搜索或选择国家和地区，查看对应的最新新闻。</p>
+          </div>
 
-    <div class="hero-content">
+          <div class="country-search-box">
+            <input type="text" id="countrySearchInput" placeholder="输入国家或地区，例如：新加坡" autocomplete="off" />
 
-      <div class="big-number">
-        24
+            <button type="button" id="countrySearchButton">
+              查找新闻
+            </button>
+          </div>
+        </div>
+
+        <div class="world-map-stage">
+          <div id="worldMap" class="world-map-placeholder">
+            <div class="world-map-placeholder-content">
+              <strong>高清平面世界地图</strong>
+              <span>下一阶段接入国家定位和新闻筛选功能</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="popular-country-list" aria-label="热门国家和地区">
+          <span>热门地区：</span>
+          <button type="button" data-country="Singapore">新加坡</button>
+          <button type="button" data-country="China">中国</button>
+          <button type="button" data-country="United States">美国</button>
+          <button type="button" data-country="United Kingdom">英国</button>
+          <button type="button" data-country="Malaysia">马来西亚</button>
+          <button type="button" data-country="Japan">日本</button>
+        </div>
       </div>
 
-      <div class="hero-text">
-        <h2>小时新闻</h2>
-        <p>NEWS · 24-HOUR NEWS</p>
-      </div>
+      <aside class="breaking-news-panel" aria-labelledby="breakingNewsTitle">
+        <div class="breaking-news-heading">
+          <div>
+            <span class="breaking-live-dot"></span>
+            <span>LIVE</span>
+          </div>
 
-      <div class="breaking">
-        BREAKING NEWS
-      </div>
+          <a href="/news-home.html">更多</a>
+        </div>
+
+        <h2 id="breakingNewsTitle">实时快讯</h2>
+
+        <div class="breaking-news-list">
+          <article class="breaking-news-item">
+            <time>刚刚</time>
+            <a href="#">全球热点新闻将在这里按发布时间展示。</a>
+          </article>
+
+          <article class="breaking-news-item">
+            <time>10分钟前</time>
+            <a href="#">后续将从新闻数据库读取最新快讯。</a>
+          </article>
+
+          <article class="breaking-news-item">
+            <time>30分钟前</time>
+            <a href="#">点击国家后，可筛选该地区相关新闻。</a>
+          </article>
+        </div>
+
+        <div class="map-topic-tags">
+          <span>热门话题</span>
+          <a href="#">国际局势</a>
+          <a href="#">财经市场</a>
+          <a href="#">人工智能</a>
+          <a href="#">新加坡</a>
+        </div>
+      </aside>
 
     </div>
-
-    <div class="slider-dots">
-      <span class="active"></span>
-      <span></span>
-      <span></span>
-    </div>
-
   </section>
 
   <!-- ==============================
        首页最新新闻
   ============================== -->
 
-  <section class="home-news-section">
+  <nav class="main-tabs home-primary-nav" aria-label="主要新闻频道">
+    <div class="home-nav-inner">
+      <a class="active" href="/">首页</a>
+      <a href="#" data-channel="breaking">实时新闻</a>
+      <a href="#" data-channel="singapore">新加坡</a>
+      <a href="#" data-channel="international">国际新闻</a>
+      <a href="#" data-channel="finance">财经市场</a>
+      <a href="#" data-channel="technology">科技与 AI</a>
+      <a href="/subscribe.html" class="home-vip-nav">VIP 聚合分析</a>
+      <a href="#" data-channel="personal">个人发布</a>
+    </div>
+  </nav>
 
+  <nav class="category-nav home-secondary-nav" aria-label="新闻细分类">
+    <div class="home-nav-inner home-secondary-nav-inner">
+      <a href="#" data-category="central-bank">全球央行</a>
+      <a href="#" data-category="economy">经济</a>
+      <a href="#" data-category="military">军事与战争</a>
+      <a href="#" data-category="crypto">数字货币</a>
+      <a href="#" data-category="politics">政要人物</a>
+      <a href="#" data-category="semiconductor">半导体</a>
+      <a href="#" data-category="think-tank">智库与论坛</a>
+      <a href="#" data-category="influencer">大V博主</a>
+      <a href="#" data-category="energy">能源</a>
+      <a href="#" data-category="futures">期货</a>
+      <a href="#" data-category="precious-metals">黄金与白银</a>
+    </div>
+  </nav>
+
+  <section class="home-news-section">
     <div class="home-news-header">
       <h2>Latest News</h2>
 
@@ -345,354 +422,16 @@
     </div>
 
     <div id="newsList" class="home-news-list"></div>
-
   </section>
 
   <!-- ==============================
-       主导航
-  ============================== -->
-
-  <nav class="main-tabs">
-
-    <a class="active" href="#">
-      实时新闻
-    </a>
-
-    <a href="#">
-      AI数据总结
-    </a>
-
-    <a href="#">
-      AI新闻汇总
-    </a>
-
-    <a href="#">
-      AI科技
-    </a>
-
-    <a href="#">
-      财经日历
-    </a>
-
-  </nav>
-
-  <!-- ==============================
-       分类导航
-  ============================== -->
-
-  <nav class="category-nav">
-
-    <a href="#">全球最新</a>
-    <a href="#">政治</a>
-    <a href="#">经济</a>
-    <a href="#">军事/战争</a>
-    <a href="#">数字货币</a>
-    <a href="#">全球央行</a>
-    <a href="#">股票人物</a>
-    <a href="#">半导体</a>
-    <a href="#">智库/论坛</a>
-    <a href="#">大V博主</a>
-    <a href="#">能源</a>
-    <a href="#">财经</a>
-    <a href="#">黄金/白银</a>
-
-  </nav>
+         分类导航
+    ============================== -->
 
   <!-- ==============================
        主体内容
   ============================== -->
 
-  <main class="main-container">
-
-    <!-- 左侧新闻列表 -->
-    <section class="news-list">
-
-      <div class="filter-row">
-
-        <span>
-          2026-02-26
-        </span>
-
-        <button type="button" class="filter-active">
-          全球快讯
-        </button>
-
-        <button type="button">
-          订阅共享
-        </button>
-
-        <button type="button">
-          特定分类
-        </button>
-
-      </div>
-
-
-      <article class="news-item">
-
-        <div class="date">
-          2026年2月25
-        </div>
-
-        <div class="news-content">
-
-          <h3>
-            来自新华社电报
-          </h3>
-
-          <p>
-            乌拉圭成为首个批准欧盟—南美贸易协定的国家
-          </p>
-
-          <div class="icons">
-            🔗 ↗ ☆ ☆ ☆ ☆ ☆
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <article class="news-item">
-
-        <div class="date">
-          2026年2月26
-        </div>
-
-        <div class="news-content">
-
-          <h3>
-            来自纽约时报
-          </h3>
-
-          <p>
-            声明说，中国正和法国天然气公司与立陶宛某集团进行合作，
-            将于今年2月至3月期间通过克莱佩达港接收9000万立方米液化天然气。
-          </p>
-
-          <div class="icons">
-            🔗 ↗ ☆ ☆ ☆ ☆ ☆
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <article class="news-item">
-
-        <div class="date">
-          2026年2月27
-        </div>
-
-        <div class="news-content">
-
-          <h3>
-            来自彭博社
-          </h3>
-
-          <p>
-            特朗普称：我不想看到美国总统数据出现问题。
-          </p>
-
-          <div class="icons">
-            🔗 ↗ ☆ ☆ ☆ ☆ ☆
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <article class="news-item">
-
-        <div class="date">
-          2026年2月28
-        </div>
-
-        <div class="news-content">
-
-          <h3>
-            来自路透社
-          </h3>
-
-          <p>
-            乌拉圭成为首个批准欧盟—南美贸易协定的国家。
-          </p>
-
-          <div class="icons">
-            🔗 ↗ ☆ ☆ ☆ ☆ ☆
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <article class="news-item">
-
-        <div class="date">
-          2026年2月28
-        </div>
-
-        <div class="news-content">
-
-          <h3>
-            来自华尔街日报
-          </h3>
-
-          <p>
-            市场消息：特朗普将在众议院监督委员会的开场陈述中表示。
-          </p>
-
-          <div class="icons">
-            🔗 ↗ ☆ ☆ ☆ ☆ ☆
-          </div>
-
-        </div>
-
-      </article>
-
-    </section>
-
-
-    <!-- 右侧财经日历 -->
-    <aside class="right-panel">
-
-      <div class="panel-header">
-
-        <h2>
-          财经日历
-        </h2>
-
-        <a href="#">
-          更多
-        </a>
-
-      </div>
-
-      <p class="publish-time">
-        12小时55分后公布
-      </p>
-
-
-      <div class="calendar-item">
-
-        <span class="flag">
-          🇪🇺
-        </span>
-
-        <span>
-          08:15
-        </span>
-
-        <p>
-          英国2月GfK消费者信心指数
-        </p>
-
-      </div>
-
-
-      <div class="calendar-item">
-
-        <span class="flag">
-          🇫🇷
-        </span>
-
-        <span>
-          08:15
-        </span>
-
-        <p>
-          法国2月GfK消费者信心指数
-        </p>
-
-      </div>
-
-
-      <div class="calendar-item">
-
-        <span class="flag">
-          🇨🇦
-        </span>
-
-        <span>
-          08:15
-        </span>
-
-        <p>
-          加拿大2月经济数据公布
-        </p>
-
-      </div>
-
-
-      <div class="calendar-item">
-
-        <span class="flag">
-          🇺🇸
-        </span>
-
-        <span>
-          08:15
-        </span>
-
-        <p>
-          美国2月GfK消费者信心指数
-        </p>
-
-      </div>
-
-
-      <div class="calendar-item">
-
-        <span class="flag">
-          🇨🇭
-        </span>
-
-        <span>
-          08:15
-        </span>
-
-        <p>
-          瑞士2月经济景气指数
-        </p>
-
-      </div>
-
-
-      <div class="calendar-item">
-
-        <span class="flag">
-          🇬🇧
-        </span>
-
-        <span>
-          08:15
-        </span>
-
-        <p>
-          英国重要经济数据
-        </p>
-
-      </div>
-
-
-      <div class="exchange-box">
-
-        <h3>
-          各国/地区央行汇率
-        </h3>
-
-        <p>
-          更新日期：2026年2月28日
-        </p>
-
-      </div>
-
-    </aside>
-
-  </main>
 
   <!-- ==============================
        登录弹窗
@@ -870,6 +609,9 @@
   <!-- ==============================
        JavaScript
   ============================== -->
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/world-map.js"></script>
 
   <script src="/script.js"></script>
 
