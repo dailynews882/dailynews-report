@@ -637,4 +637,46 @@ db.serialize(() => {
   `);
 });
 
+/*
+ * ==============================
+ * 网站系统设置表
+ * ==============================
+ */
+
+db.run(
+  `
+    CREATE TABLE IF NOT EXISTS site_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      setting_key TEXT NOT NULL UNIQUE,
+      setting_value TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `,
+  (tableError) => {
+    if (tableError) {
+      console.error(
+        "Create site_settings table error:",
+        tableError.message
+      );
+      return;
+    }
+
+    db.run(
+      `
+        CREATE UNIQUE INDEX IF NOT EXISTS
+        idx_site_settings_key
+        ON site_settings(setting_key)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create site_settings index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+  }
+);
+
 module.exports = db;

@@ -790,3 +790,53 @@
     display: none;
     content: none;
 }
+
+/* ========================================
+   首页动态网站 LOGO
+   ======================================== */
+
+.site-header-default-logo {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.site-header-logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    border-radius: 10px;
+}
+
+.site-header-logo[hidden],
+.site-header-default-logo[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .site-header-logo {
+        border-radius: 8px;
+    }
+}
+
+.home-brand-logo {
+    padding: 0;
+    overflow: hidden;
+}
+
+.site-header-logo {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 10px;
+}

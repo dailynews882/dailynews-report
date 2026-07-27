@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>系统设置 - Daily News</title>
   <link rel="stylesheet" href="admin.css" />
 </head>
+
 <body>
 
   <div class="admin-layout">
@@ -17,6 +19,56 @@
         <h1>系统设置</h1>
         <span>管理网站基础参数、会员价格、功能开关</span>
       </header>
+
+      <section class="admin-panel logo-management-panel">
+        <div class="panel-title-row">
+          <div>
+            <h2>LOGO 管理</h2>
+            <p class="logo-management-description">
+              上传网站左上角使用的 LOGO 图片。支持 PNG、JPG、JPEG 和 WebP，文件最大 2MB。
+            </p>
+          </div>
+        </div>
+
+        <div class="logo-management-layout">
+          <div class="logo-preview-box">
+            <span class="logo-preview-label">当前 LOGO</span>
+
+            <div class="logo-preview-stage">
+              <img id="siteLogoPreview" class="site-logo-preview" alt="网站 LOGO 预览" hidden />
+
+              <div id="siteLogoDefaultPreview" class="site-logo-default-preview">
+                <span>每日新闻</span>
+                <strong>DAILY NEWS</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="logo-upload-controls">
+            <label class="logo-file-label" for="siteLogoInput">
+              选择 LOGO 图片
+            </label>
+
+            <input type="file" id="siteLogoInput" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" />
+
+            <p id="siteLogoFileName" class="logo-file-name">
+              尚未选择图片
+            </p>
+
+            <div class="logo-action-row">
+              <button type="button" id="uploadSiteLogoBtn" class="small-btn">
+                上传并应用
+              </button>
+
+              <button type="button" id="resetSiteLogoBtn" class="small-btn logo-reset-btn">
+                恢复默认 LOGO
+              </button>
+            </div>
+
+            <p id="siteLogoMessage" class="logo-management-message" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
 
       <section class="admin-panel">
         <div class="panel-title-row">
@@ -114,5 +166,7 @@
 
   <script src="admin-menu.js"></script>
   <script src="admin.js"></script>
+  <script src="admin-settings.js"></script>
 </body>
+
 </html>

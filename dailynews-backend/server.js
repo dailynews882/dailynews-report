@@ -32,6 +32,7 @@ const newsRoutes =
 const commentRoute = require("./routes/commentRoute");
 const adminCommentRoute = require("./routes/adminCommentRoute");
 const adminAuthRoute = require("./routes/adminAuthRoute");
+const adminSettingsRoute = require("./routes/adminSettingsRoute");
 
 const app = express();
 
@@ -192,6 +193,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api/comments", commentRoute);
 app.use("/api/admin/auth", adminAuthRoute);
 app.use("/api/admin/comments", adminCommentRoute);
+app.use("/api/site-settings", adminSettingsRoute);
 
 app.use("/api/subscription", subscriptionRoutes);
 
