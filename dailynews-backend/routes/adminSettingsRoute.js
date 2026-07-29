@@ -3,6 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const db = require("../db");
+const { resolveFilters } = require("../services/gnewsService");
 const { verifyAdminToken } = require("../middleware/adminAuth");
 
 const router = express.Router();
@@ -141,6 +142,199 @@ function deleteSetting(settingKey) {
     });
 }
 
+const GNEWS_AUTO_FETCH_SETTING_KEY = "gnews_auto_fetch_config";
+
+const DEFAULT_GNEWS_AUTO_FETCH_CONFIG = Object.freeze({
+    enabled: false,
+    intervalMinutes: 15,
+    max: 25,
+    category: "general",
+    language: "en",
+    country: "sg",
+    status: "published",
+});
+
+const ALLOWED_AUTO_FETCH_INTERVALS = new Set([
+    5,
+    10,
+    15,
+    30,
+    60,
+]);
+
+const ALLOWED_AUTO_FETCH_MAX_VALUES = new Set([
+    3,
+    5,
+    10,
+    15,
+    20,
+    25,
+]);
+
+const ALLOWED_AUTO_FETCH_STATUSES = new Set([
+    "published",
+    "pending",
+]);
+
+function getDefaultGNewsAutoFetchConfig() {
+    return {
+        ...DEFAULT_GNEWS_AUTO_FETCH_CONFIG,
+    };
+}
+
+function normalizeConfigText(value) {
+    return String(value ?? "")
+        .trim()
+        .toLowerCase();
+}
+
+function validateGNewsAutoFetchConfig(input) {
+    if (
+        !input ||
+        typeof input !== "object" ||
+        Array.isArray(input)
+    ) {
+        const error = new Error("自动抓取配置格式不正确");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (typeof input.enabled !== "boolean") {
+        const error = new Error(
+            "enabled 必须是 true 或 false"
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const intervalMinutes = Number.parseInt(
+        input.intervalMinutes,
+        10
+    );
+
+    if (
+        !Number.isInteger(intervalMinutes) ||
+        !ALLOWED_AUTO_FETCH_INTERVALS.has(intervalMinutes)
+    ) {
+        const error = new Error(
+            "抓取间隔只能是 5、10、15、30 或 60 分钟"
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const max = Number.parseInt(input.max, 10);
+
+    if (
+        !Number.isInteger(max) ||
+        !ALLOWED_AUTO_FETCH_MAX_VALUES.has(max)
+    ) {
+        const error = new Error(
+            "每次获取数量只能是 3、5、10、15、20 或 25"
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const requestedCategory =
+        normalizeConfigText(input.category);
+
+    const requestedLanguage =
+        normalizeConfigText(input.language);
+
+    const requestedCountry =
+        normalizeConfigText(input.country);
+
+    if (!requestedCategory) {
+        const error = new Error("请选择新闻分类");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!requestedLanguage) {
+        const error = new Error("请选择新闻语言");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!requestedCountry) {
+        const error = new Error("请选择国家或地区");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const resolvedFilters = resolveFilters({
+        category: requestedCategory,
+        lang: requestedLanguage,
+        country: requestedCountry,
+        max,
+    });
+
+    if (resolvedFilters.category !== requestedCategory) {
+        const error = new Error("不支持该新闻分类");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (resolvedFilters.lang !== requestedLanguage) {
+        const error = new Error("不支持该新闻语言");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (resolvedFilters.country !== requestedCountry) {
+        const error = new Error("不支持该国家或地区");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const status = normalizeConfigText(input.status);
+
+    if (!ALLOWED_AUTO_FETCH_STATUSES.has(status)) {
+        const error = new Error(
+            "发布模式只能是 published 或 pending"
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return {
+        enabled: input.enabled,
+        intervalMinutes,
+        max,
+        category: resolvedFilters.category,
+        language: resolvedFilters.lang,
+        country: resolvedFilters.country,
+        status,
+    };
+}
+
+async function readGNewsAutoFetchConfig() {
+    const savedValue = await getSetting(
+        GNEWS_AUTO_FETCH_SETTING_KEY
+    );
+
+    if (!savedValue) {
+        return getDefaultGNewsAutoFetchConfig();
+    }
+
+    try {
+        const parsedConfig = JSON.parse(savedValue);
+
+        return {
+            ...getDefaultGNewsAutoFetchConfig(),
+            ...validateGNewsAutoFetchConfig(parsedConfig),
+        };
+    } catch (error) {
+        console.error(
+            "Read GNews auto-fetch config error:",
+            error
+        );
+
+        return getDefaultGNewsAutoFetchConfig();
+    }
+}
+
 function removeUploadedLogo(logoUrl) {
     if (
         !logoUrl ||
@@ -156,6 +350,68 @@ function removeUploadedLogo(logoUrl) {
         fs.unlinkSync(filePath);
     }
 }
+
+router.get(
+    "/gnews-auto-fetch",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const config =
+                await readGNewsAutoFetchConfig();
+
+            return res.json({
+                success: true,
+                config,
+            });
+        } catch (error) {
+            console.error(
+                "Get GNews auto-fetch config error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "读取自动抓取配置失败",
+            });
+        }
+    }
+);
+
+router.put(
+    "/gnews-auto-fetch",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const config =
+                validateGNewsAutoFetchConfig(req.body);
+
+            await saveSetting(
+                GNEWS_AUTO_FETCH_SETTING_KEY,
+                JSON.stringify(config)
+            );
+
+            return res.json({
+                success: true,
+                message: "自动抓取配置保存成功",
+                config,
+            });
+        } catch (error) {
+            console.error(
+                "Save GNews auto-fetch config error:",
+                error
+            );
+
+            return res
+                .status(error.statusCode || 500)
+                .json({
+                    success: false,
+                    message:
+                        error.message ||
+                        "保存自动抓取配置失败",
+                });
+        }
+    }
+);
 
 router.get("/logo", async (req, res) => {
     try {
