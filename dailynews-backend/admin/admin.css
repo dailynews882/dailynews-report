@@ -1437,3 +1437,161 @@ body {
     width: 100%;
   }
 }
+
+/* GNews 自动抓取运行状态 */
+.gnews-auto-status-panel {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #194e70;
+  border-radius: 12px;
+  background: #071f35;
+}
+
+.gnews-auto-status-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.gnews-auto-status-header h3 {
+  margin: 0 0 7px;
+  color: #ffd34d;
+  font-size: 18px;
+}
+
+.gnews-auto-status-header p {
+  margin: 0;
+  color: #9fc7e8;
+  line-height: 1.6;
+}
+
+.gnews-auto-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.gnews-auto-run-button {
+  background: #16b96b;
+}
+
+.gnews-auto-run-button:hover {
+  background: #10985a;
+}
+
+.gnews-auto-status-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.gnews-auto-status-item {
+  min-height: 82px;
+  padding: 14px 16px;
+  border: 1px solid #174361;
+  border-radius: 9px;
+  background: #0a2945;
+}
+
+.gnews-auto-status-item span {
+  display: block;
+  margin-bottom: 9px;
+  color: #8eb8d8;
+  font-size: 13px;
+}
+
+.gnews-auto-status-item strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.gnews-auto-run-message {
+  min-height: 22px;
+  margin-top: 14px;
+  color: #9fc7e8;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.gnews-auto-run-message[data-type="success"] {
+  color: #4ce59a;
+}
+
+.gnews-auto-run-message[data-type="warning"] {
+  color: #ffd34d;
+}
+
+.gnews-auto-run-message[data-type="error"] {
+  color: #ff7070;
+}
+
+@media (max-width: 1100px) {
+  .gnews-auto-status-grid {
+    grid-template-columns:
+      repeat(2, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .gnews-auto-status-header {
+    flex-direction: column;
+  }
+
+  .gnews-auto-status-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .gnews-auto-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.table-btn.publish {
+  background: #16b96b;
+}
+
+.table-btn.publish:hover {
+  background: #10985a;
+}
+
+/* 新闻列表操作按钮保持同一行 */
+.admin-news-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 250px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
+.admin-news-actions .table-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.admin-news-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #24506f;
+}
+
+.table-btn.published-disabled {
+  background: #526274;
+  color: #dce7ef;
+  cursor: not-allowed;
+  opacity: 0.8;
+}

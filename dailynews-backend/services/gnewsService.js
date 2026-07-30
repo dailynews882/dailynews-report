@@ -1,5 +1,10 @@
 const crypto = require("crypto");
 const db = require("../db");
+const {
+    reserveGNewsApiRequest,
+    markGNewsApiRequestSuccess,
+    markGNewsApiRequestFailed,
+} = require("./gnewsApiUsageService");
 
 const ALLOWED_CATEGORIES = new Set([
     "general",
@@ -25,6 +30,25 @@ const ALLOWED_COUNTRIES = new Set([
     "gb",
     "my"
 ]);
+
+const ALLOWED_IMPORT_STATUSES = new Set([
+    "published",
+    "pending",
+]);
+
+function resolveImportStatus(value) {
+    const requestedStatus = String(
+        value || "published"
+    )
+        .trim()
+        .toLowerCase();
+
+    return ALLOWED_IMPORT_STATUSES.has(
+        requestedStatus
+    )
+        ? requestedStatus
+        : "published";
+}
 
 function normalizeText(value) {
     if (typeof value !== "string") {
@@ -120,7 +144,7 @@ function resolveFilters(input = {}) {
     };
 }
 
-function normalizeArticle(article, category) {
+function normalizeArticle(article, category, status) {
     const originalUrl = normalizeUrl(article?.url);
     const sourceName = normalizeText(article?.source?.name);
     const title = normalizeText(article?.title);
@@ -136,7 +160,7 @@ function normalizeArticle(article, category) {
         video_url: "",
         source: sourceName || "GNews",
         author: "GNews API",
-        status: "published",
+        status: resolveImportStatus(status),
         is_vip: 0,
         views: 0,
         original_url: originalUrl,
@@ -144,7 +168,10 @@ function normalizeArticle(article, category) {
             ? createExternalId(originalUrl)
             : "",
         api_provider: "gnews",
-        published_at: normalizeText(article?.publishedAt)
+        published_at:
+            resolveImportStatus(status) === "published"
+                ? normalizeText(article?.publishedAt)
+                : null,
     };
 }
 
@@ -183,14 +210,16 @@ function dbRun(sql, parameters = []) {
 
 async function fetchGNews(input = {}) {
     const filters = resolveFilters(input);
+
     const apiKey = normalizeText(
         process.env.GNEWS_API_KEY
     );
 
     if (!apiKey) {
-        const configurationError = new Error(
-            "GNEWS_API_KEY is not configured"
-        );
+        const configurationError =
+            new Error(
+                "GNEWS_API_KEY is not configured"
+            );
 
         configurationError.statusCode = 500;
         throw configurationError;
@@ -201,63 +230,148 @@ async function fetchGNews(input = {}) {
         lang: filters.lang,
         country: filters.country,
         max: String(filters.max),
-        apikey: apiKey
+        apikey: apiKey,
     });
 
     const apiUrl =
         `https://gnews.io/api/v4/top-headlines?${query.toString()}`;
 
-    const apiResponse = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-            Accept: "application/json"
-        },
-        signal: AbortSignal.timeout(15000)
-    });
+    /*
+     * 在真正发送请求前预占一次调用额度。
+     * 达到每日950次时，这里会直接抛出429，
+     * 后面的 fetch 不会执行。
+     */
+    const reservation =
+        await reserveGNewsApiRequest();
 
-    const responseData =
-        await apiResponse.json().catch(function () {
-            return {};
+    let apiResponse = null;
+    let responseData = {};
+    let requestFailureRecorded = false;
+
+    try {
+        apiResponse = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                Accept: "application/json",
+            },
+            signal:
+                AbortSignal.timeout(15000),
         });
 
-    if (!apiResponse.ok) {
-        const apiError = new Error(
-            responseData?.errors?.[0] ||
-            responseData?.message ||
-            "Failed to fetch GNews articles"
-        );
+        responseData =
+            await apiResponse
+                .json()
+                .catch(function () {
+                    return {};
+                });
 
-        apiError.statusCode = apiResponse.status;
-        throw apiError;
+        if (!apiResponse.ok) {
+            const apiError = new Error(
+                responseData?.errors?.[0] ||
+                responseData?.message ||
+                "Failed to fetch GNews articles"
+            );
+
+            apiError.statusCode =
+                apiResponse.status;
+
+            try {
+                await markGNewsApiRequestFailed({
+                    usageDate:
+                        reservation.usageDate,
+                    statusCode:
+                        apiResponse.status,
+                    errorMessage:
+                        apiError.message,
+                });
+
+                requestFailureRecorded = true;
+            } catch (usageError) {
+                console.error(
+                    "Record failed GNews API request error:",
+                    usageError
+                );
+            }
+
+            throw apiError;
+        }
+
+        try {
+            await markGNewsApiRequestSuccess({
+                usageDate:
+                    reservation.usageDate,
+                statusCode:
+                    apiResponse.status,
+            });
+        } catch (usageError) {
+            console.error(
+                "Record successful GNews API request error:",
+                usageError
+            );
+        }
+
+        const rawArticles =
+            Array.isArray(
+                responseData.articles
+            )
+                ? responseData.articles
+                : [];
+
+        const articles = rawArticles
+            .map(function (article) {
+                return normalizeArticle(
+                    article,
+                    filters.category,
+                    input.status
+                );
+            })
+            .filter(function (article) {
+                return Boolean(
+                    article.title &&
+                    article.original_url
+                );
+            });
+
+        return {
+            filters,
+            totalArticles:
+                Number(
+                    responseData.totalArticles
+                ) || articles.length,
+            articles,
+        };
+    } catch (error) {
+        /*
+         * 非成功 HTTP 响应已经在上面记录，
+         * 这里不要重复增加 failed_count。
+         *
+         * 网络断开、DNS错误和超时会在这里记录。
+         */
+        if (!requestFailureRecorded) {
+            try {
+                await markGNewsApiRequestFailed({
+                    usageDate:
+                        reservation.usageDate,
+                    statusCode:
+                        apiResponse?.status ||
+                        null,
+                    errorMessage:
+                        error?.name ===
+                            "TimeoutError"
+                            ? "GNews API request timed out"
+                            : error?.message ||
+                            "GNews API request failed",
+                });
+            } catch (usageError) {
+                console.error(
+                    "Record GNews API network failure error:",
+                    usageError
+                );
+            }
+        }
+
+        throw error;
     }
-
-    const rawArticles = Array.isArray(
-        responseData.articles
-    )
-        ? responseData.articles
-        : [];
-
-    const articles = rawArticles
-        .map(function (article) {
-            return normalizeArticle(
-                article,
-                filters.category
-            );
-        })
-        .filter(function (article) {
-            return Boolean(
-                article.title &&
-                article.original_url
-            );
-        });
-
-    return {
-        filters,
-        totalArticles:
-            Number(responseData.totalArticles) ||
-            articles.length,
-        articles
-    };
 }
 
 async function previewGNews(input = {}) {

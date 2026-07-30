@@ -10,6 +10,12 @@ const {
     getErrorMessage
 } = require("../services/gnewsService");
 
+const {
+    createGNewsFetchLog,
+    finishGNewsFetchLog,
+    markGNewsFetchLogFailed,
+} = require("../services/gnewsFetchLogService");
+
 const router = express.Router();
 
 router.get(
@@ -49,32 +55,98 @@ router.post(
     "/import",
     verifyAdminToken,
     async function (req, res) {
+        const requestInput = {
+            ...(req.query || {}),
+            ...(req.body || {}),
+        };
+
+        let fetchLogId = null;
+
         try {
-            const requestInput = {
-                ...req.query,
-                ...(req.body || {})
-            };
+            try {
+                const fetchLog =
+                    await createGNewsFetchLog({
+                        triggerType: "manual",
+                        requestParams: requestInput,
+                    });
+
+                fetchLogId = fetchLog.id;
+            } catch (logError) {
+                console.error(
+                    "Create manual GNews fetch log error:",
+                    logError
+                );
+            }
 
             const result =
                 await importGNews(requestInput);
+
+            if (fetchLogId) {
+                try {
+                    await finishGNewsFetchLog(
+                        fetchLogId,
+                        {
+                            runStatus:
+                                result.failedCount > 0
+                                    ? "partial"
+                                    : "success",
+
+                            receivedCount:
+                                result.receivedCount,
+
+                            importedCount:
+                                result.importedCount,
+
+                            skippedCount:
+                                result.skippedCount,
+
+                            failedCount:
+                                result.failedCount,
+                        }
+                    );
+                } catch (logError) {
+                    console.error(
+                        "Finish manual GNews fetch log error:",
+                        logError
+                    );
+                }
+            }
 
             return res.json({
                 success: true,
                 message: "GNews import completed",
                 filters: result.filters,
-                receivedCount: result.receivedCount,
-                importedCount: result.importedCount,
-                skippedCount: result.skippedCount,
-                failedCount: result.failedCount,
+                receivedCount:
+                    result.receivedCount,
+                importedCount:
+                    result.importedCount,
+                skippedCount:
+                    result.skippedCount,
+                failedCount:
+                    result.failedCount,
                 imported: result.imported,
                 skipped: result.skipped,
-                failed: result.failed
+                failed: result.failed,
             });
         } catch (error) {
             console.error(
                 "GNews import error:",
                 error
             );
+
+            if (fetchLogId) {
+                try {
+                    await markGNewsFetchLogFailed(
+                        fetchLogId,
+                        error
+                    );
+                } catch (logError) {
+                    console.error(
+                        "Fail manual GNews fetch log error:",
+                        logError
+                    );
+                }
+            }
 
             return res
                 .status(getErrorStatusCode(error))
@@ -83,7 +155,7 @@ router.post(
                     message: getErrorMessage(
                         error,
                         "Failed to import GNews articles"
-                    )
+                    ),
                 });
         }
     }

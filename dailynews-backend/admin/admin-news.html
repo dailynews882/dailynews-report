@@ -239,6 +239,70 @@
           </div>
 
           <div id="gnewsAutoMessage" class="gnews-auto-message" aria-live="polite"></div>
+          <div class="gnews-auto-status-panel">
+            <div class="gnews-auto-status-header">
+              <div>
+                <h3>自动抓取运行状态</h3>
+                <p>
+                  查看调度器、最近运行结果和今日 GNews API 使用情况。
+                </p>
+              </div>
+
+              <div class="gnews-auto-status-actions">
+                <button type="button" class="small-btn" id="gnewsAutoRefreshStatusButton">
+                  刷新运行状态
+                </button>
+
+                <button type="button" class="small-btn gnews-auto-run-button" id="gnewsAutoRunNowButton">
+                  立即执行一次
+                </button>
+              </div>
+            </div>
+
+            <div class="gnews-auto-status-grid">
+              <div class="gnews-auto-status-item">
+                <span>调度器状态</span>
+                <strong id="gnewsAutoSchedulerState">读取中</strong>
+              </div>
+
+              <div class="gnews-auto-status-item">
+                <span>下一次运行</span>
+                <strong id="gnewsAutoNextRunAt">--</strong>
+              </div>
+
+              <div class="gnews-auto-status-item">
+                <span>上一次运行</span>
+                <strong id="gnewsAutoLastRunAt">--</strong>
+              </div>
+
+              <div class="gnews-auto-status-item">
+                <span>上次运行结果</span>
+                <strong id="gnewsAutoLastResult">--</strong>
+              </div>
+
+              <div class="gnews-auto-status-item">
+                <span>今日 API 已用</span>
+                <strong id="gnewsAutoApiUsed">0</strong>
+              </div>
+
+              <div class="gnews-auto-status-item">
+                <span>今日 API 剩余</span>
+                <strong id="gnewsAutoApiRemaining">950</strong>
+              </div>
+
+              <div class="gnews-auto-status-item">
+                <span>成功请求</span>
+                <strong id="gnewsAutoApiSuccess">0</strong>
+              </div>
+
+              <div class="gnews-auto-status-item">
+                <span>失败请求</span>
+                <strong id="gnewsAutoApiFailed">0</strong>
+              </div>
+            </div>
+
+            <div id="gnewsAutoRunMessage" class="gnews-auto-run-message" aria-live="polite"></div>
+          </div>
         </div>
 
         <div class="table-tools">

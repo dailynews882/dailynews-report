@@ -3,11 +3,43 @@ const ADMIN_NEWS_API = "/api/news";
 const GNEWS_AUTO_FETCH_CONFIG_API =
     "/api/site-settings/gnews-auto-fetch";
 
+const GNEWS_AUTO_FETCH_STATUS_API =
+    "/api/site-settings/gnews-auto-fetch/status";
+
+const GNEWS_AUTO_FETCH_RUN_API =
+    "/api/site-settings/gnews-auto-fetch/run";
+
 let adminNewsRecords = [];
 
 document.addEventListener("DOMContentLoaded", function () {
     loadAdminNewsRecords();
     initializeGNewsAutoFetchConfig();
+
+    const refreshStatusButton =
+        document.getElementById(
+            "gnewsAutoRefreshStatusButton"
+        );
+
+    const runNowButton =
+        document.getElementById(
+            "gnewsAutoRunNowButton"
+        );
+
+    if (refreshStatusButton) {
+        refreshStatusButton.addEventListener(
+            "click",
+            loadGNewsAutoFetchStatus
+        );
+    }
+
+    if (runNowButton) {
+        runNowButton.addEventListener(
+            "click",
+            runGNewsAutoFetchNow
+        );
+    }
+
+    loadGNewsAutoFetchStatus();
 });
 
 async function loadAdminNewsRecords() {
@@ -155,6 +187,19 @@ function renderAdminNewsRecords(records) {
                 >
                     编辑
                 </a>
+
+                ${status !== "published"
+                ? `
+                        <button
+                          type="button"
+                          class="table-btn publish"
+                          onclick="publishRealNews(${Number(news.id)})"
+                        >
+                          发布
+                        </button>
+                      `
+                : ""
+            }
 
                 <button
                     type="button"
@@ -317,11 +362,105 @@ window.viewRealNews = function (newsId) {
         <p><strong>发布时间：</strong>${escapeAdminNewsHtml(
         formatAdminNewsDate(news.published_at || news.created_at)
     )}</p>
-        <p><strong>摘要：</strong></p>
-        <p>${escapeAdminNewsHtml(news.summary || "暂无摘要")}</p>
+    <p><strong>摘要：</strong></p>
+    <p>${escapeAdminNewsHtml(news.summary || "暂无摘要")}</p>
+    
+    <div class="admin-news-modal-actions">
+      ${String(news.status || "").toLowerCase() !==
+            "published"
+            ? `
+            <button
+              type="button"
+              class="table-btn publish"
+              onclick="publishRealNews(${Number(news.id)})"
+            >
+              发布新闻
+            </button>
+          `
+            : `
+            <button
+              type="button"
+              class="table-btn published-disabled"
+              disabled
+            >
+              新闻已发布
+            </button>
+          `
+        }
+    </div>
     `;
 
     modal.style.display = "flex";
+};
+
+window.publishRealNews = async function (newsId) {
+    const news = adminNewsRecords.find(function (item) {
+        return Number(item.id) === Number(newsId);
+    });
+
+    if (!news) {
+        alert("没有找到这条新闻。");
+        return;
+    }
+
+    if (
+        String(news.status || "").toLowerCase() ===
+        "published"
+    ) {
+        alert("这条新闻已经发布。");
+        return;
+    }
+
+    const confirmed = confirm(
+        `确定发布这条新闻吗？\n\n${news.title}`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${ADMIN_NEWS_API}/${encodeURIComponent(
+                newsId
+            )}/publish`,
+            {
+                method: "PATCH",
+                headers:
+                    getAdminAuthorizationHeaders(),
+            }
+        );
+
+        const result =
+            await response
+                .json()
+                .catch(function () {
+                    return {};
+                });
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+            throw new Error(
+                result.message ||
+                "发布新闻失败"
+            );
+        }
+
+        alert("新闻发布成功。");
+
+        await loadAdminNewsRecords();
+    } catch (error) {
+        console.error(
+            "发布新闻失败：",
+            error
+        );
+
+        alert(
+            `发布失败：${error.message}`
+        );
+    }
 };
 
 window.deleteRealNews = async function (newsId) {
@@ -512,6 +651,347 @@ function setGNewsAutoMessage(
     messageBox.dataset.type = type;
 }
 
+function setGNewsAutoRunMessage(
+    message,
+    type = "normal"
+) {
+    const messageBox =
+        document.getElementById(
+            "gnewsAutoRunMessage"
+        );
+
+    if (!messageBox) {
+        return;
+    }
+
+    messageBox.textContent =
+        message || "";
+
+    messageBox.dataset.type = type;
+}
+
+function formatGNewsSchedulerDate(
+    value
+) {
+    if (!value) {
+        return "--";
+    }
+
+    const date = new Date(value);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return "--";
+    }
+
+    return date.toLocaleString(
+        "zh-CN",
+        {
+            hour12: false,
+        }
+    );
+}
+
+function renderGNewsAutoFetchStatus(
+    result
+) {
+    const scheduler =
+        result?.scheduler || {};
+
+    const apiUsage =
+        result?.apiUsage || {};
+
+    const schedulerState =
+        document.getElementById(
+            "gnewsAutoSchedulerState"
+        );
+
+    const nextRunAt =
+        document.getElementById(
+            "gnewsAutoNextRunAt"
+        );
+
+    const lastRunAt =
+        document.getElementById(
+            "gnewsAutoLastRunAt"
+        );
+
+    const lastResult =
+        document.getElementById(
+            "gnewsAutoLastResult"
+        );
+
+    const apiUsed =
+        document.getElementById(
+            "gnewsAutoApiUsed"
+        );
+
+    const apiRemaining =
+        document.getElementById(
+            "gnewsAutoApiRemaining"
+        );
+
+    const apiSuccess =
+        document.getElementById(
+            "gnewsAutoApiSuccess"
+        );
+
+    const apiFailed =
+        document.getElementById(
+            "gnewsAutoApiFailed"
+        );
+
+    if (schedulerState) {
+        if (!scheduler.started) {
+            schedulerState.textContent =
+                "未启动";
+        } else if (
+            scheduler.runnerLocked
+        ) {
+            schedulerState.textContent =
+                "正在执行";
+        } else if (
+            scheduler.timerActive
+        ) {
+            schedulerState.textContent =
+                "等待下一次运行";
+        } else {
+            schedulerState.textContent =
+                "已启动";
+        }
+    }
+
+    if (nextRunAt) {
+        nextRunAt.textContent =
+            formatGNewsSchedulerDate(
+                scheduler.nextRunAt
+            );
+    }
+
+    if (lastRunAt) {
+        lastRunAt.textContent =
+            formatGNewsSchedulerDate(
+                scheduler.lastRunAt
+            );
+    }
+
+    if (lastResult) {
+        if (!scheduler.lastResult) {
+            lastResult.textContent =
+                "暂无运行记录";
+        } else if (
+            scheduler.lastResult.success
+        ) {
+            lastResult.textContent =
+                scheduler.lastResult.skipped
+                    ? "已跳过"
+                    : "执行成功";
+        } else {
+            lastResult.textContent =
+                "执行失败";
+        }
+    }
+
+    if (apiUsed) {
+        apiUsed.textContent =
+            String(
+                apiUsage.requestCount || 0
+            );
+    }
+
+    if (apiRemaining) {
+        apiRemaining.textContent =
+            String(
+                apiUsage.remaining ?? 0
+            );
+    }
+
+    if (apiSuccess) {
+        apiSuccess.textContent =
+            String(
+                apiUsage.successCount || 0
+            );
+    }
+
+    if (apiFailed) {
+        apiFailed.textContent =
+            String(
+                apiUsage.failedCount || 0
+            );
+    }
+}
+
+async function loadGNewsAutoFetchStatus(options = {}) {
+    const silent =
+        options.silent === true;
+
+    const refreshButton =
+        document.getElementById(
+            "gnewsAutoRefreshStatusButton"
+        );
+
+    if (refreshButton) {
+        refreshButton.disabled = true;
+    }
+
+    if (!silent) {
+        setGNewsAutoRunMessage(
+            "正在读取运行状态……",
+            "normal"
+        );
+    }
+
+    try {
+        const response = await fetch(
+            GNEWS_AUTO_FETCH_STATUS_API,
+            {
+                method: "GET",
+                headers:
+                    getAdminAuthorizationHeaders(),
+                cache: "no-store",
+            }
+        );
+
+        const result =
+            await response
+                .json()
+                .catch(function () {
+                    return {};
+                });
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+            throw new Error(
+                result.message ||
+                "读取自动抓取状态失败"
+            );
+        }
+
+        renderGNewsAutoFetchStatus(
+            result
+        );
+
+        if (!silent) {
+            setGNewsAutoRunMessage(
+                "运行状态读取成功。",
+                "success"
+            );
+        }
+
+        return result;
+    } catch (error) {
+        console.error(
+            "读取自动抓取状态失败：",
+            error
+        );
+
+        setGNewsAutoRunMessage(
+            `读取状态失败：${error.message}`,
+            "error"
+        );
+
+        return null;
+    } finally {
+        if (refreshButton) {
+            refreshButton.disabled =
+                false;
+        }
+    }
+}
+
+async function runGNewsAutoFetchNow() {
+    const runButton =
+        document.getElementById(
+            "gnewsAutoRunNowButton"
+        );
+
+    const confirmed = confirm(
+        "确定立即执行一次 GNews 自动抓取吗？\n\n" +
+        "本次操作会消耗 1 次 GNews API 调用。"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    if (runButton) {
+        runButton.disabled = true;
+    }
+
+    setGNewsAutoRunMessage(
+        "正在执行 GNews 自动抓取，请稍候……",
+        "warning"
+    );
+
+    try {
+        const response = await fetch(
+            GNEWS_AUTO_FETCH_RUN_API,
+            {
+                method: "POST",
+                headers:
+                    getAdminAuthorizationHeaders(),
+            }
+        );
+
+        const result =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+            throw new Error(
+                result.message ||
+                "自动抓取执行失败"
+            );
+        }
+
+        const runResult =
+            result.result || {};
+
+        setGNewsAutoRunMessage(
+            `执行完成：收到 ${runResult.receivedCount || 0
+            } 条，新增 ${runResult.importedCount || 0
+            } 条，跳过 ${runResult.skippedCount || 0
+            } 条，失败 ${runResult.failedCount || 0
+            } 条。`,
+            runResult.failedCount > 0
+                ? "warning"
+                : "success"
+        );
+
+        await loadGNewsAutoFetchStatus({
+            silent: true,
+        });
+
+        if (
+            typeof loadAdminNewsRecords ===
+            "function"
+        ) {
+            await loadAdminNewsRecords();
+        }
+    } catch (error) {
+        console.error(
+            "立即执行自动抓取失败：",
+            error
+        );
+
+        setGNewsAutoRunMessage(
+            `执行失败：${error.message}`,
+            "error"
+        );
+    } finally {
+        if (runButton) {
+            runButton.disabled = false;
+        }
+    }
+
+}
 function updateGNewsAutoStatusBadge(enabled) {
     const { statusBadge } =
         getGNewsAutoFetchElements();
@@ -875,6 +1355,7 @@ window.previewGNewsArticles = async function () {
     previewList.innerHTML = `
         <div class="gnews-preview-empty">
             正在获取新闻，请稍候……
+            
         </div>
     `;
 

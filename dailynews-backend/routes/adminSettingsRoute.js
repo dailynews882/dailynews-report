@@ -3,7 +3,25 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const db = require("../db");
-const { resolveFilters } = require("../services/gnewsService");
+const {
+    readGNewsAutoFetchConfig:
+    readGNewsAutoFetchConfigFromService,
+    saveGNewsAutoFetchConfig:
+    saveGNewsAutoFetchConfigFromService,
+} = require("../services/gnewsAutoFetchConfigService");
+const {
+    reloadGNewsAutoFetchScheduler,
+    getGNewsAutoFetchSchedulerStatus,
+} = require("../services/gnewsAutoFetchScheduler");
+
+const {
+    getGNewsApiUsage,
+    DEFAULT_DAILY_REQUEST_LIMIT,
+} = require("../services/gnewsApiUsageService");
+
+const {
+    runGNewsAutoFetch,
+} = require("../services/gnewsAutoFetchRunner");
 const { verifyAdminToken } = require("../middleware/adminAuth");
 
 const router = express.Router();
@@ -142,199 +160,6 @@ function deleteSetting(settingKey) {
     });
 }
 
-const GNEWS_AUTO_FETCH_SETTING_KEY = "gnews_auto_fetch_config";
-
-const DEFAULT_GNEWS_AUTO_FETCH_CONFIG = Object.freeze({
-    enabled: false,
-    intervalMinutes: 15,
-    max: 25,
-    category: "general",
-    language: "en",
-    country: "sg",
-    status: "published",
-});
-
-const ALLOWED_AUTO_FETCH_INTERVALS = new Set([
-    5,
-    10,
-    15,
-    30,
-    60,
-]);
-
-const ALLOWED_AUTO_FETCH_MAX_VALUES = new Set([
-    3,
-    5,
-    10,
-    15,
-    20,
-    25,
-]);
-
-const ALLOWED_AUTO_FETCH_STATUSES = new Set([
-    "published",
-    "pending",
-]);
-
-function getDefaultGNewsAutoFetchConfig() {
-    return {
-        ...DEFAULT_GNEWS_AUTO_FETCH_CONFIG,
-    };
-}
-
-function normalizeConfigText(value) {
-    return String(value ?? "")
-        .trim()
-        .toLowerCase();
-}
-
-function validateGNewsAutoFetchConfig(input) {
-    if (
-        !input ||
-        typeof input !== "object" ||
-        Array.isArray(input)
-    ) {
-        const error = new Error("自动抓取配置格式不正确");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (typeof input.enabled !== "boolean") {
-        const error = new Error(
-            "enabled 必须是 true 或 false"
-        );
-        error.statusCode = 400;
-        throw error;
-    }
-
-    const intervalMinutes = Number.parseInt(
-        input.intervalMinutes,
-        10
-    );
-
-    if (
-        !Number.isInteger(intervalMinutes) ||
-        !ALLOWED_AUTO_FETCH_INTERVALS.has(intervalMinutes)
-    ) {
-        const error = new Error(
-            "抓取间隔只能是 5、10、15、30 或 60 分钟"
-        );
-        error.statusCode = 400;
-        throw error;
-    }
-
-    const max = Number.parseInt(input.max, 10);
-
-    if (
-        !Number.isInteger(max) ||
-        !ALLOWED_AUTO_FETCH_MAX_VALUES.has(max)
-    ) {
-        const error = new Error(
-            "每次获取数量只能是 3、5、10、15、20 或 25"
-        );
-        error.statusCode = 400;
-        throw error;
-    }
-
-    const requestedCategory =
-        normalizeConfigText(input.category);
-
-    const requestedLanguage =
-        normalizeConfigText(input.language);
-
-    const requestedCountry =
-        normalizeConfigText(input.country);
-
-    if (!requestedCategory) {
-        const error = new Error("请选择新闻分类");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (!requestedLanguage) {
-        const error = new Error("请选择新闻语言");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (!requestedCountry) {
-        const error = new Error("请选择国家或地区");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    const resolvedFilters = resolveFilters({
-        category: requestedCategory,
-        lang: requestedLanguage,
-        country: requestedCountry,
-        max,
-    });
-
-    if (resolvedFilters.category !== requestedCategory) {
-        const error = new Error("不支持该新闻分类");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (resolvedFilters.lang !== requestedLanguage) {
-        const error = new Error("不支持该新闻语言");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (resolvedFilters.country !== requestedCountry) {
-        const error = new Error("不支持该国家或地区");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    const status = normalizeConfigText(input.status);
-
-    if (!ALLOWED_AUTO_FETCH_STATUSES.has(status)) {
-        const error = new Error(
-            "发布模式只能是 published 或 pending"
-        );
-        error.statusCode = 400;
-        throw error;
-    }
-
-    return {
-        enabled: input.enabled,
-        intervalMinutes,
-        max,
-        category: resolvedFilters.category,
-        language: resolvedFilters.lang,
-        country: resolvedFilters.country,
-        status,
-    };
-}
-
-async function readGNewsAutoFetchConfig() {
-    const savedValue = await getSetting(
-        GNEWS_AUTO_FETCH_SETTING_KEY
-    );
-
-    if (!savedValue) {
-        return getDefaultGNewsAutoFetchConfig();
-    }
-
-    try {
-        const parsedConfig = JSON.parse(savedValue);
-
-        return {
-            ...getDefaultGNewsAutoFetchConfig(),
-            ...validateGNewsAutoFetchConfig(parsedConfig),
-        };
-    } catch (error) {
-        console.error(
-            "Read GNews auto-fetch config error:",
-            error
-        );
-
-        return getDefaultGNewsAutoFetchConfig();
-    }
-}
-
 function removeUploadedLogo(logoUrl) {
     if (
         !logoUrl ||
@@ -357,7 +182,7 @@ router.get(
     async (req, res) => {
         try {
             const config =
-                await readGNewsAutoFetchConfig();
+                await readGNewsAutoFetchConfigFromService();
 
             return res.json({
                 success: true,
@@ -383,17 +208,21 @@ router.put(
     async (req, res) => {
         try {
             const config =
-                validateGNewsAutoFetchConfig(req.body);
+                await saveGNewsAutoFetchConfigFromService(
+                    req.body
+                );
 
-            await saveSetting(
-                GNEWS_AUTO_FETCH_SETTING_KEY,
-                JSON.stringify(config)
-            );
+            const schedulerResult =
+                await reloadGNewsAutoFetchScheduler();
 
             return res.json({
                 success: true,
                 message: "自动抓取配置保存成功",
                 config,
+                scheduler: {
+                    reason: schedulerResult.reason,
+                    nextRunAt: schedulerResult.nextRunAt,
+                },
             });
         } catch (error) {
             console.error(
@@ -408,6 +237,109 @@ router.put(
                     message:
                         error.message ||
                         "保存自动抓取配置失败",
+                });
+        }
+    }
+);
+
+router.get(
+    "/gnews-auto-fetch/status",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const scheduler =
+                getGNewsAutoFetchSchedulerStatus();
+
+            const usage =
+                await getGNewsApiUsage();
+
+            const requestCount =
+                Number(usage.request_count) || 0;
+
+            return res.json({
+                success: true,
+                scheduler,
+                apiUsage: {
+                    usageDate:
+                        usage.usage_date,
+                    requestCount,
+                    successCount:
+                        Number(
+                            usage.success_count
+                        ) || 0,
+                    failedCount:
+                        Number(
+                            usage.failed_count
+                        ) || 0,
+                    dailyLimit:
+                        DEFAULT_DAILY_REQUEST_LIMIT,
+                    remaining:
+                        Math.max(
+                            DEFAULT_DAILY_REQUEST_LIMIT -
+                            requestCount,
+                            0
+                        ),
+                    lastStatusCode:
+                        usage.last_status_code,
+                    lastError:
+                        usage.last_error,
+                    lastRequestedAt:
+                        usage.last_requested_at,
+                },
+            });
+        } catch (error) {
+            console.error(
+                "Get GNews auto-fetch status error:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    success: false,
+                    message:
+                        error.message ||
+                        "读取 GNews 自动抓取状态失败",
+                });
+        }
+    }
+);
+
+router.post(
+    "/gnews-auto-fetch/run",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const result =
+                await runGNewsAutoFetch({
+                    force: true,
+                });
+
+            return res.json({
+                success: result.success,
+                message: result.skipped
+                    ? result.message
+                    : result.success
+                        ? "GNews 自动抓取执行完成"
+                        : result.message ||
+                        "GNews 自动抓取执行失败",
+                result,
+            });
+        } catch (error) {
+            console.error(
+                "Run GNews auto-fetch manually error:",
+                error
+            );
+
+            return res
+                .status(
+                    error.statusCode || 500
+                )
+                .json({
+                    success: false,
+                    message:
+                        error.message ||
+                        "GNews 自动抓取执行失败",
                 });
         }
     }

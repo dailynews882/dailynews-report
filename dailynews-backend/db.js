@@ -621,10 +621,38 @@ db.serialize(() => {
    status TEXT DEFAULT 'published',
    is_vip INTEGER DEFAULT 0,
    views INTEGER DEFAULT 0,
+   original_url TEXT,
+   external_id TEXT,
+   api_provider TEXT,
+   published_at DATETIME,
    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+  addColumnIfMissing(
+    `ALTER TABLE news
+       ADD COLUMN original_url TEXT`,
+    "news.original_url"
+  );
+
+  addColumnIfMissing(
+    `ALTER TABLE news
+       ADD COLUMN external_id TEXT`,
+    "news.external_id"
+  );
+
+  addColumnIfMissing(
+    `ALTER TABLE news
+       ADD COLUMN api_provider TEXT`,
+    "news.api_provider"
+  );
+
+  addColumnIfMissing(
+    `ALTER TABLE news
+       ADD COLUMN published_at DATETIME`,
+    "news.published_at"
+  );
 
   db.run(`     CREATE INDEX IF NOT EXISTS
     idx_news_status_created_at
@@ -636,6 +664,147 @@ db.serialize(() => {
     ON news(category)
   `);
 });
+
+/*
+ * ================================
+ * GNews 抓取运行日志表
+ * ================================
+ */
+db.run(
+  `
+    CREATE TABLE IF NOT EXISTS gnews_fetch_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trigger_type TEXT NOT NULL DEFAULT 'automatic',
+      run_status TEXT NOT NULL DEFAULT 'running',
+      request_params TEXT,
+      received_count INTEGER DEFAULT 0,
+      imported_count INTEGER DEFAULT 0,
+      skipped_count INTEGER DEFAULT 0,
+      failed_count INTEGER DEFAULT 0,
+      error_message TEXT,
+      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      finished_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `,
+  (tableError) => {
+    if (tableError) {
+      console.error(
+        "Create gnews_fetch_logs table error:",
+        tableError.message
+      );
+      return;
+    }
+
+    db.run(
+      `
+        CREATE INDEX IF NOT EXISTS
+        idx_gnews_fetch_logs_started_at
+        ON gnews_fetch_logs(started_at)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create gnews fetch log time index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+
+    db.run(
+      `
+        CREATE INDEX IF NOT EXISTS
+        idx_gnews_fetch_logs_status
+        ON gnews_fetch_logs(run_status)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create gnews fetch log status index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+
+    db.run(
+      `
+        CREATE INDEX IF NOT EXISTS
+        idx_gnews_fetch_logs_trigger
+        ON gnews_fetch_logs(trigger_type)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create gnews fetch log trigger index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+  }
+);
+
+/*
+ * ================================
+ * GNews API 每日调用统计表
+ * ================================
+ *
+ * request_count:
+ * 已经向 GNews 发出的请求总次数。
+ *
+ * success_count:
+ * 收到成功 HTTP 响应的次数。
+ *
+ * failed_count:
+ * 网络错误、超时或非成功 HTTP 响应次数。
+ *
+ * usage_date:
+ * 当前先使用 UTC 日期 YYYY-MM-DD 统计。
+ */
+db.run(
+  `
+    CREATE TABLE IF NOT EXISTS gnews_api_usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usage_date TEXT NOT NULL UNIQUE,
+      request_count INTEGER NOT NULL DEFAULT 0,
+      success_count INTEGER NOT NULL DEFAULT 0,
+      failed_count INTEGER NOT NULL DEFAULT 0,
+      last_status_code INTEGER,
+      last_error TEXT,
+      first_requested_at DATETIME,
+      last_requested_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `,
+  (tableError) => {
+    if (tableError) {
+      console.error(
+        "Create gnews_api_usage table error:",
+        tableError.message
+      );
+      return;
+    }
+
+    db.run(
+      `
+        CREATE UNIQUE INDEX IF NOT EXISTS
+        idx_gnews_api_usage_date
+        ON gnews_api_usage(usage_date)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create GNews API usage date index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+  }
+);
 
 /*
  * ==============================

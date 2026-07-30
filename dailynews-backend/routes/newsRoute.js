@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const {
+  verifyAdminToken,
+} = require("../middleware/adminAuth");
 const jwt = require("jsonwebtoken");
 
 // 获取新闻列表
@@ -402,6 +405,54 @@ router.put("/:id", (req, res) => {
     });
   });
 });
+
+// 管理员发布新闻
+router.patch(
+  "/:id/publish",
+  verifyAdminToken,
+  (req, res) => {
+    const { id } = req.params;
+
+    const sql = `
+            UPDATE news
+            SET
+                status = 'published',
+                published_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `;
+
+    db.run(sql, [id], function (err) {
+      if (err) {
+        console.error(
+          "Publish news error:",
+          err.message
+        );
+
+        return res.status(500).json({
+          success: false,
+          message: "发布新闻失败",
+        });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "新闻不存在",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "新闻发布成功",
+        data: {
+          id: Number(id),
+          status: "published",
+        },
+      });
+    });
+  }
+);
 
 // 删除新闻
 router.delete("/:id", (req, res) => {

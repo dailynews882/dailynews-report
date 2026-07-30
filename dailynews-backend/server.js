@@ -33,6 +33,12 @@ const commentRoute = require("./routes/commentRoute");
 const adminCommentRoute = require("./routes/adminCommentRoute");
 const adminAuthRoute = require("./routes/adminAuthRoute");
 const adminSettingsRoute = require("./routes/adminSettingsRoute");
+const adminNewsImportRoute = require("./routes/adminNewsImportRoute");
+
+const {
+  startGNewsAutoFetchScheduler,
+  stopGNewsAutoFetchScheduler,
+} = require("./services/gnewsAutoFetchScheduler");
 
 const app = express();
 
@@ -194,6 +200,7 @@ app.use("/api/comments", commentRoute);
 app.use("/api/admin/auth", adminAuthRoute);
 app.use("/api/admin/comments", adminCommentRoute);
 app.use("/api/site-settings", adminSettingsRoute);
+app.use("/api/admin/news-import", adminNewsImportRoute);
 
 app.use("/api/subscription", subscriptionRoutes);
 
@@ -256,5 +263,39 @@ app.listen(
       "/api/payment/webhook"
     );
 
+    startGNewsAutoFetchScheduler()
+      .then((result) => {
+        console.log(
+          "[GNews Scheduler] Startup result:",
+          {
+            reason: result.reason,
+            nextRunAt: result.nextRunAt,
+          }
+        );
+      })
+      .catch((error) => {
+        console.error(
+          "[GNews Scheduler] Startup error:",
+          error
+        );
+      });
+
   }
 );
+
+function shutdownServer(signal) {
+  console.log(
+    `[Server] Received ${signal}, shutting down`
+  );
+
+  stopGNewsAutoFetchScheduler();
+  process.exit(0);
+}
+
+process.once("SIGINT", () => {
+  shutdownServer("SIGINT");
+});
+
+process.once("SIGTERM", () => {
+  shutdownServer("SIGTERM");
+});

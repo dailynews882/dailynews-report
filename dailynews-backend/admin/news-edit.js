@@ -16,6 +16,18 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", updateNews);
 });
 
+const publishButton =
+  document.getElementById(
+    "publishNewsButton"
+  );
+
+if (publishButton) {
+  publishButton.addEventListener(
+    "click",
+    publishCurrentNews
+  );
+}
+
 function getNewsIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get("id");
@@ -44,6 +56,9 @@ async function loadNewsDetail(id) {
     document.getElementById("newsSource").value = news.source || "";
     document.getElementById("newsAuthor").value = news.author || "DailyNews Admin";
     document.getElementById("newsStatus").value = news.status || "published";
+    updatePublishButtonState(
+      news.status
+    );
     document.getElementById("newsIsVip").checked = Number(news.is_vip) === 1;
 
     showMessage("新闻内容读取成功，可以开始修改。");
@@ -51,6 +66,31 @@ async function loadNewsDetail(id) {
     console.error("Load news detail error:", error);
     showMessage("无法连接后端，请确认 node server.js 正在运行。");
   }
+}
+
+function updatePublishButtonState(status) {
+  const publishButton =
+    document.getElementById(
+      "publishNewsButton"
+    );
+
+  if (!publishButton) {
+    return;
+  }
+
+  const isPublished =
+    String(status || "")
+      .trim()
+      .toLowerCase() ===
+    "published";
+
+  publishButton.disabled =
+    isPublished;
+
+  publishButton.textContent =
+    isPublished
+      ? "新闻已发布"
+      : "发布新闻";
 }
 
 async function updateNews(event) {
@@ -108,14 +148,127 @@ async function updateNews(event) {
       return;
     }
 
-    showMessage("新闻修改成功！2 秒后返回新闻列表。");
+    showMessage(
+      "新闻修改成功！2 秒后返回后台新闻管理。"
+    );
 
     setTimeout(() => {
-      window.location.href = "./news-list.html";
+      window.location.href = "./admin-news.html";
     }, 2000);
   } catch (error) {
     console.error("Update news error:", error);
     showMessage("无法连接后端，请确认 node server.js 正在运行。");
+  }
+}
+
+async function publishCurrentNews() {
+  if (!currentNewsId) {
+    showMessage(
+      "无法确认当前新闻ID"
+    );
+    return;
+  }
+
+  const confirmed = confirm(
+    "确定发布这条新闻吗？\n\n" +
+    "发布后，这条新闻将可以在网站前端显示。"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const publishButton =
+    document.getElementById(
+      "publishNewsButton"
+    );
+
+  if (publishButton) {
+    publishButton.disabled = true;
+    publishButton.textContent =
+      "正在发布……";
+  }
+
+  try {
+    const adminToken =
+      localStorage.getItem(
+        "adminToken"
+      );
+
+    if (!adminToken) {
+      throw new Error(
+        "管理员登录已过期，请重新登录"
+      );
+    }
+
+    const response = await fetch(
+      `${API_NEWS}/${currentNewsId}/publish`,
+      {
+        method: "PATCH",
+        headers: {
+          Accept:
+            "application/json",
+          Authorization:
+            `Bearer ${adminToken}`,
+        },
+      }
+    );
+
+    const result =
+      await response
+        .json()
+        .catch(function () {
+          return {};
+        });
+
+    if (
+      !response.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "发布新闻失败"
+      );
+    }
+
+    const statusSelect =
+      document.getElementById(
+        "newsStatus"
+      );
+
+    if (statusSelect) {
+      statusSelect.value =
+        "published";
+    }
+
+    updatePublishButtonState(
+      "published"
+    );
+
+    showMessage(
+      "新闻发布成功！2秒后返回后台新闻管理。"
+    );
+
+    setTimeout(function () {
+      window.location.href =
+        "./admin-news.html";
+    }, 2000);
+  } catch (error) {
+    console.error(
+      "Publish news error:",
+      error
+    );
+
+    showMessage(
+      `发布失败：${error.message}`
+    );
+
+    if (publishButton) {
+      publishButton.disabled =
+        false;
+      publishButton.textContent =
+        "发布新闻";
+    }
   }
 }
 
