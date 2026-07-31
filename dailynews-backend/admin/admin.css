@@ -1595,3 +1595,392 @@ body {
   cursor: not-allowed;
   opacity: 0.8;
 }
+
+/* =========================================
+   广告管理页面
+   ========================================= */
+
+.admin-ad-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.admin-ad-form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-ad-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-ad-form .form-group label {
+  color: #d9ecff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-ad-form .form-group input,
+.admin-ad-form .form-group select {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #2476a8;
+  border-radius: 8px;
+  background: #061a31;
+  color: #ffffff;
+  font: inherit;
+  outline: none;
+}
+
+.admin-ad-form .form-group input:focus,
+.admin-ad-form .form-group select:focus {
+  border-color: #27b7ff;
+  box-shadow:
+    0 0 0 3px rgba(39, 183, 255, 0.13);
+}
+
+.admin-ad-form .form-group small {
+  color: #8fb9d9;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-ad-options {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.admin-ad-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #d9ecff;
+  cursor: pointer;
+}
+
+.admin-ad-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: #16b96b;
+}
+
+.admin-ad-preview-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-ad-preview-label {
+  color: #d9ecff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-ad-preview-stage {
+  position: relative;
+  width: 100%;
+  min-height: 150px;
+  overflow: hidden;
+  border: 1px dashed #2d79a8;
+  border-radius: 12px;
+  background: #06172a;
+}
+
+.admin-ad-preview-image {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.admin-ad-preview-empty {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  color: #7fa8c7;
+  text-align: center;
+}
+
+.admin-ad-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ad-secondary-button {
+  background: #41566b;
+}
+
+.ad-secondary-button:hover {
+  background: #536d86;
+}
+
+.admin-ad-message {
+  min-height: 22px;
+  color: #9fc7e8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.admin-ad-message[data-type="success"] {
+  color: #4ce59a;
+}
+
+.admin-ad-message[data-type="warning"] {
+  color: #ffd34d;
+}
+
+.admin-ad-message[data-type="error"] {
+  color: #ff7070;
+}
+
+.admin-ads-table {
+  min-width: 1080px;
+}
+
+.admin-ads-table th,
+.admin-ads-table td {
+  vertical-align: middle;
+}
+
+.admin-ad-table-image {
+  display: block;
+  width: 150px;
+  height: 52px;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid #245a7d;
+  border-radius: 7px;
+  background: #06172a;
+}
+
+.admin-ad-link {
+  display: inline-block;
+  max-width: 240px;
+  overflow: hidden;
+  color: #72c8ff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.admin-ad-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.admin-ad-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-ad-status.is-active {
+  background: rgba(22, 185, 107, 0.2);
+  color: #55e8a3;
+}
+
+.admin-ad-status.is-inactive {
+  background: rgba(255, 211, 77, 0.16);
+  color: #ffd34d;
+}
+
+.admin-ad-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .admin-ad-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-ad-preview-stage,
+  .admin-ad-preview-image,
+  .admin-ad-preview-empty {
+    min-height: 110px;
+    height: 110px;
+  }
+}
+
+/* 广告预览弹窗 */
+
+.admin-ad-modal {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(0, 8, 20, 0.82);
+}
+
+.admin-ad-modal-card {
+  width: min(100%, 1100px);
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #2476a8;
+  border-radius: 14px;
+  background: #09213d;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.admin-ad-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #24506f;
+}
+
+.admin-ad-modal-header h2 {
+  margin: 0;
+  color: #ffd34d;
+}
+
+.admin-ad-modal-close {
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-ad-modal-body {
+  padding: 22px;
+  color: #dceeff;
+}
+
+.admin-ad-modal-image {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  margin-bottom: 22px;
+  object-fit: contain;
+  border: 1px solid #245a7d;
+  border-radius: 10px;
+  background: #041325;
+}
+
+.admin-ad-modal-body a {
+  color: #55c8ff;
+  word-break: break-all;
+}
+
+.admin-ad-content-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-ad-content-group label {
+  color: #d9ecff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-ad-content-group textarea {
+  width: 100%;
+  min-height: 130px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  resize: vertical;
+  border: 1px solid #2476a8;
+  border-radius: 8px;
+  background: #061a31;
+  color: #ffffff;
+  font: inherit;
+  line-height: 1.6;
+  outline: none;
+}
+
+.admin-ad-content-group textarea:focus {
+  border-color: #27b7ff;
+  box-shadow:
+    0 0 0 3px rgba(39, 183, 255, 0.13);
+}
+
+.admin-ad-content-group small {
+  color: #8fb9d9;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-ad-modal-content {
+  margin: 8px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #245a7d;
+  border-radius: 8px;
+  background: #06172a;
+  color: #dceeff;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-ad-edit-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.admin-ad-modal-body .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-ad-modal-body .form-group label {
+  color: #d9ecff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-ad-modal-body .form-group input,
+.admin-ad-modal-body .form-group select,
+.admin-ad-modal-body .form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1px solid #2476a8;
+  border-radius: 8px;
+  background: #061a31;
+  color: #ffffff;
+  font: inherit;
+  outline: none;
+}
+
+@media (max-width: 800px) {
+  .admin-ad-edit-grid {
+    grid-template-columns: 1fr;
+  }
+}

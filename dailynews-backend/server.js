@@ -34,6 +34,7 @@ const adminCommentRoute = require("./routes/adminCommentRoute");
 const adminAuthRoute = require("./routes/adminAuthRoute");
 const adminSettingsRoute = require("./routes/adminSettingsRoute");
 const adminNewsImportRoute = require("./routes/adminNewsImportRoute");
+const siteAdsRoute = require("./routes/siteAdsRoute");
 
 const {
   startGNewsAutoFetchScheduler,
@@ -201,6 +202,7 @@ app.use("/api/admin/auth", adminAuthRoute);
 app.use("/api/admin/comments", adminCommentRoute);
 app.use("/api/site-settings", adminSettingsRoute);
 app.use("/api/admin/news-import", adminNewsImportRoute);
+app.use("/api/site-ads", siteAdsRoute);
 
 app.use("/api/subscription", subscriptionRoutes);
 

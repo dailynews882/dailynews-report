@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>广告管理 - Daily News</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1>广告管理</h1>
+          <span>
+            管理首页横幅广告、跳转链接、显示顺序和启用状态
+          </span>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <div>
+            <h2>新增广告</h2>
+            <p>
+              首页最多显示5张启用状态的横幅广告。
+              推荐图片尺寸为1600 × 180像素。
+            </p>
+          </div>
+        </div>
+
+        <form id="adminAdForm" class="admin-ad-form" enctype="multipart/form-data">
+          <div class="admin-ad-form-grid">
+            <div class="form-group">
+              <label for="adminAdTitle">
+                广告标题
+              </label>
+
+              <input type="text" id="adminAdTitle" name="title" maxlength="100" placeholder="例如：VIP高级会员推广" required />
+            </div>
+
+            <div class="form-group">
+              <label for="adminAdTargetUrl">
+                点击跳转链接
+              </label>
+
+              <input type="text" id="adminAdTargetUrl" name="target_url" maxlength="500"
+                placeholder="/subscribe.html 或 https://example.com" required />
+            </div>
+
+            <div class="form-group">
+              <label for="adminAdSortOrder">
+                显示顺序
+              </label>
+
+              <select id="adminAdSortOrder" name="sort_order">
+                <option value="1">第1张</option>
+                <option value="2">第2张</option>
+                <option value="3">第3张</option>
+                <option value="4">第4张</option>
+                <option value="5">第5张</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="adminAdImage">
+                广告图片
+              </label>
+
+              <input type="file" id="adminAdImage" name="image"
+                accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" required />
+
+              <small>
+                支持PNG、JPG、JPEG和WebP，建议1600 × 180像素。
+              </small>
+            </div>
+          </div>
+
+          <div class="admin-ad-options">
+            <label class="admin-ad-checkbox">
+              <input type="checkbox" id="adminAdActive" name="is_active" checked />
+              <span>上传后立即启用</span>
+            </label>
+
+            <label class="admin-ad-checkbox">
+              <input type="checkbox" id="adminAdNewTab" name="open_new_tab" />
+              <span>点击后在新窗口打开</span>
+            </label>
+          </div>
+
+          <div class="admin-ad-preview-panel">
+            <span class="admin-ad-preview-label">
+              图片预览
+            </span>
+
+            <div class="admin-ad-preview-stage">
+              <img id="adminAdPreviewImage" class="admin-ad-preview-image" alt="广告图片预览" hidden />
+
+              <div id="adminAdPreviewEmpty" class="admin-ad-preview-empty">
+                选择图片后将在这里预览
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group admin-ad-content-group">
+            <label for="adminAdContent">
+              广告文字内容
+            </label>
+
+            <textarea id="adminAdContent" name="content" rows="5" maxlength="1000"
+              placeholder="请输入广告宣传文字、说明内容或活动介绍"></textarea>
+
+            <small>
+              最多1000个字符。后续可以在编辑弹窗中继续修改。
+            </small>
+          </div>
+
+          <div class="admin-ad-action-row">
+            <button type="submit" id="adminAdSubmitButton" class="small-btn">
+              上传并新增广告
+            </button>
+
+            <button type="button" id="adminAdResetButton" class="small-btn ad-secondary-button">
+              清空表单
+            </button>
+          </div>
+
+          <div id="adminAdFormMessage" class="admin-ad-message" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="admin-panel">
+        <div class="panel-title-row">
+          <div>
+            <h2>广告列表</h2>
+            <p>
+              可预览、编辑、启用、停用或删除首页广告。
+            </p>
+          </div>
+
+          <button type="button" id="refreshAdminAdsButton" class="small-btn">
+            刷新广告列表
+          </button>
+        </div>
+
+        <div id="adminAdsListMessage" class="admin-ad-message" aria-live="polite">
+          广告管理页面已加载，等待连接后台接口。
+        </div>
+
+        <div class="table-wrap">
+          <table class="admin-table admin-ads-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>预览</th>
+                <th>广告标题</th>
+                <th>跳转链接</th>
+                <th>顺序</th>
+                <th>状态</th>
+                <th>打开方式</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+
+            <tbody id="adminAdsTableBody">
+              <tr>
+                <td colspan="8">
+                  暂无广告数据
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="admin.js"></script>
+  <script src="admin-ads.js"></script>
+</body>
+
+</html>

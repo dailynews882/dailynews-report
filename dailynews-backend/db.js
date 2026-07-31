@@ -611,6 +611,7 @@ db.serialize(() => {
   db.run(`     CREATE TABLE IF NOT EXISTS news (
    id INTEGER PRIMARY KEY AUTOINCREMENT,
    title TEXT NOT NULL,
+   content TEXT DEFAULT '',
    category TEXT DEFAULT 'general',
    summary TEXT,
    content TEXT NOT NULL,
@@ -843,6 +844,113 @@ db.run(
             indexError.message
           );
         }
+      }
+    );
+  }
+);
+
+/*
+ * =========================================
+ * 首页广告管理表
+ * =========================================
+ */
+
+db.run(
+  `
+    CREATE TABLE IF NOT EXISTS site_ads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      target_url TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 1,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      open_new_tab INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `,
+  (tableError) => {
+    if (tableError) {
+      console.error(
+        "Create site_ads table error:",
+        tableError.message
+      );
+      return;
+    }
+
+    db.run(
+      `
+        CREATE INDEX IF NOT EXISTS
+        idx_site_ads_sort_order
+        ON site_ads(sort_order)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create site_ads sort order index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+
+    db.run(
+      `
+        CREATE INDEX IF NOT EXISTS
+        idx_site_ads_active
+        ON site_ads(is_active)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create site_ads active index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+  }
+);
+
+db.all(
+  "PRAGMA table_info(site_ads)",
+  [],
+  (schemaError, columns) => {
+    if (schemaError) {
+      console.error(
+        "Read site_ads schema error:",
+        schemaError.message
+      );
+      return;
+    }
+
+    const hasContentColumn =
+      Array.isArray(columns) &&
+      columns.some(function (column) {
+        return column.name === "content";
+      });
+
+    if (hasContentColumn) {
+      return;
+    }
+
+    db.run(
+      `
+        ALTER TABLE site_ads
+        ADD COLUMN content TEXT DEFAULT ''
+      `,
+      (alterError) => {
+        if (alterError) {
+          console.error(
+            "Add site_ads content column error:",
+            alterError.message
+          );
+          return;
+        }
+
+        console.log(
+          "site_ads content column added"
+        );
       }
     );
   }

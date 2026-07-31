@@ -72,6 +72,7 @@ function renderAdminSidebar() {
     { name: "提现管理", link: "admin-withdrawals.html" },
     { name: "API管理", link: "admin-api.html" },
     { name: "新闻管理", link: "admin-news.html" },
+    { name: "广告管理", link: "admin-ads.html" },
     { name: "系统设置", link: "admin-settings.html" },
     { name: "操作日志", link: "admin-logs.html" },
     { name: "评论管理", link: "admin-comments.html" }
