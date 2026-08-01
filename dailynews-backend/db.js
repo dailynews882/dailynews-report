@@ -956,4 +956,112 @@ db.all(
   }
 );
 
+/*
+ * ============================================================
+ * 全球央行利率表
+ * ============================================================
+ *
+ * 用途：
+ * 1. 首页“全球央行利率”模块
+ * 2. 后续财经日历二级页面
+ * 3. 保存当前值、上次值、预测值、公布值
+ * 4. 支持美联储等利率区间
+ */
+
+db.run(
+  `
+    CREATE TABLE IF NOT EXISTS central_bank_rates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      bank_code TEXT NOT NULL UNIQUE,
+      country_code TEXT NOT NULL,
+      country_name TEXT NOT NULL,
+      bank_name TEXT NOT NULL,
+
+      rate_code TEXT NOT NULL,
+      rate_name TEXT NOT NULL,
+
+      current_value REAL,
+      current_low REAL,
+      current_high REAL,
+
+      previous_value REAL,
+      previous_low REAL,
+      previous_high REAL,
+
+      forecast_value REAL,
+      forecast_low REAL,
+      forecast_high REAL,
+
+      actual_value REAL,
+      actual_low REAL,
+      actual_high REAL,
+
+      unit TEXT NOT NULL DEFAULT '%',
+
+      decision_time DATETIME,
+      effective_date TEXT,
+      next_decision_time DATETIME,
+
+      direction TEXT NOT NULL DEFAULT 'unchanged',
+      status TEXT NOT NULL DEFAULT 'published',
+
+      official_source_name TEXT,
+      official_source_url TEXT,
+
+      forecast_source_name TEXT,
+      forecast_source_url TEXT,
+
+      is_active INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 1,
+
+      last_checked_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `,
+  (tableError) => {
+    if (tableError) {
+      console.error(
+        "Create central_bank_rates table error:",
+        tableError.message
+      );
+
+      return;
+    }
+
+    db.run(
+      `
+        CREATE UNIQUE INDEX IF NOT EXISTS
+        idx_central_bank_rates_bank_code
+        ON central_bank_rates(bank_code)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create central_bank_rates bank code index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+
+    db.run(
+      `
+        CREATE INDEX IF NOT EXISTS
+        idx_central_bank_rates_active_sort
+        ON central_bank_rates(is_active, sort_order)
+      `,
+      (indexError) => {
+        if (indexError) {
+          console.error(
+            "Create central_bank_rates active sort index error:",
+            indexError.message
+          );
+        }
+      }
+    );
+  }
+);
+
 module.exports = db;

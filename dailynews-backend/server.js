@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const centralBankRateRoute = require("./routes/centralBankRateRoute");
 
 /*
 
@@ -35,6 +36,8 @@ const adminAuthRoute = require("./routes/adminAuthRoute");
 const adminSettingsRoute = require("./routes/adminSettingsRoute");
 const adminNewsImportRoute = require("./routes/adminNewsImportRoute");
 const siteAdsRoute = require("./routes/siteAdsRoute");
+const holidayRoute = require("./routes/holidayRoute");
+const fxRateRoute = require("./routes/fxRateRoute");
 
 const {
   startGNewsAutoFetchScheduler,
@@ -203,6 +206,9 @@ app.use("/api/admin/comments", adminCommentRoute);
 app.use("/api/site-settings", adminSettingsRoute);
 app.use("/api/admin/news-import", adminNewsImportRoute);
 app.use("/api/site-ads", siteAdsRoute);
+app.use("/api/holidays", holidayRoute);
+app.use("/api/fx-rates", fxRateRoute);
+app.use("/api/central-bank-rates", centralBankRateRoute);
 
 app.use("/api/subscription", subscriptionRoutes);
 

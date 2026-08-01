@@ -298,87 +298,6 @@
        大横幅 Banner
   ============================== -->
 
-  <section class="global-map-section" aria-labelledby="globalMapTitle">
-    <div class="global-map-inner">
-
-      <div class="global-map-main">
-        <div class="global-map-header">
-          <div>
-            <span class="global-map-kicker">GLOBAL NEWS MAP</span>
-            <h2 id="globalMapTitle">全球新闻地图</h2>
-            <p>搜索或选择国家和地区，查看对应的最新新闻。</p>
-          </div>
-
-          <div class="country-search-box">
-            <input type="text" id="countrySearchInput" placeholder="输入国家或地区，例如：新加坡" autocomplete="off" />
-
-            <button type="button" id="countrySearchButton">
-              查找新闻
-            </button>
-          </div>
-        </div>
-
-        <div class="world-map-stage">
-          <div id="worldMap" class="world-map-placeholder">
-            <div class="world-map-placeholder-content">
-              <strong>高清平面世界地图</strong>
-              <span>下一阶段接入国家定位和新闻筛选功能</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="popular-country-list" aria-label="热门国家和地区">
-          <span>热门地区：</span>
-          <button type="button" data-country="Singapore">新加坡</button>
-          <button type="button" data-country="China">中国</button>
-          <button type="button" data-country="United States">美国</button>
-          <button type="button" data-country="United Kingdom">英国</button>
-          <button type="button" data-country="Malaysia">马来西亚</button>
-          <button type="button" data-country="Japan">日本</button>
-        </div>
-      </div>
-
-      <aside class="breaking-news-panel" aria-labelledby="breakingNewsTitle">
-        <div class="breaking-news-heading">
-          <div>
-            <span class="breaking-live-dot"></span>
-            <span>LIVE</span>
-          </div>
-
-          <a href="/news-home.html">更多</a>
-        </div>
-
-        <h2 id="breakingNewsTitle">实时快讯</h2>
-
-        <div class="breaking-news-list">
-          <article class="breaking-news-item">
-            <time>刚刚</time>
-            <a href="#">全球热点新闻将在这里按发布时间展示。</a>
-          </article>
-
-          <article class="breaking-news-item">
-            <time>10分钟前</time>
-            <a href="#">后续将从新闻数据库读取最新快讯。</a>
-          </article>
-
-          <article class="breaking-news-item">
-            <time>30分钟前</time>
-            <a href="#">点击国家后，可筛选该地区相关新闻。</a>
-          </article>
-        </div>
-
-        <div class="map-topic-tags">
-          <span>热门话题</span>
-          <a href="#">国际局势</a>
-          <a href="#">财经市场</a>
-          <a href="#">人工智能</a>
-          <a href="#">新加坡</a>
-        </div>
-      </aside>
-
-    </div>
-  </section>
-
   <!-- 首页横幅广告轮播 -->
   <section class="home-ad-carousel-section" aria-label="首页广告推荐">
     <div class="home-ad-carousel" id="homeAdCarousel">
@@ -461,21 +380,211 @@
     </div>
   </nav>
 
-  <section class="home-news-section">
-    <div class="home-news-header">
-      <h2>Latest News</h2>
+  <!-- 首页三栏内容区 -->
+  <div class="home-content-layout">
 
-      <a href="/news-home.html">
-        View All
-      </a>
-    </div>
+    <!-- 左侧工具栏 -->
+    <aside class="home-left-sidebar" aria-label="首页左侧工具">
 
-    <div id="newsMessage">
-      正在加载新闻...
-    </div>
+      <!-- 万年历 -->
+      <section class="home-side-card home-calendar-card">
+        <div class="home-tool-card-header">
+          <div>
+            <span class="home-tool-kicker">CALENDAR</span>
+            <h2>万年历</h2>
+          </div>
 
-    <div id="newsList" class="home-news-list"></div>
-  </section>
+          <button type="button" id="calendarTodayButton" class="calendar-today-button">
+            返回今天
+          </button>
+        </div>
+
+        <div class="calendar-current-summary">
+          <strong id="calendarCurrentDate">
+            正在读取日期
+          </strong>
+
+          <span id="calendarCurrentWeekday">
+            --
+          </span>
+        </div>
+
+        <div class="calendar-country-row">
+          <label for="calendarCountrySelect">
+            节假日国家
+          </label>
+
+          <select id="calendarCountrySelect">
+            <option value="SG">新加坡</option>
+            <option value="CN">中国</option>
+            <option value="US">美国</option>
+            <option value="GB">英国</option>
+            <option value="MY">马来西亚</option>
+            <option value="JP">日本</option>
+            <option value="AU">澳大利亚</option>
+            <option value="CA">加拿大</option>
+          </select>
+        </div>
+
+        <p id="calendarHolidayStatus" class="calendar-holiday-status" aria-live="polite"></p>
+
+        <div class="calendar-navigation">
+          <button type="button" id="calendarPreviousMonth" aria-label="上一个月">
+            ‹
+          </button>
+
+          <h3 id="calendarMonthTitle">
+            --
+          </h3>
+
+          <button type="button" id="calendarNextMonth" aria-label="下一个月">
+            ›
+          </button>
+        </div>
+
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>日</span>
+          <span>一</span>
+          <span>二</span>
+          <span>三</span>
+          <span>四</span>
+          <span>五</span>
+          <span>六</span>
+        </div>
+
+        <div id="calendarDays" class="calendar-days" aria-label="月历日期"></div>
+      </section>
+
+      <!-- 实时汇率 -->
+      <section class="home-side-card home-fx-card">
+        <div class="home-fx-header">
+          <div>
+            <span class="home-tool-kicker">
+              REAL-TIME FX
+            </span>
+
+            <h2>实时汇率</h2>
+          </div>
+
+          <button type="button" id="fxRefreshButton" class="fx-refresh-button">
+            刷新
+          </button>
+        </div>
+
+        <div class="fx-base-row">
+          <label for="fxBaseCurrency">
+            基准货币
+          </label>
+
+          <select id="fxBaseCurrency">
+            <option value="SGD">SGD 新加坡元</option>
+            <option value="USD">USD 美元</option>
+            <option value="CNY">CNY 人民币</option>
+            <option value="EUR">EUR 欧元</option>
+            <option value="GBP">GBP 英镑</option>
+            <option value="JPY">JPY 日元</option>
+            <option value="MYR">MYR 马来西亚林吉特</option>
+            <option value="AUD">AUD 澳大利亚元</option>
+            <option value="CAD">CAD 加拿大元</option>
+            <option value="HKD">HKD 港币</option>
+          </select>
+        </div>
+
+        <p id="fxStatusMessage" class="fx-status-message" aria-live="polite">
+          正在读取最新汇率...
+        </p>
+
+        <div id="fxRatesList" class="fx-rates-list"></div>
+
+        <div class="fx-footer">
+          <span id="fxRateDate">
+            --
+          </span>
+
+          <span>
+            参考汇率
+          </span>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- 中间新闻列表 -->
+    <main class="home-center-content">
+      <section class="home-news-section">
+        <div class="home-news-header">
+          <h2>Latest News</h2>
+
+          <a href="/news-home.html">
+            View All
+          </a>
+        </div>
+
+        <div id="newsMessage">
+          正在加载新闻...
+        </div>
+
+        <div id="newsList" class="home-news-list"></div>
+      </section>
+    </main>
+
+    <!-- 右侧工具栏 -->
+    <aside class="home-right-sidebar" aria-label="首页右侧工具">
+
+      <section class="home-side-card home-central-bank-card">
+        <div class="home-central-bank-header">
+          <div>
+            <span class="home-tool-kicker">
+              CENTRAL BANK RATES
+            </span>
+            <h2>全球央行利率</h2>
+          </div>
+
+          <button type="button" id="centralBankRefreshButton" class="central-bank-refresh-button">
+            刷新
+          </button>
+        </div>
+
+        <p id="centralBankStatusMessage" class="central-bank-status-message" aria-live="polite">
+          正在读取央行利率...
+        </p>
+
+        <div class="central-bank-table-wrap">
+          <table class="central-bank-table">
+            <thead>
+              <tr>
+                <th scope="col">央行</th>
+                <th scope="col">当前</th>
+                <th scope="col">上次</th>
+                <th scope="col">预测</th>
+                <th scope="col">公布</th>
+              </tr>
+            </thead>
+
+            <tbody id="centralBankRatesBody">
+              <tr>
+                <td colspan="5">
+                  正在加载...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="central-bank-footer">
+          <span id="centralBankUpdatedAt">
+            更新时间：--
+          </span>
+
+          <span id="centralBankDataStatus">
+            正在确认数据来源...
+          </span>
+        </div>
+      </section>
+
+    </aside>
+
+  </div>
 
   <!-- ==============================
          分类导航
@@ -664,13 +773,18 @@
   ============================== -->
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/world-map.js"></script>
 
   <script src="/script.js"></script>
 
   <script src="/news-home.js"></script>
 
   <script src="/home-ad-carousel.js"></script>
+
+  <script src="/home-calendar.js"></script>
+
+  <script src="/home-fx-rates.js"></script>
+
+  <script src="/home-central-bank-rates.js"></script>
 
   <script src="/site-settings.js"></script>
 

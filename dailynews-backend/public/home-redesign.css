@@ -377,420 +377,6 @@
     }
 }
 
-/* =========================================================
-   第三阶段：全球新闻地图与实时快讯
-   ========================================================= */
-
-.global-map-section {
-    width: 100%;
-    padding: 28px 24px;
-    box-sizing: border-box;
-    background:
-        radial-gradient(circle at 25% 30%, rgba(24, 124, 210, 0.16), transparent 34%),
-        linear-gradient(180deg, #07111f 0%, #0b1728 100%);
-    color: #ffffff;
-    border-bottom: 1px solid #173454;
-}
-
-.global-map-inner {
-    width: min(100%, 1600px);
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
-    gap: 24px;
-    align-items: stretch;
-}
-
-.global-map-main {
-    min-width: 0;
-    padding: 22px;
-    border: 1px solid #1d4e75;
-    border-radius: 14px;
-    background: rgba(4, 15, 29, 0.78);
-    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28);
-    box-sizing: border-box;
-}
-
-.global-map-header {
-    margin-bottom: 18px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 22px;
-}
-
-.global-map-kicker {
-    display: block;
-    margin-bottom: 6px;
-    color: #29b6f6;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 1.6px;
-}
-
-.global-map-header h2 {
-    margin: 0 0 7px;
-    color: #ffffff;
-    font-size: clamp(24px, 2.2vw, 34px);
-    line-height: 1.15;
-}
-
-.global-map-header p {
-    margin: 0;
-    color: #aebed0;
-    font-size: 15px;
-    line-height: 1.55;
-}
-
-.country-search-box {
-    flex: 0 1 500px;
-    min-width: 320px;
-    height: 44px;
-    display: flex;
-    overflow: hidden;
-    border: 1px solid #477394;
-    border-radius: 7px;
-    background: #ffffff;
-}
-
-.country-search-box input {
-    flex: 1;
-    min-width: 0;
-    padding: 0 14px;
-    border: 0;
-    outline: none;
-    color: #182332;
-    background: #ffffff;
-    font-size: 14px;
-}
-
-.country-search-box input::placeholder {
-    color: #7e8a97;
-}
-
-.country-search-box button {
-    flex: 0 0 auto;
-    padding: 0 18px;
-    border: 0;
-    border-left: 1px solid #d5dde5;
-    background: #087fd1;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.country-search-box button:hover {
-    background: #066eb7;
-}
-
-.world-map-stage {
-    width: 100%;
-    min-height: 520px;
-    overflow: hidden;
-    border: 1px solid #28577b;
-    border-radius: 12px;
-    background:
-        linear-gradient(rgba(6, 22, 38, 0.18), rgba(6, 22, 38, 0.18)),
-        radial-gradient(circle at center, #123c5c 0%, #071421 70%);
-}
-
-.world-map-placeholder {
-    width: 100%;
-    min-height: 520px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    box-sizing: border-box;
-}
-
-
-.world-map-placeholder-content {
-    position: relative;
-    z-index: 1;
-    padding: 24px 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-    border: 1px solid rgba(75, 184, 239, 0.35);
-    border-radius: 10px;
-    background: rgba(4, 18, 32, 0.72);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
-}
-
-.world-map-placeholder-content strong {
-    color: #ffffff;
-    font-size: 24px;
-}
-
-.world-map-placeholder-content span {
-    color: #9db4c8;
-    font-size: 14px;
-}
-
-.popular-country-list {
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.popular-country-list>span {
-    color: #9fb1c4;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.popular-country-list button {
-    padding: 7px 12px;
-    border: 1px solid #315d7f;
-    border-radius: 18px;
-    background: #0d2237;
-    color: #dce9f4;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.popular-country-list button:hover {
-    border-color: #29aaf0;
-    background: #123653;
-    color: #ffffff;
-}
-
-.breaking-news-panel {
-    padding: 22px;
-    border: 1px solid #1d5b86;
-    border-radius: 14px;
-    background: rgba(4, 15, 29, 0.9);
-    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28);
-    box-sizing: border-box;
-}
-
-.breaking-news-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.breaking-news-heading>div {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #ff5252;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-}
-
-.breaking-live-dot {
-    width: 9px;
-    height: 9px;
-    display: inline-block;
-    border-radius: 50%;
-    background: #ff3b3b;
-    box-shadow: 0 0 0 5px rgba(255, 59, 59, 0.13);
-}
-
-.breaking-news-heading a {
-    color: #35b8ff;
-    font-size: 13px;
-    text-decoration: none;
-}
-
-.breaking-news-panel h2 {
-    margin: 14px 0 18px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid #24435f;
-    color: #ffffff;
-    font-size: 27px;
-}
-
-.breaking-news-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.breaking-news-item {
-    padding: 14px 0;
-    border-bottom: 1px solid #1c354d;
-}
-
-.breaking-news-item time {
-    display: block;
-    margin-bottom: 6px;
-    color: #35b8ff;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.breaking-news-item a {
-    color: #d8e4ee;
-    font-size: 14px;
-    line-height: 1.55;
-    text-decoration: none;
-}
-
-.breaking-news-item a:hover {
-    color: #ffffff;
-}
-
-.map-topic-tags {
-    margin-top: 20px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.map-topic-tags span {
-    width: 100%;
-    margin-bottom: 2px;
-    color: #9fb1c4;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.map-topic-tags a {
-    padding: 6px 10px;
-    border-radius: 16px;
-    background: #102942;
-    color: #bcd2e4;
-    font-size: 12px;
-    text-decoration: none;
-}
-
-.map-topic-tags a:hover {
-    background: #174367;
-    color: #ffffff;
-}
-
-@media (max-width: 1180px) {
-    .global-map-inner {
-        grid-template-columns: 1fr;
-    }
-
-    .breaking-news-panel {
-        width: 100%;
-    }
-}
-
-@media (max-width: 820px) {
-    .global-map-section {
-        padding: 18px 12px;
-    }
-
-    .global-map-main,
-    .breaking-news-panel {
-        padding: 16px;
-    }
-
-    .global-map-header {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .country-search-box {
-        width: 100%;
-        min-width: 0;
-        flex-basis: auto;
-    }
-
-    .world-map-stage,
-    .world-map-placeholder {
-        min-height: 300px;
-    }
-}
-
-@media (max-width: 520px) {
-    .country-search-box {
-        height: auto;
-        flex-direction: column;
-        overflow: visible;
-        border: 0;
-        background: transparent;
-    }
-
-    .country-search-box input,
-    .country-search-box button {
-        width: 100%;
-        height: 44px;
-        border: 1px solid #477394;
-        border-radius: 7px;
-        box-sizing: border-box;
-    }
-
-    .country-search-box button {
-        margin-top: 8px;
-    }
-
-    .world-map-placeholder-content strong {
-        font-size: 20px;
-    }
-}
-
-/* 真实 Leaflet 世界地图 */
-
-#worldMap {
-    width: 100%;
-    height: 520px;
-    min-height: 520px;
-    background: #071421;
-}
-
-#worldMap.leaflet-container {
-    font-family: Arial, "Microsoft YaHei", sans-serif;
-    background: #071421;
-}
-
-#worldMap .leaflet-control-zoom a {
-    color: #16344c;
-}
-
-.country-map-tooltip {
-    padding: 7px 10px;
-    border: 1px solid #2ba8e8;
-    border-radius: 6px;
-    background: rgba(4, 20, 34, 0.94);
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
-}
-
-.country-map-tooltip::before {
-    border-top-color: rgba(4, 20, 34, 0.94);
-}
-
-.world-map-load-error {
-    width: 100%;
-    height: 100%;
-    min-height: 520px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffb4b4;
-    font-size: 16px;
-    text-align: center;
-}
-
-@media (max-width: 820px) {
-
-    #worldMap,
-    .world-map-load-error {
-        height: 300px;
-        min-height: 300px;
-    }
-}
-
-#worldMap.world-map-placeholder::before {
-    display: none;
-    content: none;
-}
-
 /* ========================================
    首页动态网站 LOGO
    ======================================== */
@@ -1123,5 +709,1034 @@
         width: 28px;
         height: 38px;
         font-size: 18px;
+    }
+}
+
+/* ============================================================
+   首页实用工具区
+============================================================ */
+
+.home-tools-section {
+    width: 100%;
+    padding: 22px 24px;
+    box-sizing: border-box;
+    background:
+        linear-gradient(180deg,
+            #061425 0%,
+            #07182c 100%);
+    border-bottom: 1px solid #173d5b;
+}
+
+.home-tools-inner {
+    width: min(100%, 1600px);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns:
+        minmax(360px, 1.15fr) minmax(280px, 0.9fr) minmax(280px, 0.9fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+.home-tool-card {
+    min-width: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1px solid #205a82;
+    border-radius: 14px;
+    background:
+        linear-gradient(145deg,
+            rgba(11, 43, 73, 0.96),
+            rgba(4, 23, 42, 0.98));
+    box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.24);
+    color: #eaf6ff;
+}
+
+.home-tool-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.home-tool-kicker {
+    display: block;
+    margin-bottom: 4px;
+    color: #27c3ff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.home-tool-card-header h2 {
+    margin: 0;
+    color: #ffd248;
+    font-size: 25px;
+    line-height: 1.2;
+}
+
+.calendar-today-button {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    border: 1px solid #2788bd;
+    border-radius: 8px;
+    background: #0b4c73;
+    color: #ffffff;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.calendar-today-button:hover {
+    background: #0d6898;
+}
+
+.calendar-current-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border: 1px solid #1d5277;
+    border-radius: 10px;
+    background: rgba(3, 18, 34, 0.72);
+}
+
+.calendar-current-summary strong {
+    color: #ffffff;
+    font-size: 17px;
+}
+
+.calendar-current-summary span {
+    color: #63d8ff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.calendar-navigation {
+    display: grid;
+    grid-template-columns: 38px 1fr 38px;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.calendar-navigation h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 18px;
+    text-align: center;
+}
+
+.calendar-navigation button {
+    width: 38px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid #2c6d98;
+    border-radius: 8px;
+    background: #082642;
+    color: #ffffff;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.calendar-navigation button:hover {
+    background: #0c476d;
+}
+
+.calendar-weekdays,
+.calendar-days {
+    display: grid;
+    grid-template-columns:
+        repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.calendar-weekdays {
+    margin-bottom: 6px;
+}
+
+.calendar-weekdays span {
+    padding: 6px 0;
+    color: #7ecdf4;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.calendar-days {
+    min-height: 220px;
+}
+
+.calendar-day {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: rgba(5, 30, 52, 0.7);
+    color: #dcefff;
+    font-size: 13px;
+    cursor: default;
+}
+
+.calendar-day.is-outside {
+    color: #57758d;
+    background: rgba(3, 17, 30, 0.45);
+}
+
+.calendar-day.is-today {
+    border-color: #ffd248;
+    background: #0d5a82;
+    color: #ffffff;
+    font-weight: 800;
+    box-shadow:
+        0 0 0 2px rgba(255, 210, 72, 0.14);
+}
+
+.home-tool-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 360px;
+    text-align: center;
+}
+
+.home-tool-placeholder span {
+    color: #28c4ff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+}
+
+.home-tool-placeholder strong {
+    display: block;
+    margin: 10px 0;
+    color: #ffd248;
+    font-size: 25px;
+}
+
+.home-tool-placeholder p {
+    margin: 0;
+    color: #9fc0d9;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+@media (max-width: 1180px) {
+    .home-tools-inner {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .home-calendar-card {
+        grid-column: 1 / -1;
+    }
+
+    .home-tool-placeholder {
+        min-height: 200px;
+    }
+}
+
+@media (max-width: 760px) {
+    .home-tools-section {
+        padding: 14px 12px;
+    }
+
+    .home-tools-inner {
+        grid-template-columns: 1fr;
+    }
+
+    .home-calendar-card {
+        grid-column: auto;
+    }
+
+    .home-tool-card {
+        padding: 16px;
+    }
+
+    .home-tool-card-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .calendar-today-button {
+        width: 100%;
+    }
+
+    .calendar-current-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .calendar-days {
+        min-height: 190px;
+    }
+
+    .home-tool-placeholder {
+        min-height: 160px;
+    }
+}
+
+/* ============================================================
+   首页新闻三栏布局
+============================================================ */
+
+.home-content-layout {
+    width: min(100%, 1800px);
+    margin: 0 auto;
+    padding: 34px 20px 50px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns:
+        minmax(260px, 300px) minmax(0, 1fr) minmax(260px, 300px);
+    gap: 28px;
+    align-items: start;
+    background: #000000;
+}
+
+.home-left-sidebar,
+.home-right-sidebar {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.home-center-content {
+    min-width: 0;
+}
+
+.home-side-card {
+    padding: 18px;
+    box-sizing: border-box;
+    border: 1px solid #205a82;
+    border-radius: 14px;
+    background:
+        linear-gradient(145deg,
+            rgba(11, 43, 73, 0.96),
+            rgba(4, 23, 42, 0.98));
+    box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.24);
+    color: #eaf6ff;
+}
+
+.home-side-card h2 {
+    margin: 6px 0 14px;
+    color: #ffd248;
+    font-size: 23px;
+    line-height: 1.2;
+}
+
+.home-side-card p {
+    margin: 0;
+    color: #9fc0d9;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.home-calendar-card {
+    min-height: 430px;
+}
+
+.home-fx-card {
+    min-height: 190px;
+}
+
+.home-central-bank-card {
+    min-height: 430px;
+}
+
+.home-content-layout .home-news-section {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.home-content-layout .home-news-list {
+    width: 100%;
+}
+
+@media (max-width: 1280px) {
+    .home-content-layout {
+        grid-template-columns:
+            minmax(250px, 280px) minmax(0, 1fr);
+    }
+
+    .home-right-sidebar {
+        grid-column: 1 / -1;
+    }
+
+    .home-central-bank-card {
+        min-height: 200px;
+    }
+}
+
+@media (max-width: 880px) {
+    .home-content-layout {
+        grid-template-columns: 1fr;
+        padding: 22px 12px 36px;
+        gap: 18px;
+    }
+
+    .home-left-sidebar,
+    .home-center-content,
+    .home-right-sidebar {
+        grid-column: auto;
+    }
+
+    .home-calendar-card,
+    .home-fx-card,
+    .home-central-bank-card {
+        min-height: auto;
+    }
+}
+
+/* ============================================================
+   万年历农历日期样式
+============================================================ */
+
+.calendar-day {
+    min-height: 48px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 2px;
+    line-height: 1.1;
+}
+
+.calendar-solar-day {
+    display: block;
+    color: #f5fbff;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.calendar-lunar-day {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: #8fb7d1;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.15;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-day.is-outside .calendar-solar-day {
+    color: #4e718a;
+}
+
+.calendar-day.is-outside .calendar-lunar-day {
+    color: #3f6077;
+}
+
+.calendar-day.is-today .calendar-solar-day {
+    color: #ffffff;
+}
+
+.calendar-day.is-today .calendar-lunar-day {
+    color: #ffe27b;
+    font-weight: 700;
+}
+
+.calendar-days {
+    min-height: 300px;
+}
+
+@media (max-width: 880px) {
+    .calendar-day {
+        min-height: 46px;
+    }
+
+    .calendar-solar-day {
+        font-size: 13px;
+    }
+
+    .calendar-lunar-day {
+        font-size: 10px;
+    }
+
+    .calendar-days {
+        min-height: 285px;
+    }
+}
+
+/* ============================================================
+   万年历国家节假日选择
+============================================================ */
+
+.calendar-country-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.calendar-country-row label {
+    flex: 0 0 auto;
+    color: #8fc8e8;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.calendar-country-row select {
+    min-width: 0;
+    flex: 1;
+    height: 34px;
+    padding: 0 9px;
+    border: 1px solid #2b6d98;
+    border-radius: 8px;
+    outline: none;
+    background: #071f36;
+    color: #ffffff;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.calendar-country-row select:hover {
+    border-color: #38a9e3;
+}
+
+.calendar-country-row select:focus {
+    border-color: #36c8ff;
+    box-shadow:
+        0 0 0 2px rgba(54, 200, 255, 0.14);
+}
+
+.calendar-day.is-holiday {
+    border-color:
+        rgba(255, 88, 88, 0.5);
+    background:
+        rgba(111, 24, 38, 0.42);
+}
+
+.calendar-day.is-holiday .calendar-solar-day {
+    color: #ff6b75;
+}
+
+.calendar-day.is-holiday .calendar-lunar-day {
+    color: #ff9ca4;
+    font-weight: 700;
+}
+
+.calendar-day.is-holiday.is-today {
+    border-color: #ffd248;
+    box-shadow:
+        0 0 0 2px rgba(255, 210, 72, 0.15);
+}
+
+.calendar-day.is-substitute-holiday {
+    border-style: dashed;
+}
+
+.calendar-holiday-status {
+    min-height: 18px;
+    margin: 8px 0 0;
+    color: #76badf;
+    font-size: 11px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.calendar-holiday-status.is-error {
+    color: #ff8b94;
+}
+
+@media (max-width: 880px) {
+    .calendar-country-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .calendar-country-row select {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   首页三栏桌面端宽度与对齐优化
+============================================================ */
+
+@media (min-width: 1281px) {
+    .home-content-layout {
+        width: 100%;
+        max-width: none;
+        padding:
+            28px 14px 50px;
+        grid-template-columns:
+            320px minmax(0, 1fr) 320px;
+        gap: 18px;
+    }
+
+    .home-left-sidebar,
+    .home-right-sidebar {
+        width: 100%;
+    }
+
+    .home-side-card {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   右侧央行利率模块位置微调
+============================================================ */
+
+@media (min-width: 1281px) {
+    .home-right-sidebar {
+        transform: translateX(-11px);
+    }
+}
+
+/* ============================================================
+   首页实时汇率模块
+============================================================ */
+
+.home-fx-card {
+    min-height: 420px;
+}
+
+.home-fx-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.home-fx-header h2 {
+    margin: 6px 0 0;
+}
+
+.fx-refresh-button {
+    flex: 0 0 auto;
+    padding: 7px 10px;
+    border: 1px solid #2b78a7;
+    border-radius: 8px;
+    background: #0b4c73;
+    color: #ffffff;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.fx-refresh-button:hover {
+    background: #0d6797;
+}
+
+.fx-refresh-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.fx-base-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.fx-base-row label {
+    flex: 0 0 auto;
+    color: #8fc8e8;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.fx-base-row select {
+    min-width: 0;
+    flex: 1;
+    height: 33px;
+    padding: 0 8px;
+    border: 1px solid #2b6d98;
+    border-radius: 8px;
+    outline: none;
+    background: #071f36;
+    color: #ffffff;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.fx-base-row select:focus {
+    border-color: #36c8ff;
+    box-shadow:
+        0 0 0 2px rgba(54, 200, 255, 0.14);
+}
+
+.fx-status-message {
+    min-height: 17px;
+    margin: 0 0 9px;
+    color: #77bddf;
+    font-size: 10px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.fx-status-message.is-error {
+    color: #ff8993;
+}
+
+.fx-rates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fx-rate-item {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-height: 35px;
+    padding: 7px 9px;
+    box-sizing: border-box;
+    border: 1px solid #174b6e;
+    border-radius: 8px;
+    background: rgba(3, 22, 39, 0.68);
+}
+
+.fx-rate-currency {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.fx-rate-code {
+    flex: 0 0 auto;
+    color: #34c7ff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.fx-rate-name {
+    min-width: 0;
+    overflow: hidden;
+    color: #aac8da;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fx-rate-value {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.fx-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid #17465f;
+    color: #729eb8;
+    font-size: 9px;
+}
+
+@media (max-width: 880px) {
+    .home-fx-card {
+        min-height: auto;
+    }
+
+    .fx-base-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fx-base-row select {
+        width: 100%;
+    }
+}
+
+/*
+ * ============================================================
+ * 首页全球央行利率模块
+ * ============================================================
+ */
+
+.home-central-bank-card {
+    min-height: 420px;
+    overflow: hidden;
+}
+
+.home-central-bank-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.home-central-bank-header h2 {
+    margin: 6px 0 0;
+    color: #ffd21f;
+    font-size: 24px;
+    line-height: 1.15;
+}
+
+.central-bank-refresh-button {
+    flex: 0 0 auto;
+    min-width: 48px;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid #247fb1;
+    border-radius: 9px;
+    background: #07537d;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.central-bank-refresh-button:hover {
+    background: #086a9f;
+    border-color: #36c8ff;
+}
+
+.central-bank-refresh-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.central-bank-status-message {
+    margin: 0 0 10px;
+    padding: 0;
+    color: #7edcff;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.central-bank-status-message.is-error {
+    color: #ff8a8a;
+}
+
+.central-bank-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #16597a;
+    border-radius: 10px;
+    background: rgba(1, 27, 45, 0.72);
+    scrollbar-width: thin;
+}
+
+.central-bank-table {
+    width: 100%;
+    min-width: 286px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    color: #ffffff;
+    font-size: 10px;
+}
+
+.central-bank-table th,
+.central-bank-table td {
+    padding: 8px 3px;
+    border-bottom: 1px solid rgba(38, 126, 166, 0.45);
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.central-bank-table th {
+    background: rgba(4, 60, 91, 0.92);
+    color: #77dcff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+}
+
+.central-bank-table th:first-child,
+.central-bank-table td:first-child {
+    width: 72px;
+    padding-left: 6px;
+    text-align: left;
+}
+
+.central-bank-table th:not(:first-child),
+.central-bank-table td:not(:first-child) {
+    width: calc((100% - 72px) / 4);
+}
+
+.central-bank-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.central-bank-table tbody tr:hover {
+    background: rgba(0, 164, 230, 0.08);
+}
+
+.central-bank-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.central-bank-name strong {
+    overflow: hidden;
+    color: #31d1ff;
+    font-size: 11px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.central-bank-name span {
+    overflow: hidden;
+    color: #9dc3d4;
+    font-size: 9px;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.central-bank-value {
+    display: inline-block;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.central-bank-value.is-up {
+    color: #ff7676;
+}
+
+.central-bank-value.is-down {
+    color: #5be6a7;
+}
+
+.central-bank-value.is-unchanged {
+    color: #ffffff;
+}
+
+.central-bank-empty-row td {
+    padding: 22px 8px;
+    color: #9dc3d4;
+    font-size: 12px;
+    text-align: center;
+}
+
+.central-bank-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(38, 126, 166, 0.5);
+    color: #78bdd8;
+    font-size: 9px;
+    line-height: 1.3;
+}
+
+.central-bank-footer span:last-child {
+    flex: 0 0 auto;
+    color: #9dc3d4;
+}
+
+.central-bank-value.is-range {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    min-height: 52px;
+    line-height: 1;
+    white-space: normal;
+}
+
+.central-bank-range-line {
+    display: block;
+    width: 100%;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.central-bank-range-separator {
+    display: block;
+    width: 100%;
+    color: #78bdd8;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+}
+
+.central-bank-table tbody tr {
+    min-height: 46px;
+}
+
+.central-bank-table td {
+    min-height: 46px;
+}
+
+.central-bank-table tbody tr:first-child td {
+    height: 68px;
+}
+
+@media (max-width: 1280px) {
+    .home-central-bank-card {
+        min-height: auto;
+    }
+
+    .central-bank-table {
+        min-width: 300px;
+    }
+}
+
+@media (max-width: 760px) {
+    .home-central-bank-header h2 {
+        font-size: 22px;
+    }
+
+    .central-bank-table {
+        min-width: 520px;
+        font-size: 11px;
+    }
+
+    .central-bank-table th,
+    .central-bank-table td {
+        padding: 9px 6px;
+    }
+
+    .central-bank-table th:first-child,
+    .central-bank-table td:first-child {
+        width: 110px;
+    }
+
+    .central-bank-value {
+        font-size: 11px;
     }
 }
