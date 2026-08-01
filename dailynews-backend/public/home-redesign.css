@@ -1740,3 +1740,200 @@
         font-size: 11px;
     }
 }
+
+/*
+ * =========================================
+ * 首页深色双层导航
+ * =========================================
+ */
+
+.home-primary-nav,
+.home-secondary-nav {
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.home-primary-nav {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    background:
+        linear-gradient(180deg,
+            #07192d 0%,
+            #061426 100%);
+    border-top: 1px solid rgba(36, 184, 255, 0.18);
+    border-bottom: 1px solid rgba(36, 184, 255, 0.34);
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.home-secondary-nav {
+    background:
+        linear-gradient(180deg,
+            #0a2138 0%,
+            #071a2e 100%);
+    border-bottom: 1px solid rgba(36, 184, 255, 0.26);
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.home-nav-inner {
+    width: min(100%, 1600px);
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.home-primary-nav-inner {
+    min-height: 52px;
+    gap: 4px;
+}
+
+.home-primary-nav .home-nav-inner a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 24px;
+    color: #dcecff;
+    background: transparent;
+    border: 0;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.home-primary-nav .home-nav-inner a:hover {
+    color: #35c8ff;
+    background: rgba(26, 135, 199, 0.14);
+}
+
+.home-primary-nav .home-nav-inner a.active {
+    color: #ffd34e;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 205, 65, 0.14) 0%,
+            rgba(255, 205, 65, 0.04) 100%);
+}
+
+.home-primary-nav .home-nav-inner a.active::after {
+    content: "";
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: #ffd34e;
+    box-shadow:
+        0 0 10px rgba(255, 211, 78, 0.42);
+}
+
+.home-primary-nav .home-vip-nav {
+    color: #ffd34e;
+}
+
+.home-secondary-nav-inner {
+    min-height: 43px;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(51, 198, 255, 0.45) transparent;
+}
+
+.home-secondary-nav .home-nav-inner a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 43px;
+    padding: 0 15px;
+    color: #c6dcf2;
+    background: transparent;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.home-secondary-nav .home-nav-inner a:hover {
+    color: #37caff;
+    background: rgba(24, 151, 220, 0.14);
+}
+
+.home-nav-caret {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-top: 1px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    opacity: 0.8;
+    transform-origin: center;
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.home-secondary-link:hover .home-nav-caret {
+    opacity: 1;
+    transform: translateY(1px);
+}
+
+@media (max-width: 900px) {
+    .home-nav-inner {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .home-primary-nav-inner {
+        overflow-x: auto;
+    }
+
+    .home-primary-nav .home-nav-inner a {
+        min-height: 48px;
+        padding: 0 17px;
+        font-size: 14px;
+    }
+
+    .home-secondary-nav-inner {
+        min-height: 41px;
+    }
+
+    .home-secondary-nav .home-nav-inner a {
+        min-height: 41px;
+        padding: 0 12px;
+        font-size: 12px;
+    }
+}
+
+/*
+ * 禁用旧版分类导航文字 v
+ */
+.home-secondary-nav .home-secondary-nav-inner>a::after {
+    content: none !important;
+    display: none !important;
+}
+
+/*
+ * 只显示新版小三角箭头
+ */
+.home-secondary-nav .home-secondary-nav-inner>a .home-nav-caret {
+    display: inline-block !important;
+}
