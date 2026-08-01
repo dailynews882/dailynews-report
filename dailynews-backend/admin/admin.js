@@ -1571,97 +1571,295 @@ window.closeAddNewsModal = function () {
 // ===============================
 // 新闻管理：保存新增新闻
 // ===============================
-window.saveNewNews = function () {
-  const titleInput = document.getElementById("newNewsTitle");
-  const categoryInput = document.getElementById("newNewsCategory");
-  const sourceInput = document.getElementById("newNewsSource");
-  const statusInput = document.getElementById("newNewsStatus");
-  const table = document.getElementById("newsTable");
+window.saveNewNews = async function () {
+  const titleInput =
+    document.getElementById(
+      "newNewsTitle"
+    );
 
-  if (!titleInput || !categoryInput || !sourceInput || !statusInput || !table) {
-    alert("新增新闻表单或新闻表格不存在，请检查页面代码。");
+  const categoryInput =
+    document.getElementById(
+      "newNewsCategory"
+    );
+
+  const sourceInput =
+    document.getElementById(
+      "newNewsSource"
+    );
+
+  const statusInput =
+    document.getElementById(
+      "newNewsStatus"
+    );
+
+  const editor =
+    document.getElementById(
+      "newNewsContent"
+    );
+
+  if (
+    !titleInput ||
+    !categoryInput ||
+    !sourceInput ||
+    !statusInput ||
+    !editor
+  ) {
+    alert(
+      "新增新闻表单结构不完整，请检查页面代码。"
+    );
+
     return;
   }
 
-  const title = titleInput.value.trim();
-  const category = categoryInput.value.trim();
-  const source = sourceInput.value.trim();
-  const statusValue = statusInput.value;
+  const title =
+    titleInput.value.trim();
 
-  if (!title || !category || !source) {
-    alert("请填写新闻标题、分类和来源");
+  const category =
+    categoryInput.value.trim();
+
+  const source =
+    sourceInput.value.trim();
+
+  const status =
+    statusInput.value;
+
+  const content =
+    editor.innerHTML.trim();
+
+  const plainText =
+    editor.innerText
+      .replace(/\s+/g, " ")
+      .trim();
+
+  if (!title) {
+    alert(
+      "请输入新闻标题。"
+    );
+
+    titleInput.focus();
+
     return;
   }
 
-  const tbody = table.querySelector("tbody");
-  const newsId = "N" + Date.now().toString().slice(-9);
+  if (!category) {
+    alert(
+      "请输入新闻分类。"
+    );
 
-  let statusText = "草稿";
-  let statusClass = "normal";
+    categoryInput.focus();
 
-  if (statusValue === "published") {
-    statusText = "已发布";
-    statusClass = "vip";
-  } else if (statusValue === "pending") {
-    statusText = "待审核";
-    statusClass = "normal";
-  } else if (statusValue === "unpublished") {
-    statusText = "未发布";
-    statusClass = "banned";
+    return;
   }
 
-  const now = new Date();
-  const timeText =
-    now.getFullYear() +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(now.getDate()).padStart(2, "0") +
-    " " +
-    String(now.getHours()).padStart(2, "0") +
-    ":" +
-    String(now.getMinutes()).padStart(2, "0");
+  if (!source) {
+    alert(
+      "请输入新闻来源。"
+    );
 
-  let actionButtons = `
-    <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
-    <button class="table-btn success" onclick="generateNewsSummary(this)">生成摘要</button>
-    <button class="table-btn danger" onclick="deleteNewsFromRow(this)">删除</button>
-  `;
+    sourceInput.focus();
 
-  if (statusValue === "published") {
-    actionButtons = `
-      <button class="table-btn" onclick="viewNewsFromRow(this)">查看</button>
-      <button class="table-btn" onclick="editNewsFromRow(this)">编辑</button>
-    `;
+    return;
   }
 
-  const newRow = document.createElement("tr");
-  newRow.setAttribute("data-status", statusValue);
-  newRow.setAttribute("data-ai", "not_generated");
+  if (
+    !plainText &&
+    !editor.querySelector(
+      "img, video"
+    )
+  ) {
+    alert(
+      "请输入新闻正文内容。"
+    );
 
-  newRow.innerHTML = `
-    <td>${newsId}</td>
-    <td>${title}</td>
-    <td>${category}</td>
-    <td>${source}</td>
-    <td><span class="status banned">未生成</span></td>
-    <td><span class="status ${statusClass}">${statusText}</span></td>
-    <td>${timeText}</td>
-    <td>${actionButtons}</td>
-  `;
+    editor.focus();
 
-  tbody.appendChild(newRow);
+    return;
+  }
 
-  titleInput.value = "";
-  categoryInput.value = "";
-  sourceInput.value = "";
-  statusInput.value = "draft";
+  const adminToken =
+    localStorage.getItem(
+      "adminToken"
+    );
 
-  closeAddNewsModal();
+  if (!adminToken) {
+    alert(
+      "管理员登录已失效，请重新登录。"
+    );
 
-  alert("新增新闻已添加到列表！（当前为前端演示，刷新页面后不会永久保存）");
+    window.location.href =
+      "/admin/admin.html";
+
+    return;
+  }
+
+  const firstImage =
+    editor.querySelector("img");
+
+  const firstVideo =
+    editor.querySelector(
+      "video source, video"
+    );
+
+  const imageUrl =
+    firstImage
+      ? firstImage.getAttribute(
+        "src"
+      ) || ""
+      : "";
+
+  const videoUrl =
+    firstVideo
+      ? firstVideo.getAttribute(
+        "src"
+      ) || ""
+      : "";
+
+  const summary =
+    plainText.length > 220
+      ? `${plainText.slice(
+        0,
+        220
+      )}...`
+      : plainText;
+
+  const saveButton =
+    document.querySelector(
+      '#addNewsModal button[onclick="saveNewNews()"]'
+    );
+
+  const originalButtonText =
+    saveButton
+      ? saveButton.textContent
+      : "";
+
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent =
+      "正在保存...";
+  }
+
+  try {
+    const response =
+      await fetch(
+        "/api/news",
+        {
+          method: "POST",
+
+          headers: {
+            Accept:
+              "application/json",
+
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${adminToken}`,
+          },
+
+          body: JSON.stringify({
+            title,
+            category,
+            summary,
+            content,
+            image_url:
+              imageUrl,
+            video_url:
+              videoUrl,
+            source,
+            author:
+              "DailyNews Admin",
+            status,
+            is_vip: 0,
+          }),
+        }
+      );
+
+    let result = null;
+
+    try {
+      result =
+        await response.json();
+    } catch (parseError) {
+      result = null;
+    }
+
+    if (
+      response.status === 401 ||
+      response.status === 403
+    ) {
+      localStorage.removeItem(
+        "adminToken"
+      );
+
+      alert(
+        result?.message ||
+        "管理员登录已过期，请重新登录。"
+      );
+
+      window.location.href =
+        "/admin/admin.html";
+
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+        `保存新闻失败，状态码：${response.status}`
+      );
+    }
+
+    if (
+      !result ||
+      result.success !== true
+    ) {
+      throw new Error(
+        result?.message ||
+        "服务器没有确认新闻保存成功。"
+      );
+    }
+
+    const createdNewsId =
+      result.data?.id || "";
+
+    titleInput.value = "";
+    categoryInput.value = "";
+    sourceInput.value = "";
+    statusInput.value =
+      "draft";
+
+    editor.innerHTML = "";
+
+    closeAddNewsModal();
+
+    alert(
+      status === "published"
+        ? `新闻保存成功并已发布！新闻ID：${createdNewsId}`
+        : `新闻保存成功！新闻ID：${createdNewsId}`
+    );
+
+    window.location.reload();
+  } catch (error) {
+    console.error(
+      "Save manual news error:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "保存新闻失败，请稍后重试。"
+    );
+  } finally {
+    if (saveButton) {
+      saveButton.disabled =
+        false;
+
+      saveButton.textContent =
+        originalButtonText ||
+        "保存新闻";
+    }
+  }
 };
-
 
 // ===============================
 // 新闻管理：导出新闻

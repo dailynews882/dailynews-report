@@ -34,44 +34,189 @@ window.selectNewsImageFile = function () {
 // ===============================
 // 插入本地图片到编辑器
 // ===============================
-window.insertSelectedNewsImage = function (event) {
-  const file = event.target.files[0];
+window.insertSelectedNewsImage =
+  async function (event) {
+    const file =
+      event.target.files[0];
 
-  if (!file) {
-    return;
-  }
+    if (!file) {
+      return;
+    }
 
-  if (!file.type.startsWith("image/")) {
-    alert("请选择图片文件");
-    return;
-  }
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
+      alert(
+        "请选择图片文件。"
+      );
 
-  const editor = document.getElementById("newNewsContent");
+      event.target.value = "";
 
-  if (!editor) {
-    alert("找不到新闻正文编辑器 newNewsContent");
-    return;
-  }
+      return;
+    }
 
-  const reader = new FileReader();
+    const maximumFileSize =
+      5 * 1024 * 1024;
 
-  reader.onload = function (e) {
-    editor.focus();
+    if (
+      file.size >
+      maximumFileSize
+    ) {
+      alert(
+        "新闻图片不能超过5MB。"
+      );
 
-    const imageHtml = `
-      <p>
-        <img src="${e.target.result}" alt="新闻图片" />
-      </p>
-    `;
+      event.target.value = "";
 
-    document.execCommand("insertHTML", false, imageHtml);
+      return;
+    }
+
+    const editor =
+      document.getElementById(
+        "newNewsContent"
+      );
+
+    if (!editor) {
+      alert(
+        "找不到新闻正文编辑器 newNewsContent。"
+      );
+
+      event.target.value = "";
+
+      return;
+    }
+
+    const adminToken =
+      localStorage.getItem(
+        "adminToken"
+      );
+
+    if (!adminToken) {
+      alert(
+        "管理员登录已失效，请重新登录。"
+      );
+
+      window.location.href =
+        "/admin/admin.html";
+
+      return;
+    }
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "image",
+      file
+    );
+
+    const originalCursor =
+      document.body.style.cursor;
+
+    document.body.style.cursor =
+      "wait";
+
+    try {
+      const response =
+        await fetch(
+          "/api/admin/news-upload/image",
+          {
+            method: "POST",
+
+            headers: {
+              Authorization:
+                `Bearer ${adminToken}`,
+            },
+
+            body:
+              formData,
+          }
+        );
+
+      let result = null;
+
+      try {
+        result =
+          await response.json();
+      } catch (parseError) {
+        result = null;
+      }
+
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        localStorage.removeItem(
+          "adminToken"
+        );
+
+        alert(
+          result?.message ||
+          "管理员登录已过期，请重新登录。"
+        );
+
+        window.location.href =
+          "/admin/admin.html";
+
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          result?.message ||
+          `图片上传失败，状态码：${response.status}`
+        );
+      }
+
+      const imageUrl =
+        result?.data?.imageUrl;
+
+      if (!imageUrl) {
+        throw new Error(
+          "服务器没有返回图片地址。"
+        );
+      }
+
+      editor.focus();
+
+      const imageHtml = `
+        <p>
+          <img
+            src="${imageUrl}"
+            alt="新闻图片"
+            style="max-width:100%;height:auto;border-radius:10px;"
+          />
+        </p>
+      `;
+
+      document.execCommand(
+        "insertHTML",
+        false,
+        imageHtml
+      );
+
+      alert(
+        "新闻图片上传并插入成功。"
+      );
+    } catch (error) {
+      console.error(
+        "Upload news image error:",
+        error
+      );
+
+      alert(
+        error.message ||
+        "新闻图片上传失败，请稍后重试。"
+      );
+    } finally {
+      document.body.style.cursor =
+        originalCursor;
+
+      event.target.value = "";
+    }
   };
-
-  reader.readAsDataURL(file);
-
-  event.target.value = "";
-};
-
 
 // ===============================
 // 选择本地视频
@@ -135,8 +280,6 @@ window.insertSelectedNewsVideo = function (event) {
 
     document.execCommand("insertHTML", false, videoHtml);
   };
-
-  reader.readAsDataURL(file);
 
   event.target.value = "";
 };

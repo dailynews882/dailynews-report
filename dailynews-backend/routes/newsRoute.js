@@ -260,7 +260,7 @@ router.get("/:id", (req, res) => {
 });
 
 // 新增新闻
-router.post("/", (req, res) => {
+router.post("/", verifyAdminToken, (req, res) => {
   const {
     title,
     category,
