@@ -122,7 +122,36 @@
             color: #f5f7fb;
             line-height: 2;
             font-size: 17px;
-            white-space: pre-wrap;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .content p {
+            margin: 0 0 18px;
+        }
+
+        .content img {
+            display: block;
+            width: auto;
+            max-width: 100%;
+            height: auto;
+            margin: 18px auto;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .content video {
+            display: block;
+            width: 100%;
+            max-height: 680px;
+            margin: 18px auto;
+            border-radius: 12px;
+            background: #000000;
+        }
+
+        .content a {
+            color: #43c8ff;
+            text-decoration: underline;
         }
 
         .lock-box {

@@ -89,7 +89,7 @@ function showArticle(news) {
             : ""
         }
 
-      <div class="content">${escapeHtml(news.content || "")}</div>
+        <div class="content">${sanitizeNewsContent(news.content || "")}</div>
     </article>
   `;
 }
@@ -141,6 +141,214 @@ function showMessage(text) {
     messageBox.style.display = "block";
     messageBox.innerText = text;
     articleBox.innerHTML = "";
+}
+
+function sanitizeNewsContent(html) {
+    const template =
+        document.createElement("template");
+
+    template.innerHTML =
+        String(html || "");
+
+    const allowedTags =
+        new Set([
+            "P",
+            "BR",
+            "DIV",
+            "SPAN",
+            "STRONG",
+            "B",
+            "EM",
+            "I",
+            "U",
+            "H2",
+            "H3",
+            "H4",
+            "UL",
+            "OL",
+            "LI",
+            "BLOCKQUOTE",
+            "A",
+            "IMG",
+            "VIDEO",
+            "SOURCE",
+        ]);
+
+    const allowedAttributes = {
+        A: new Set([
+            "href",
+            "target",
+            "rel",
+        ]),
+
+        IMG: new Set([
+            "src",
+            "alt",
+            "title",
+            "width",
+            "height",
+            "loading",
+        ]),
+
+        VIDEO: new Set([
+            "src",
+            "controls",
+            "poster",
+            "preload",
+        ]),
+
+        SOURCE: new Set([
+            "src",
+            "type",
+        ]),
+
+        SPAN: new Set([]),
+        DIV: new Set([]),
+        P: new Set([]),
+    };
+
+    const elements =
+        Array.from(
+            template.content.querySelectorAll(
+                "*"
+            )
+        );
+
+    elements.forEach(
+        function (element) {
+            if (
+                !allowedTags.has(
+                    element.tagName
+                )
+            ) {
+                element.replaceWith(
+                    document.createTextNode(
+                        element.textContent || ""
+                    )
+                );
+
+                return;
+            }
+
+            const tagAttributes =
+                allowedAttributes[
+                element.tagName
+                ] || new Set();
+
+            Array.from(
+                element.attributes
+            ).forEach(
+                function (attribute) {
+                    const attributeName =
+                        attribute.name
+                            .toLowerCase();
+
+                    if (
+                        attributeName.startsWith(
+                            "on"
+                        ) ||
+                        attributeName ===
+                        "style" ||
+                        !tagAttributes.has(
+                            attributeName
+                        )
+                    ) {
+                        element.removeAttribute(
+                            attribute.name
+                        );
+                    }
+                }
+            );
+
+            if (
+                element.tagName === "A"
+            ) {
+                const href =
+                    element.getAttribute(
+                        "href"
+                    ) || "";
+
+                if (
+                    !isSafeNewsUrl(href)
+                ) {
+                    element.removeAttribute(
+                        "href"
+                    );
+                } else {
+                    element.setAttribute(
+                        "target",
+                        "_blank"
+                    );
+
+                    element.setAttribute(
+                        "rel",
+                        "noopener noreferrer"
+                    );
+                }
+            }
+
+            if (
+                element.tagName === "IMG"
+            ) {
+                const src =
+                    element.getAttribute(
+                        "src"
+                    ) || "";
+
+                if (
+                    !isSafeNewsUrl(src)
+                ) {
+                    element.remove();
+                    return;
+                }
+
+                element.setAttribute(
+                    "loading",
+                    "lazy"
+                );
+            }
+
+            if (
+                element.tagName ===
+                "VIDEO" ||
+                element.tagName ===
+                "SOURCE"
+            ) {
+                const src =
+                    element.getAttribute(
+                        "src"
+                    ) || "";
+
+                if (
+                    src &&
+                    !isSafeNewsUrl(src)
+                ) {
+                    element.removeAttribute(
+                        "src"
+                    );
+                }
+            }
+        }
+    );
+
+    return template.innerHTML;
+}
+
+function isSafeNewsUrl(url) {
+    const value =
+        String(url || "")
+            .trim()
+            .toLowerCase();
+
+    return (
+        value.startsWith("/") ||
+        value.startsWith(
+            "https://"
+        ) ||
+        value.startsWith(
+            "http://"
+        )
+    );
 }
 
 function escapeHtml(text) {
