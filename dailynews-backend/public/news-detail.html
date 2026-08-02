@@ -26,9 +26,68 @@
             border-bottom: 1px solid rgba(80, 150, 255, 0.35);
         }
 
-        .logo {
-            font-size: 26px;
-            font-weight: bold;
+        .news-detail-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .news-detail-logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 164px;
+            height: 64px;
+            flex: 0 0 164px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .news-detail-logo-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .news-detail-logo-image[hidden] {
+            display: none;
+        }
+
+        .news-detail-default-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            border: 1px solid rgba(53, 199, 255, 0.45);
+            border-radius: 8px;
+            background:
+                linear-gradient(135deg,
+                    rgba(7, 113, 195, 0.9),
+                    rgba(9, 44, 89, 0.96));
+            color: #ffffff;
+            font-size: 20px;
+            line-height: 1.1;
+            text-align: center;
+        }
+
+        .news-detail-default-logo[hidden] {
+            display: none;
+        }
+
+        .news-detail-page-name {
+            color: #d8ecff;
+            font-size: 24px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .news-detail-brand:hover .news-detail-page-name {
+            color: #39caff;
         }
 
         .back-btn {
@@ -207,8 +266,22 @@
                 padding: 16px 18px;
             }
 
-            .logo {
-                font-size: 21px;
+            .news-detail-brand {
+                gap: 9px;
+            }
+
+            .news-detail-logo-wrap {
+                width: 116px;
+                height: 46px;
+                flex-basis: 116px;
+            }
+
+            .news-detail-default-logo {
+                font-size: 15px;
+            }
+
+            .news-detail-page-name {
+                font-size: 18px;
             }
 
             .article {
@@ -226,7 +299,19 @@
 
 <body>
     <header class="top-bar">
-        <div class="logo">Daily News 新闻详情</div>
+        <a class="news-detail-brand" href="/" aria-label="返回 Daily News 首页">
+            <span class="news-detail-logo-wrap">
+                <img id="siteHeaderLogo" class="news-detail-logo-image" alt="Daily News LOGO" hidden />
+
+                <span id="siteHeaderDefaultLogo" class="news-detail-default-logo">
+                    <strong>Daily News</strong>
+                </span>
+            </span>
+
+            <span class="news-detail-page-name">
+                新闻详情
+            </span>
+        </a>
         <a class="back-btn" href="/index.html">返回首页</a>
     </header>
 
@@ -253,8 +338,10 @@
         </section>
     </main>
 
+    <script src="/site-settings.js"></script>
     <script src="/news-detail.js"></script>
     <script src="/news-comments.js?v=26"></script>
+
 </body>
 
 </html>
