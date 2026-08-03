@@ -144,7 +144,7 @@ function resolveFilters(input = {}) {
     };
 }
 
-function normalizeArticle(article, category, status) {
+function normalizeArticle(article, category, status, countryCode) {
     const originalUrl = normalizeUrl(article?.url);
     const sourceName = normalizeText(article?.source?.name);
     const title = normalizeText(article?.title);
@@ -154,6 +154,7 @@ function normalizeArticle(article, category, status) {
     return {
         title,
         category,
+        country_code: normalizeText(countryCode).toLowerCase(),
         summary,
         content: apiContent || summary || title,
         image_url: normalizeText(article?.image),
@@ -322,7 +323,8 @@ async function fetchGNews(input = {}) {
                 return normalizeArticle(
                     article,
                     filters.category,
-                    input.status
+                    input.status,
+                    filters.country
                 );
             })
             .filter(function (article) {
@@ -419,6 +421,7 @@ async function importGNews(input = {}) {
                     INSERT INTO news (
                         title,
                         category,
+                        country_code,
                         summary,
                         content,
                         image_url,
@@ -448,12 +451,14 @@ async function importGNews(input = {}) {
                         ?,
                         ?,
                         ?,
+                        ?,
                         ?
                     )
                 `,
                 [
                     article.title,
                     article.category,
+                    article.country_code,
                     article.summary,
                     article.content,
                     article.image_url,
