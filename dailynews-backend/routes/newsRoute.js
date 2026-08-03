@@ -9,28 +9,66 @@ const jwt = require("jsonwebtoken");
 // 获取新闻列表
 
 router.get("/", (req, res) => {
+  const country = String(
+    req.query.country || ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (
+    country &&
+    country !== "all" &&
+    !/^[a-z]{2}$/.test(country)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid country code",
+    });
+  }
+
+  const conditions = [];
+  const parameters = [];
+
+  if (country && country !== "all") {
+    conditions.push("country_code = ?");
+    parameters.push(country);
+  }
+
+  const whereClause =
+    conditions.length > 0
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
   const sql = `
-    SELECT 
-      id,
-      title,
-      category,
-      summary,
-      image_url,
-      video_url,
-      source,
-      author,
-      status,
-      is_vip,
-      views,
-      created_at,
-      updated_at
-    FROM news
-    ORDER BY created_at DESC
+      SELECT
+          id,
+          title,
+          category,
+          country_code,
+          country_name,
+          region,
+          summary,
+          image_url,
+          video_url,
+          source,
+          author,
+          status,
+          is_vip,
+          views,
+          created_at,
+          updated_at
+      FROM news
+      ${whereClause}
+      ORDER BY created_at DESC
   `;
 
-  db.all(sql, [], (err, rows) => {
+  db.all(sql, parameters, (err, rows) => {
     if (err) {
-      console.error("Get news list error:", err.message);
+      console.error(
+        "Get news list error:",
+        err.message
+      );
+
       return res.status(500).json({
         success: false,
         message: "Failed to get news list",
@@ -39,6 +77,12 @@ router.get("/", (req, res) => {
 
     res.json({
       success: true,
+      filters: {
+        country:
+          country && country !== "all"
+            ? country
+            : null,
+      },
       data: rows,
     });
   });
