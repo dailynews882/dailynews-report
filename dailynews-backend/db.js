@@ -655,6 +655,24 @@ db.serialize(() => {
     "news.published_at"
   );
 
+  addColumnIfMissing(
+    `ALTER TABLE news
+       ADD COLUMN country_code TEXT`,
+    "news.country_code"
+  );
+
+  addColumnIfMissing(
+    `ALTER TABLE news
+       ADD COLUMN country_name TEXT`,
+    "news.country_name"
+  );
+
+  addColumnIfMissing(
+    `ALTER TABLE news
+       ADD COLUMN region TEXT`,
+    "news.region"
+  );
+
   db.run(`     CREATE INDEX IF NOT EXISTS
     idx_news_status_created_at
     ON news(status, created_at)
