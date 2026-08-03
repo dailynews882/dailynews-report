@@ -31,6 +31,29 @@ const ALLOWED_COUNTRIES = new Set([
     "my"
 ]);
 
+const COUNTRY_METADATA = Object.freeze({
+    sg: {
+        name: "Singapore",
+        region: "Asia",
+    },
+    us: {
+        name: "United States",
+        region: "North America",
+    },
+    cn: {
+        name: "China",
+        region: "Asia",
+    },
+    gb: {
+        name: "United Kingdom",
+        region: "Europe",
+    },
+    my: {
+        name: "Malaysia",
+        region: "Asia",
+    },
+});
+
 const ALLOWED_IMPORT_STATUSES = new Set([
     "published",
     "pending",
@@ -150,11 +173,15 @@ function normalizeArticle(article, category, status, countryCode) {
     const title = normalizeText(article?.title);
     const summary = normalizeText(article?.description);
     const apiContent = normalizeText(article?.content);
+    const normalizedCountryCode = normalizeText(countryCode).toLowerCase();
+    const countryMetadata = COUNTRY_METADATA[normalizedCountryCode] || {};
 
     return {
         title,
         category,
-        country_code: normalizeText(countryCode).toLowerCase(),
+        country_code: normalizedCountryCode,
+        country_name: countryMetadata.name || "",
+        region: countryMetadata.region || "",
         summary,
         content: apiContent || summary || title,
         image_url: normalizeText(article?.image),
@@ -422,6 +449,8 @@ async function importGNews(input = {}) {
                         title,
                         category,
                         country_code,
+                        country_name,
+                        region,
                         summary,
                         content,
                         image_url,
@@ -452,6 +481,8 @@ async function importGNews(input = {}) {
                         ?,
                         ?,
                         ?,
+                        ?,
+                        ?,
                         ?
                     )
                 `,
@@ -459,6 +490,8 @@ async function importGNews(input = {}) {
                     article.title,
                     article.category,
                     article.country_code,
+                    article.country_name,
+                    article.region,
                     article.summary,
                     article.content,
                     article.image_url,
