@@ -1,18 +1,39 @@
 ﻿const API_NEWS = "/api/news";
 const FAVORITES_KEY = "dailynewsFavorites";
 const LIKES_KEY = "dailynewsLikes";
+let activeCountryCode = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   const newsListBox = document.getElementById("newsList");
+  const countryLink = document.querySelector(
+    '.home-secondary-link[data-category="country"]'
+  );
 
   if (newsListBox) {
     newsListBox.addEventListener("click", handleNewsAction);
   }
 
+  if (countryLink) {
+    countryLink.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      const countryCode = window.prompt(
+        "请输入国家代码：sg、us、cn、gb、my；输入 all 显示全部新闻。",
+        activeCountryCode || "all"
+      );
+
+      if (countryCode === null) {
+        return;
+      }
+
+      loadNewsHome(countryCode);
+    });
+  }
+
   loadNewsHome();
 });
 
-async function loadNewsHome() {
+async function loadNewsHome(countryCode = activeCountryCode) {
   const newsListBox = document.getElementById("newsList");
   const messageBox = document.getElementById("newsMessage");
 
@@ -22,9 +43,14 @@ async function loadNewsHome() {
 
   newsListBox.innerHTML = "";
   messageBox.innerText = "正在加载新闻...";
+  activeCountryCode = String(countryCode || "").trim().toLowerCase();
+
+  const requestUrl = activeCountryCode
+    ? API_NEWS + "?country=" + encodeURIComponent(activeCountryCode)
+    : API_NEWS;
 
   try {
-    const response = await fetch(API_NEWS);
+    const response = await fetch(requestUrl);
     const result = await response.json();
 
     if (!response.ok || !result.success) {
