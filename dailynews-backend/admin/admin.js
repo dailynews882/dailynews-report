@@ -1577,6 +1577,11 @@ window.saveNewNews = async function () {
       "newNewsTitle"
     );
 
+  const countryInput =
+    document.getElementById(
+      "newNewsCountryCode"
+    );
+
   const categoryInput =
     document.getElementById(
       "newNewsCategory"
@@ -1600,6 +1605,7 @@ window.saveNewNews = async function () {
   if (
     !titleInput ||
     !categoryInput ||
+    !countryInput ||
     !sourceInput ||
     !statusInput ||
     !editor
@@ -1616,6 +1622,9 @@ window.saveNewNews = async function () {
 
   const category =
     categoryInput.value.trim();
+
+  const countryCode =
+    countryInput.value.trim().toLowerCase();
 
   const source =
     sourceInput.value.trim();
@@ -1759,6 +1768,7 @@ window.saveNewNews = async function () {
           body: JSON.stringify({
             title,
             category,
+            country_code: countryCode,
             summary,
             content,
             image_url:
@@ -1867,3 +1877,133 @@ window.saveNewNews = async function () {
 window.exportNewsRecords = function () {
   alert("新闻记录导出成功！（当前为前端演示，后期可导出 CSV / Excel）");
 };
+/*
+ * =====================================
+ * 新增新闻：动态加载分类和国家
+ * =====================================
+ */
+
+async function loadNewNewsMetadataOptions() {
+  const categorySelect =
+    document.getElementById(
+      "newNewsCategory"
+    );
+
+  const countrySelect =
+    document.getElementById(
+      "newNewsCountryCode"
+    );
+
+  if (
+    !categorySelect ||
+    !countrySelect
+  ) {
+    return;
+  }
+
+  categorySelect.innerHTML =
+    '<option value="">正在加载新闻分类...</option>';
+
+  countrySelect.innerHTML =
+    '<option value="">正在加载国家...</option>';
+
+  try {
+    const [
+      categoryResponse,
+      countryResponse
+    ] = await Promise.all([
+      fetch(
+        "/api/news-metadata/categories"
+      ),
+      fetch(
+        "/api/news-metadata/countries"
+      )
+    ]);
+
+    const categoryResult =
+      await categoryResponse.json();
+
+    const countryResult =
+      await countryResponse.json();
+
+    if (
+      !categoryResponse.ok ||
+      !categoryResult.success
+    ) {
+      throw new Error(
+        categoryResult.message ||
+        "加载新闻分类失败"
+      );
+    }
+
+    if (
+      !countryResponse.ok ||
+      !countryResult.success
+    ) {
+      throw new Error(
+        countryResult.message ||
+        "加载国家失败"
+      );
+    }
+
+    categorySelect.innerHTML =
+      '<option value="">请选择新闻分类</option>';
+
+    categoryResult.categories.forEach(
+      (category) => {
+        const option =
+          document.createElement(
+            "option"
+          );
+
+        option.value =
+          category.category_code;
+
+        option.textContent =
+          category.category_name;
+
+        categorySelect.appendChild(
+          option
+        );
+      }
+    );
+
+    countrySelect.innerHTML =
+      '<option value="">未指定国家</option>';
+
+    countryResult.countries.forEach(
+      (country) => {
+        const option =
+          document.createElement(
+            "option"
+          );
+
+        option.value =
+          country.country_code;
+
+        option.textContent =
+          country.country_name;
+
+        countrySelect.appendChild(
+          option
+        );
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Load news metadata error:",
+      error
+    );
+
+    categorySelect.innerHTML =
+      '<option value="">分类加载失败</option>';
+
+    countrySelect.innerHTML =
+      '<option value="">国家加载失败</option>';
+  }
+}
+
+document.addEventListener(
+  "DOMContentLoaded",
+  loadNewNewsMetadataOptions
+);

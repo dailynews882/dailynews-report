@@ -5,6 +5,55 @@ const {
   verifyAdminToken,
 } = require("../middleware/adminAuth");
 const jwt = require("jsonwebtoken");
+const NEWS_COUNTRY_METADATA = Object.freeze({
+  sg: {
+    name: "Singapore",
+    region: "Asia",
+  },
+  us: {
+    name: "United States",
+    region: "North America",
+  },
+  cn: {
+    name: "China",
+    region: "Asia",
+  },
+  gb: {
+    name: "United Kingdom",
+    region: "Europe",
+  },
+  my: {
+    name: "Malaysia",
+    region: "Asia",
+  },
+});
+
+function resolveNewsCountry(countryCode) {
+  const normalizedCode = String(countryCode || "")
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedCode) {
+    return {
+      country_code: null,
+      country_name: null,
+      region: null,
+    };
+  }
+
+  const metadata =
+    NEWS_COUNTRY_METADATA[normalizedCode];
+
+  if (!metadata) {
+    return null;
+  }
+
+  return {
+    country_code: normalizedCode,
+    country_name: metadata.name,
+    region: metadata.region,
+  };
+}
 
 // 获取新闻列表
 
@@ -308,6 +357,7 @@ router.post("/", verifyAdminToken, (req, res) => {
   const {
     title,
     category,
+    country_code,
     summary,
     content,
     image_url,
@@ -325,10 +375,22 @@ router.post("/", verifyAdminToken, (req, res) => {
     });
   }
 
+  const country = resolveNewsCountry(country_code);
+
+  if (!country) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid country code",
+    });
+  }
+
   const sql = `
     INSERT INTO news (
       title,
       category,
+      country_code,
+      country_name,
+      region,
       summary,
       content,
       image_url,
@@ -337,12 +399,15 @@ router.post("/", verifyAdminToken, (req, res) => {
       author,
       status,
       is_vip
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
     title,
     category || "general",
+    country.country_code,
+    country.country_name,
+    country.region,
     summary || "",
     content,
     image_url || "",
@@ -373,12 +438,13 @@ router.post("/", verifyAdminToken, (req, res) => {
 });
 
 // 修改新闻
-router.put("/:id", (req, res) => {
+router.put("/:id", verifyAdminToken, (req, res) => {
   const { id } = req.params;
 
   const {
     title,
     category,
+    country_code,
     summary,
     content,
     image_url,
@@ -396,11 +462,23 @@ router.put("/:id", (req, res) => {
     });
   }
 
+  const country = resolveNewsCountry(country_code);
+
+  if (!country) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid country code",
+    });
+  }
+
   const sql = `
     UPDATE news
     SET
       title = ?,
       category = ?,
+      country_code = ?,
+      country_name = ?,
+      region = ?,
       summary = ?,
       content = ?,
       image_url = ?,
@@ -416,6 +494,9 @@ router.put("/:id", (req, res) => {
   const values = [
     title,
     category || "general",
+    country.country_code,
+    country.country_name,
+    country.region,
     summary || "",
     content,
     image_url || "",

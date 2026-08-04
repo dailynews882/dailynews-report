@@ -1937,3 +1937,59 @@
 .home-secondary-nav .home-secondary-nav-inner>a .home-nav-caret {
     display: inline-block !important;
 }
+
+.country-filter-menu {
+    position: absolute;
+    z-index: 1200;
+    min-width: 180px;
+    padding: 8px;
+    border: 1px solid rgba(55, 202, 255, 0.42);
+    border-radius: 10px;
+    background: linear-gradient(180deg,
+            rgba(8, 35, 59, 0.98) 0%,
+            rgba(5, 24, 43, 0.98) 100%);
+    box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.34),
+        0 0 16px rgba(55, 202, 255, 0.12);
+}
+
+.country-filter-menu[hidden] {
+    display: none !important;
+}
+
+.country-filter-menu button {
+    width: 100%;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #dcecff;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.country-filter-menu button:hover,
+.country-filter-menu button.is-active {
+    color: #37caff;
+    background: rgba(24, 151, 220, 0.16);
+}
+
+@media (max-width: 900px) {
+    .country-filter-menu {
+        min-width: 160px;
+    }
+
+    .country-filter-menu button {
+        min-height: 36px;
+        font-size: 13px;
+    }
+}

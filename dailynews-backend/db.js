@@ -682,6 +682,124 @@ db.serialize(() => {
     idx_news_category
     ON news(category)
   `);
+  /*
+ * ==============================
+ * 新闻分类基础数据表
+ * ==============================
+ */
+  db.run(`
+  CREATE TABLE IF NOT EXISTS news_categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_code TEXT NOT NULL UNIQUE,
+    category_name TEXT NOT NULL,
+    category_name_en TEXT DEFAULT '',
+    sort_order INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    show_in_home_nav INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+  db.run(`
+  CREATE INDEX IF NOT EXISTS
+  idx_news_categories_active_sort
+  ON news_categories(
+    is_active,
+    sort_order
+  )
+`);
+
+  const defaultNewsCategories = [
+    ["general", "综合新闻", "General", 10, 1, 0],
+    ["politics", "政治", "Politics", 20, 1, 1],
+    ["economy", "经济", "Economy", 30, 1, 1],
+    ["military", "军事与战争", "Military & War", 40, 1, 1],
+    ["crypto", "数字货币", "Cryptocurrency", 50, 1, 1],
+    ["politics-figure", "政要人物", "Political Figures", 60, 1, 1],
+    ["semiconductor", "半导体", "Semiconductor", 70, 1, 1],
+    ["think-tank", "智库与论坛", "Think Tanks & Forums", 80, 1, 1],
+    ["influencer", "大V博主", "Influencers", 90, 1, 1],
+    ["energy", "能源", "Energy", 100, 1, 1],
+    ["futures", "期货", "Futures", 110, 1, 1],
+    ["precious-metals", "黄金与白银", "Gold & Silver", 120, 1, 1]
+  ];
+
+  const insertDefaultCategorySql = `
+  INSERT OR IGNORE INTO news_categories (
+    category_code,
+    category_name,
+    category_name_en,
+    sort_order,
+    is_active,
+    show_in_home_nav
+  )
+  VALUES (?, ?, ?, ?, ?, ?)
+`;
+
+  defaultNewsCategories.forEach((category) => {
+    db.run(
+      insertDefaultCategorySql,
+      category
+    );
+  });
+
+  /*
+   * ==============================
+   * 新闻国家基础数据表
+   * ==============================
+   */
+  db.run(`
+  CREATE TABLE IF NOT EXISTS news_countries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    country_code TEXT NOT NULL UNIQUE,
+    country_name TEXT NOT NULL,
+    country_name_en TEXT DEFAULT '',
+    region TEXT DEFAULT '',
+    sort_order INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    show_in_home_menu INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+  db.run(`
+  CREATE INDEX IF NOT EXISTS
+  idx_news_countries_active_sort
+  ON news_countries(
+    is_active,
+    sort_order
+  )
+`);
+
+  const defaultNewsCountries = [
+    ["sg", "新加坡", "Singapore", "Asia", 10, 1, 1],
+    ["us", "美国", "United States", "North America", 20, 1, 1],
+    ["cn", "中国", "China", "Asia", 30, 1, 1],
+    ["gb", "英国", "United Kingdom", "Europe", 40, 1, 1],
+    ["my", "马来西亚", "Malaysia", "Asia", 50, 1, 1]
+  ];
+
+  const insertDefaultCountrySql = `
+  INSERT OR IGNORE INTO news_countries (
+    country_code,
+    country_name,
+    country_name_en,
+    region,
+    sort_order,
+    is_active,
+    show_in_home_menu
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`;
+
+  defaultNewsCountries.forEach((country) => {
+    db.run(
+      insertDefaultCountrySql,
+      country
+    );
+  });
 });
 
 /*

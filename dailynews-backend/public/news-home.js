@@ -8,30 +8,121 @@ document.addEventListener("DOMContentLoaded", () => {
   const countryLink = document.querySelector(
     '.home-secondary-link[data-category="country"]'
   );
+  const countryMenu = document.getElementById("countryFilterMenu");
 
   if (newsListBox) {
     newsListBox.addEventListener("click", handleNewsAction);
   }
 
-  if (countryLink) {
+  if (countryLink && countryMenu) {
     countryLink.addEventListener("click", (event) => {
       event.preventDefault();
+      event.stopPropagation();
 
-      const countryCode = window.prompt(
-        "请输入国家代码：sg、us、cn、gb、my；输入 all 显示全部新闻。",
-        activeCountryCode || "all"
-      );
+      const shouldOpen = countryMenu.hidden;
 
-      if (countryCode === null) {
+      closeCountryMenu();
+
+      if (shouldOpen) {
+        positionCountryMenu(countryLink, countryMenu);
+        countryMenu.hidden = false;
+      }
+    });
+
+    countryMenu.addEventListener("click", (event) => {
+      const countryButton = event.target.closest("[data-country]");
+
+      if (!countryButton) {
         return;
       }
 
-      loadNewsHome(countryCode);
+      const countryCode = String(
+        countryButton.dataset.country || "all"
+      )
+        .trim()
+        .toLowerCase();
+
+      activeCountryCode =
+        countryCode === "all" ? "" : countryCode;
+
+      updateCountryMenuActiveState(countryMenu);
+      countryMenu.hidden = true;
+
+      loadNewsHome(activeCountryCode);
     });
+
+    document.addEventListener("click", (event) => {
+      if (
+        !countryMenu.hidden &&
+        !countryMenu.contains(event.target) &&
+        !countryLink.contains(event.target)
+      ) {
+        countryMenu.hidden = true;
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (!countryMenu.hidden) {
+        positionCountryMenu(countryLink, countryMenu);
+      }
+    });
+
+    window.addEventListener("scroll", () => {
+      if (!countryMenu.hidden) {
+        positionCountryMenu(countryLink, countryMenu);
+      }
+    }, true);
   }
 
   loadNewsHome();
 });
+
+function closeCountryMenu() {
+  const countryMenu = document.getElementById("countryFilterMenu");
+
+  if (countryMenu) {
+    countryMenu.hidden = true;
+  }
+}
+
+function positionCountryMenu(countryLink, countryMenu) {
+  const linkRect = countryLink.getBoundingClientRect();
+  const menuWidth = countryMenu.offsetWidth || 180;
+  const viewportPadding = 12;
+
+  let left = linkRect.left + window.scrollX;
+
+  const maximumLeft =
+    window.scrollX +
+    window.innerWidth -
+    menuWidth -
+    viewportPadding;
+
+  if (left > maximumLeft) {
+    left = maximumLeft;
+  }
+
+  if (left < window.scrollX + viewportPadding) {
+    left = window.scrollX + viewportPadding;
+  }
+
+  countryMenu.style.left = left + "px";
+  countryMenu.style.top =
+    linkRect.bottom + window.scrollY + 6 + "px";
+}
+
+function updateCountryMenuActiveState(countryMenu) {
+  const currentCountry = activeCountryCode || "all";
+
+  countryMenu
+    .querySelectorAll("[data-country]")
+    .forEach((button) => {
+      button.classList.toggle(
+        "is-active",
+        button.dataset.country === currentCountry
+      );
+    });
+}
 
 async function loadNewsHome(countryCode = activeCountryCode) {
   const newsListBox = document.getElementById("newsList");

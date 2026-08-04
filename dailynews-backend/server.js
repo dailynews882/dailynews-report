@@ -34,6 +34,7 @@ const commentRoute = require("./routes/commentRoute");
 const adminCommentRoute = require("./routes/adminCommentRoute");
 const adminAuthRoute = require("./routes/adminAuthRoute");
 const adminSettingsRoute = require("./routes/adminSettingsRoute");
+const newsMetadataRoute = require("./routes/newsMetadataRoute");
 const adminNewsImportRoute = require("./routes/adminNewsImportRoute");
 const adminNewsUploadRoute = require("./routes/adminNewsUploadRoute");
 const siteAdsRoute = require("./routes/siteAdsRoute");
@@ -200,6 +201,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
 
 app.use("/api/news", newsRoutes);
+
+app.use("/api/news-metadata", newsMetadataRoute);
 
 app.use("/api/comments", commentRoute);
 app.use("/api/admin/auth", adminAuthRoute);
