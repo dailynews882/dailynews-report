@@ -70,6 +70,221 @@
         </div>
       </section>
 
+      <section class="admin-panel metadata-management-panel">
+        <div class="panel-title-row">
+          <div>
+            <h2>新闻分类管理</h2>
+            <p class="metadata-description">
+              管理后台新增新闻时使用的分类，也可以控制分类是否启用及是否显示在首页。
+            </p>
+          </div>
+
+          <button type="button" class="small-btn" id="addNewsCategoryBtn">
+            新增分类
+          </button>
+        </div>
+
+        <div id="newsCategoryMessage" class="metadata-message" aria-live="polite"></div>
+
+        <div class="metadata-table-wrap">
+          <table class="metadata-table">
+            <thead>
+              <tr>
+                <th>排序</th>
+                <th>分类代码</th>
+                <th>中文名称</th>
+                <th>英文名称</th>
+                <th>启用</th>
+                <th>首页显示</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+
+            <tbody id="newsCategoryTableBody">
+              <tr>
+                <td colspan="7">正在加载新闻分类...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-panel metadata-management-panel">
+        <div class="panel-title-row">
+          <div>
+            <h2>国家管理</h2>
+            <p class="metadata-description">
+              管理新闻所属国家、地区、排序和首页国家菜单显示状态。
+            </p>
+          </div>
+
+          <button type="button" class="small-btn" id="addNewsCountryBtn">
+            新增国家
+          </button>
+        </div>
+
+        <div id="newsCountryMessage" class="metadata-message" aria-live="polite"></div>
+
+        <div class="metadata-table-wrap">
+          <table class="metadata-table">
+            <thead>
+              <tr>
+                <th>排序</th>
+                <th>国家代码</th>
+                <th>中文名称</th>
+                <th>英文名称</th>
+                <th>地区</th>
+                <th>启用</th>
+                <th>首页显示</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+
+            <tbody id="newsCountryTableBody">
+              <tr>
+                <td colspan="8">正在加载国家...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="metadata-modal-overlay" id="newsCategoryModal" hidden>
+        <div class="metadata-modal">
+          <div class="metadata-modal-header">
+            <h2 id="newsCategoryModalTitle">新增新闻分类</h2>
+
+            <button type="button" class="metadata-modal-close" id="closeNewsCategoryModalBtn">
+              ×
+            </button>
+          </div>
+
+          <div class="metadata-modal-content">
+            <input type="hidden" id="newsCategoryId" />
+
+            <div class="form-group">
+              <label for="newsCategoryCode">
+                分类代码
+              </label>
+
+              <input type="text" id="newsCategoryCode" placeholder="例如 technology" maxlength="50" />
+            </div>
+
+            <div class="form-group">
+              <label for="newsCategoryName">
+                中文名称
+              </label>
+
+              <input type="text" id="newsCategoryName" placeholder="例如 科技" />
+            </div>
+
+            <div class="form-group">
+              <label for="newsCategoryNameEn">
+                英文名称
+              </label>
+
+              <input type="text" id="newsCategoryNameEn" placeholder="例如 Technology" />
+            </div>
+
+            <div class="form-group">
+              <label for="newsCategorySortOrder">
+                排序编号
+              </label>
+
+              <input type="number" id="newsCategorySortOrder" value="0" min="0" />
+            </div>
+
+            <label class="metadata-checkbox-row">
+              <input type="checkbox" id="newsCategoryIsActive" checked />
+
+              <span>启用该分类</span>
+            </label>
+
+            <label class="metadata-checkbox-row">
+              <input type="checkbox" id="newsCategoryShowHome" checked />
+
+              <span>显示在首页分类导航</span>
+            </label>
+
+            <button type="button" class="small-btn full-btn" id="saveNewsCategoryBtn">
+              保存分类
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="metadata-modal-overlay" id="newsCountryModal" hidden>
+        <div class="metadata-modal">
+          <div class="metadata-modal-header">
+            <h2 id="newsCountryModalTitle">新增国家</h2>
+
+            <button type="button" class="metadata-modal-close" id="closeNewsCountryModalBtn">
+              ×
+            </button>
+          </div>
+
+          <div class="metadata-modal-content">
+            <input type="hidden" id="newsCountryId" />
+
+            <div class="form-group">
+              <label for="newsCountryCode">
+                两位国家代码
+              </label>
+
+              <input type="text" id="newsCountryCode" placeholder="例如 sg、us、cn" maxlength="2" />
+            </div>
+
+            <div class="form-group">
+              <label for="newsCountryName">
+                中文名称
+              </label>
+
+              <input type="text" id="newsCountryName" placeholder="例如 新加坡" />
+            </div>
+
+            <div class="form-group">
+              <label for="newsCountryNameEn">
+                英文名称
+              </label>
+
+              <input type="text" id="newsCountryNameEn" placeholder="例如 Singapore" />
+            </div>
+
+            <div class="form-group">
+              <label for="newsCountryRegion">
+                所属地区
+              </label>
+
+              <input type="text" id="newsCountryRegion" placeholder="例如 Asia" />
+            </div>
+
+            <div class="form-group">
+              <label for="newsCountrySortOrder">
+                排序编号
+              </label>
+
+              <input type="number" id="newsCountrySortOrder" value="0" min="0" />
+            </div>
+
+            <label class="metadata-checkbox-row">
+              <input type="checkbox" id="newsCountryIsActive" checked />
+
+              <span>启用该国家</span>
+            </label>
+
+            <label class="metadata-checkbox-row">
+              <input type="checkbox" id="newsCountryShowHome" checked />
+
+              <span>显示在首页国家菜单</span>
+            </label>
+
+            <button type="button" class="small-btn full-btn" id="saveNewsCountryBtn">
+              保存国家
+            </button>
+          </div>
+        </div>
+      </div>
+
       <section class="admin-panel">
         <div class="panel-title-row">
           <h2>网站基础设置</h2>
