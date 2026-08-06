@@ -1390,4 +1390,149 @@ db.serialize(() => {
   `);
 });
 
+
+/*
+ * ============================================================
+ * 商城商品表
+ * ============================================================
+ */
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS store_products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_code TEXT NOT NULL UNIQUE,
+      product_name TEXT NOT NULL,
+      product_type TEXT NOT NULL DEFAULT 'ebook',
+      description TEXT DEFAULT '',
+      price REAL NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'SGD',
+      cover_url TEXT DEFAULT '',
+      access_url TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'draft',
+      is_featured INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_store_products_status_sort
+    ON store_products(status, sort_order, id)
+  `);
+
+  const defaultStoreProducts = [
+    [
+      "ebook-global-news",
+      "全球新闻行业电子书",
+      "ebook",
+      "新闻聚合、国际传播和媒体运营的系统化学习资料。",
+      19.90,
+      "SGD",
+      "",
+      "",
+      "published",
+      1,
+      10
+    ],
+    [
+      "report-global-market",
+      "全球市场研究报告",
+      "report",
+      "国际财经、科技和地缘政治趋势的专题分析报告。",
+      29.90,
+      "SGD",
+      "",
+      "",
+      "published",
+      1,
+      20
+    ],
+    [
+      "video-news-analysis",
+      "新闻分析视频课程",
+      "video",
+      "新闻筛选、内容判断和视频新闻制作的实用课程。",
+      39.90,
+      "SGD",
+      "",
+      "",
+      "published",
+      1,
+      30
+    ],
+    [
+      "vip-monthly",
+      "Daily News VIP会员",
+      "membership",
+      "解锁VIP新闻、AI分析、专题报告和更多会员专属功能。",
+      9.90,
+      "SGD",
+      "",
+      "/subscribe.html",
+      "published",
+      1,
+      40
+    ]
+  ];
+
+  const insertDefaultStoreProductSql = `
+    INSERT OR IGNORE INTO store_products (
+      product_code,
+      product_name,
+      product_type,
+      description,
+      price,
+      currency,
+      cover_url,
+      access_url,
+      status,
+      is_featured,
+      sort_order
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  defaultStoreProducts.forEach((product) => {
+    db.run(insertDefaultStoreProductSql, product);
+  });
+});
+
+
+/*
+ * ============================================================
+ * 商城商品图片表
+ * image_type:
+ * cover  = 商品封面图，最多4张
+ * detail = 商品详情图，最多10张
+ * ============================================================
+ */
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS store_product_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      image_type TEXT NOT NULL DEFAULT 'cover',
+      image_url TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id)
+        REFERENCES store_products(id)
+        ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_store_product_images_product_type_sort
+    ON store_product_images(
+      product_id,
+      image_type,
+      sort_order,
+      id
+    )
+  `);
+});
+
 module.exports = db;

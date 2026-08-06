@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>商品详情 - Daily News 商城</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #061426;
+            color: #ffffff;
+            font-family:
+                Arial,
+                "Microsoft YaHei",
+                sans-serif;
+        }
+
+        .product-detail-header {
+            padding: 22px 30px;
+            border-bottom: 2px solid #e8bd24;
+            background: #07111f;
+        }
+
+        .product-detail-header-inner,
+        .product-detail-main {
+            width: min(1180px,
+                    calc(100% - 30px));
+            margin: 0 auto;
+        }
+
+        .product-detail-header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .product-detail-header h1 {
+            margin: 0;
+            color: #ffd447;
+        }
+
+        .product-detail-header a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .product-detail-main {
+            margin-top: 30px;
+            margin-bottom: 50px;
+        }
+
+        .product-detail-loading {
+            padding: 30px;
+            border: 1px solid #1c5f8a;
+            border-radius: 14px;
+            background: #0a2441;
+            color: #b9d1e2;
+        }
+
+        .product-detail-top {
+            display: grid;
+            grid-template-columns:
+                minmax(0, 1.05fr) minmax(320px, 0.95fr);
+            gap: 30px;
+        }
+
+        .product-gallery,
+        .product-summary,
+        .product-description-card,
+        .product-detail-images-card {
+            border: 1px solid #1c5f8a;
+            border-radius: 14px;
+            background: #0a2441;
+        }
+
+        .product-gallery {
+            padding: 18px;
+        }
+
+        .product-main-image {
+            width: 100%;
+            height: 460px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 10px;
+            background:
+                linear-gradient(135deg,
+                    #0c5d9c,
+                    #08182c);
+            color: #ffd447;
+            font-size: 36px;
+            font-weight: 800;
+        }
+
+        .product-main-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #07182d;
+        }
+
+        .product-thumbnails {
+            display: grid;
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .product-thumbnail {
+            height: 86px;
+            padding: 0;
+            overflow: hidden;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: #07182d;
+            cursor: pointer;
+        }
+
+        .product-thumbnail.is-active {
+            border-color: #ffd447;
+        }
+
+        .product-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-summary {
+            padding: 28px;
+        }
+
+        .product-summary h2 {
+            margin: 0 0 16px;
+            color: #ffffff;
+            font-size: 32px;
+        }
+
+        .product-type-label {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #0b679b;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .product-detail-price {
+            margin: 24px 0;
+            color: #ffd447;
+            font-size: 34px;
+            font-weight: 800;
+        }
+
+        .product-buy-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 170px;
+            min-height: 48px;
+            padding: 0 20px;
+            border-radius: 8px;
+            background: #0aa9ed;
+            color: #ffffff;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .product-description-card,
+        .product-detail-images-card {
+            margin-top: 24px;
+            padding: 26px;
+        }
+
+        .product-description-card h2,
+        .product-detail-images-card h2 {
+            margin: 0 0 18px;
+            color: #ffd447;
+        }
+
+        .product-description-content {
+            color: #d8ecf8;
+            line-height: 1.85;
+            overflow-wrap: anywhere;
+        }
+
+        .product-description-content h2,
+        .product-description-content h3 {
+            color: #ffd447;
+        }
+
+        .product-description-content a {
+            color: #30c8ff;
+        }
+
+        .product-detail-images {
+            display: grid;
+            gap: 18px;
+        }
+
+        .product-detail-images img {
+            display: block;
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 850px) {
+            .product-detail-top {
+                grid-template-columns: 1fr;
+            }
+
+            .product-main-image {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="product-detail-header">
+        <div class="product-detail-header-inner">
+            <h1>Daily News 商品详情</h1>
+            <a href="/store.html">
+                返回商城
+            </a>
+        </div>
+    </header>
+
+    <main id="productDetailMain" class="product-detail-main">
+        <div class="product-detail-loading">
+            正在读取商品详情...
+        </div>
+    </main>
+
+    <script src="/product-detail.js"></script>
+</body>
+
+</html>
