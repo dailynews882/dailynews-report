@@ -347,6 +347,33 @@
     </div>
   </section>
 
+
+  <!-- ==============================
+       全球市场行情栏（第一阶段演示数据）
+  ============================== -->
+  <section class="market-ticker-section" aria-label="全球市场行情">
+    <div class="market-ticker-shell">
+      <div class="market-ticker-heading">
+        <span class="market-ticker-live-dot" aria-hidden="true"></span>
+        <strong>全球市场</strong>
+        <span>演示行情</span>
+      </div>
+
+      <div class="market-ticker-viewport" id="marketTickerViewport" tabindex="0" aria-label="全球主要指数、商品和数字货币行情">
+        <div class="market-ticker-track" id="marketTickerTrack">
+          <span class="market-ticker-loading">
+            正在加载全球市场行情...
+          </span>
+        </div>
+      </div>
+
+      <div class="market-ticker-time">
+        <span>更新时间</span>
+        <strong id="marketTickerUpdatedAt">--:--:--</strong>
+      </div>
+    </div>
+  </section>
+
   <!-- ==============================
        首页最新新闻
   ============================== -->
@@ -818,6 +845,8 @@
   <script src="/news-home.js"></script>
 
   <script src="/home-ad-carousel.js"></script>
+
+  <script src="/market-ticker.js"></script>
 
   <script src="/home-calendar.js"></script>
 
