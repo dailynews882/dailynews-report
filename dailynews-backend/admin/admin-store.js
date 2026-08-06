@@ -616,7 +616,6 @@ async function saveStoreProduct() {
         }
 
         closeStoreProductModal();
-        await loadStoreProducts();
 
         showStoreAdminMessage(
             "商品及图片保存成功。",
@@ -627,6 +626,8 @@ async function saveStoreProduct() {
             top: 0,
             behavior: "smooth"
         });
+
+        await loadStoreProducts();
     } catch (error) {
         console.error(error);
 
@@ -648,36 +649,86 @@ async function uploadStoreImages(
     imageType,
     files
 ) {
-    const formData = new FormData();
-
-    formData.append(
-        "image_type",
-        imageType
-    );
-
-    files.forEach((file) => {
-        formData.append("images", file);
-    });
-
-    const response = await fetch(
-        `${STORE_ADMIN_API}/${productId}/images`,
-        {
-            method: "POST",
-            headers: getAdminHeaders(false),
-            body: formData
-        }
-    );
-
-    const result = await response.json();
-
-    if (
-        !response.ok ||
-        !result.success
+    for (
+        let index = 0;
+        index < files.length;
+        index += 1
     ) {
-        throw new Error(
-            result.message ||
-            "上传商品图片失败。"
+        const file = files[index];
+        const formData = new FormData();
+
+        formData.append(
+            "image_type",
+            imageType
         );
+
+        formData.append(
+            "images",
+            file
+        );
+
+        const controller =
+            new AbortController();
+
+        const timeoutId =
+            window.setTimeout(
+                () => controller.abort(),
+                60000
+            );
+
+        try {
+            const response = await fetch(
+                `${STORE_ADMIN_API}/${productId}/images`,
+                {
+                    method: "POST",
+                    headers:
+                        getAdminHeaders(false),
+                    body: formData,
+                    signal: controller.signal
+                }
+            );
+
+            const contentType =
+                response.headers.get(
+                    "content-type"
+                ) || "";
+
+            const result =
+                contentType.includes(
+                    "application/json"
+                )
+                    ? await response.json()
+                    : {
+                        success: false,
+                        message:
+                            await response.text()
+                    };
+
+            if (
+                !response.ok ||
+                !result.success
+            ) {
+                throw new Error(
+                    result.message ||
+                    `第 ${index + 1} 张图片上传失败。`
+                );
+            }
+        } catch (error) {
+            if (
+                error.name ===
+                "AbortError"
+            ) {
+                throw new Error(
+                    `第 ${index + 1} 张图片上传超时，请重试。`
+                );
+            }
+
+            throw error;
+        } finally {
+            window.clearTimeout(
+                timeoutId
+            );
+        }
     }
 }
 

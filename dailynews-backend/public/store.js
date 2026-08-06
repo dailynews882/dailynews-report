@@ -66,12 +66,17 @@ async function loadStoreProducts() {
                     activeStoreType
                 )}`;
 
+        const separator =
+            query ? "&" : "?";
+
         const response = await fetch(
-            `${STORE_API}${query}`,
+            `${STORE_API}${query}${separator}_=${Date.now()}`,
             {
                 headers: {
                     Accept:
-                        "application/json"
+                        "application/json",
+                    "Cache-Control":
+                        "no-cache"
                 },
                 cache: "no-store"
             }
