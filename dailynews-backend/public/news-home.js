@@ -1,88 +1,369 @@
 ﻿const API_NEWS = "/api/news";
+const NEWS_METADATA_API = "/api/news-metadata";
 const FAVORITES_KEY = "dailynewsFavorites";
 const LIKES_KEY = "dailynewsLikes";
-let activeCountryCode = "";
 
-document.addEventListener("DOMContentLoaded", () => {
+let activeCountryCode = "";
+let activeCategoryCode = "";
+
+document.addEventListener("DOMContentLoaded", async () => {
   const newsListBox = document.getElementById("newsList");
-  const countryLink = document.querySelector(
-    '.home-secondary-link[data-category="country"]'
-  );
-  const countryMenu = document.getElementById("countryFilterMenu");
 
   if (newsListBox) {
     newsListBox.addEventListener("click", handleNewsAction);
   }
 
-  if (countryLink && countryMenu) {
-    countryLink.addEventListener("click", (event) => {
+  bindCountryMenuEvents();
+  bindDynamicCategoryEvents();
+
+  await loadHomeNewsMetadata();
+  await loadNewsHome();
+});
+
+function bindCountryMenuEvents() {
+  document.addEventListener("click", (event) => {
+    const countryLink = event.target.closest(
+      '.home-secondary-link[data-category="country"]'
+    );
+
+    const countryMenu = document.getElementById(
+      "countryFilterMenu"
+    );
+
+    if (!countryMenu) {
+      return;
+    }
+
+    if (countryLink) {
       event.preventDefault();
       event.stopPropagation();
 
-      const shouldOpen = countryMenu.hidden;
+      const isOpen =
+        countryMenu.hidden === false &&
+        countryMenu.style.display !== "none";
 
-      closeCountryMenu();
-
-      if (shouldOpen) {
-        positionCountryMenu(countryLink, countryMenu);
-        countryMenu.hidden = false;
-      }
-    });
-
-    countryMenu.addEventListener("click", (event) => {
-      const countryButton = event.target.closest("[data-country]");
-
-      if (!countryButton) {
+      if (isOpen) {
+        closeCountryMenu();
         return;
       }
 
+      positionCountryMenu(
+        countryLink,
+        countryMenu
+      );
+
+      countryMenu.hidden = false;
+      countryMenu.removeAttribute("hidden");
+      countryMenu.style.display = "block";
+
+      return;
+    }
+
+    const countryButton =
+      event.target.closest(
+        "#countryFilterMenu [data-country]"
+      );
+
+    if (countryButton) {
+      event.preventDefault();
+      event.stopPropagation();
+
       const countryCode = String(
-        countryButton.dataset.country || "all"
+        countryButton.dataset.country ||
+        "all"
       )
         .trim()
         .toLowerCase();
 
       activeCountryCode =
-        countryCode === "all" ? "" : countryCode;
+        countryCode === "all"
+          ? ""
+          : countryCode;
 
-      updateCountryMenuActiveState(countryMenu);
-      countryMenu.hidden = true;
+      updateCountryMenuActiveState(
+        countryMenu
+      );
 
-      loadNewsHome(activeCountryCode);
-    });
+      updateCountryLinkLabel();
+      closeCountryMenu();
+      loadNewsHome();
 
-    document.addEventListener("click", (event) => {
-      if (
-        !countryMenu.hidden &&
-        !countryMenu.contains(event.target) &&
-        !countryLink.contains(event.target)
-      ) {
-        countryMenu.hidden = true;
-      }
-    });
+      return;
+    }
 
-    window.addEventListener("resize", () => {
-      if (!countryMenu.hidden) {
-        positionCountryMenu(countryLink, countryMenu);
-      }
-    });
+    if (
+      !countryMenu.contains(event.target)
+    ) {
+      closeCountryMenu();
+    }
+  });
 
-    window.addEventListener("scroll", () => {
-      if (!countryMenu.hidden) {
-        positionCountryMenu(countryLink, countryMenu);
-      }
-    }, true);
+  window.addEventListener("resize", () => {
+    const countryMenu =
+      document.getElementById(
+        "countryFilterMenu"
+      );
+
+    const countryLink =
+      document.querySelector(
+        '.home-secondary-link[data-category="country"]'
+      );
+
+    if (
+      countryMenu &&
+      countryLink &&
+      !countryMenu.hidden
+    ) {
+      positionCountryMenu(
+        countryLink,
+        countryMenu
+      );
+    }
+  });
+}
+
+function bindDynamicCategoryEvents() {
+  const navInner = document.getElementById("homeSecondaryNavInner");
+
+  if (!navInner) {
+    return;
   }
 
-  loadNewsHome();
-});
+  navInner.addEventListener("click", (event) => {
+    const categoryLink = event.target.closest(
+      ".home-dynamic-category-link"
+    );
+
+    if (!categoryLink) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const categoryCode = String(
+      categoryLink.dataset.category || ""
+    )
+      .trim()
+      .toLowerCase();
+
+    activeCategoryCode =
+      activeCategoryCode === categoryCode
+        ? ""
+        : categoryCode;
+
+    updateCategoryActiveState();
+    loadNewsHome();
+  });
+}
+
+async function loadHomeNewsMetadata() {
+  const categoryLoading = document.getElementById(
+    "homeCategoryLoading"
+  );
+  const countryLoading = document.getElementById(
+    "countryFilterLoading"
+  );
+
+  try {
+    const [categoryResponse, countryResponse] =
+      await Promise.all([
+        fetch(`${NEWS_METADATA_API}/categories`),
+        fetch(`${NEWS_METADATA_API}/countries`)
+      ]);
+
+    const categoryResult = await categoryResponse.json();
+    const countryResult = await countryResponse.json();
+
+    if (!categoryResponse.ok || !categoryResult.success) {
+      throw new Error(
+        categoryResult.message || "首页分类加载失败"
+      );
+    }
+
+    if (!countryResponse.ok || !countryResult.success) {
+      throw new Error(
+        countryResult.message || "首页国家加载失败"
+      );
+    }
+
+    renderHomeCategories(categoryResult.categories || []);
+    renderHomeCountries(countryResult.countries || []);
+  } catch (error) {
+    console.error("Load home metadata error:", error);
+
+    if (categoryLoading) {
+      categoryLoading.textContent = "分类加载失败";
+      categoryLoading.dataset.state = "error";
+    }
+
+    if (countryLoading) {
+      countryLoading.textContent = "国家加载失败";
+      countryLoading.dataset.state = "error";
+    }
+  }
+}
+
+function renderHomeCategories(categories) {
+  const navInner = document.getElementById(
+    "homeSecondaryNavInner"
+  );
+  const loading = document.getElementById(
+    "homeCategoryLoading"
+  );
+
+  if (!navInner) {
+    return;
+  }
+
+  loading?.remove();
+
+  const existingLinks = navInner.querySelectorAll(
+    ".home-dynamic-category-link"
+  );
+
+  existingLinks.forEach((link) => link.remove());
+
+  categories
+    .filter(
+      (category) =>
+        Number(category.show_in_home_nav) === 1
+    )
+    .forEach((category) => {
+      const link = document.createElement("a");
+
+      link.href = "#";
+      link.className =
+        "home-secondary-link home-dynamic-category-link";
+      link.dataset.category =
+        String(category.category_code || "")
+          .trim()
+          .toLowerCase();
+
+      const label = document.createElement("span");
+      label.textContent =
+        category.category_name ||
+        category.category_name_en ||
+        category.category_code;
+
+      link.appendChild(label);
+      navInner.appendChild(link);
+    });
+
+  updateCategoryActiveState();
+}
+
+function renderHomeCountries(countries) {
+  const countryMenu = document.getElementById(
+    "countryFilterMenu"
+  );
+
+  if (!countryMenu) {
+    return;
+  }
+
+  countryMenu
+    .querySelectorAll("[data-country]:not([data-country='all'])")
+    .forEach((button) => button.remove());
+
+  document.getElementById(
+    "countryFilterLoading"
+  )?.remove();
+
+  countries
+    .filter(
+      (country) =>
+        Number(country.show_in_home_menu) === 1
+    )
+    .forEach((country) => {
+      const button = document.createElement("button");
+
+      button.type = "button";
+      button.dataset.country =
+        String(country.country_code || "")
+          .trim()
+          .toLowerCase();
+
+      button.textContent =
+        country.country_name ||
+        country.country_name_en ||
+        country.country_code;
+
+      countryMenu.appendChild(button);
+    });
+
+  updateCountryMenuActiveState(countryMenu);
+  updateCountryLinkLabel();
+}
+
+function updateCategoryActiveState() {
+  document
+    .querySelectorAll(".home-dynamic-category-link")
+    .forEach((link) => {
+      link.classList.toggle(
+        "is-active",
+        link.dataset.category === activeCategoryCode
+      );
+    });
+}
+
+function updateCountryLinkLabel() {
+  const countryLink = document.querySelector(
+    '.home-secondary-link[data-category="country"]'
+  );
+
+  const countryMenu = document.getElementById(
+    "countryFilterMenu"
+  );
+
+  if (!countryLink || !countryMenu) {
+    return;
+  }
+
+  const label = countryLink.querySelector(
+    "span:first-child"
+  );
+
+  const currentCountry =
+    activeCountryCode || "all";
+
+  const selectedButton =
+    countryMenu.querySelector(
+      `[data-country="${currentCountry}"]`
+    );
+
+  if (label) {
+    if (selectedButton) {
+      const selectedName =
+        selectedButton.textContent.trim();
+
+      label.textContent =
+        currentCountry === "all"
+          ? "全部国家"
+          : `国家：${selectedName}`;
+    } else {
+      label.textContent =
+        "全部国家";
+    }
+  }
+
+  countryLink.classList.toggle(
+    "is-active",
+    true
+  );
+}
 
 function closeCountryMenu() {
-  const countryMenu = document.getElementById("countryFilterMenu");
+  const countryMenu = document.getElementById(
+    "countryFilterMenu"
+  );
 
-  if (countryMenu) {
-    countryMenu.hidden = true;
+  if (!countryMenu) {
+    return;
   }
+
+  countryMenu.hidden = true;
+  countryMenu.setAttribute("hidden", "");
+  countryMenu.style.display = "none";
 }
 
 function positionCountryMenu(countryLink, countryMenu) {
@@ -150,7 +431,22 @@ async function loadNewsHome(countryCode = activeCountryCode) {
     }
 
     const newsList = result.data || [];
-    const publishedNews = newsList.filter((item) => item.status === "published");
+
+    const publishedNews = newsList.filter((item) => {
+      if (item.status !== "published") {
+        return false;
+      }
+
+      if (!activeCategoryCode) {
+        return true;
+      }
+
+      return (
+        String(item.category || "")
+          .trim()
+          .toLowerCase() === activeCategoryCode
+      );
+    });
 
     if (publishedNews.length === 0) {
       messageBox.innerText = "目前还没有已发布的新闻。请先到后台新增新闻。";

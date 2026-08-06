@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Daily News 商城</title>
+
+    <link rel="stylesheet" href="/style.css" />
+
+    <style>
+        body {
+            margin: 0;
+            background: #061426;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+
+        .store-header {
+            padding: 22px 30px;
+            border-bottom: 2px solid #e8bd24;
+            background: #07111f;
+        }
+
+        .store-header-inner {
+            width: min(1180px, calc(100% - 30px));
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .store-header h1 {
+            margin: 0;
+            color: #ffd447;
+            font-size: 30px;
+        }
+
+        .store-header a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .store-main {
+            width: min(1180px, calc(100% - 30px));
+            margin: 30px auto;
+        }
+
+        .store-hero {
+            padding: 32px;
+            border: 1px solid #1d628f;
+            border-radius: 16px;
+            background:
+                linear-gradient(135deg,
+                    #07346f,
+                    #061a34);
+        }
+
+        .store-hero h2 {
+            margin: 0 0 12px;
+            color: #ffd447;
+            font-size: 34px;
+        }
+
+        .store-hero p {
+            max-width: 760px;
+            margin: 0;
+            color: #cfe7f7;
+            line-height: 1.8;
+        }
+
+        .store-category-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 24px 0;
+        }
+
+        .store-category-nav button {
+            padding: 10px 18px;
+            border: 1px solid #168fd8;
+            border-radius: 999px;
+            background: #0a3155;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .store-category-nav button.active {
+            background: #0aa9ed;
+            color: #ffffff;
+        }
+
+        .store-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit,
+                    minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .store-card {
+            overflow: hidden;
+            border: 1px solid #1c5f8a;
+            border-radius: 14px;
+            background: #0a2441;
+        }
+
+        .store-card-cover {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(135deg,
+                    #0c5d9c,
+                    #08182c);
+            color: #ffd447;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .store-card-body {
+            padding: 18px;
+        }
+
+        .store-card h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .store-card p {
+            min-height: 68px;
+            margin: 0;
+            color: #b9d1e2;
+            line-height: 1.6;
+        }
+
+        .store-price-row {
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .store-price {
+            color: #ffd447;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .store-buy-button {
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 7px;
+            background: #0aa9ed;
+            color: #ffffff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .store-note {
+            margin-top: 28px;
+            padding: 18px;
+            border: 1px dashed #2b7da9;
+            border-radius: 10px;
+            color: #9dc6df;
+            line-height: 1.7;
+        }
+
+        @media (max-width: 640px) {
+            .store-header-inner {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .store-hero {
+                padding: 22px;
+            }
+
+            .store-hero h2 {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="store-header">
+        <div class="store-header-inner">
+            <h1>Daily News 商城</h1>
+
+            <a href="/">
+                返回新闻首页
+            </a>
+        </div>
+    </header>
+
+    <main class="store-main">
+
+        <section class="store-hero">
+            <h2>数字内容与会员商城</h2>
+
+            <p>
+                提供电子书、研究报告、视频内容、
+                VIP会员和企业订阅服务。
+                当前为商城第一版展示页面，
+                后续将接入商品后台管理、订单系统和Stripe支付。
+            </p>
+        </section>
+
+        <div class="store-category-nav">
+            <button type="button" class="active">
+                全部商品
+            </button>
+
+            <button type="button">
+                电子书
+            </button>
+
+            <button type="button">
+                研究报告
+            </button>
+
+            <button type="button">
+                视频内容
+            </button>
+
+            <button type="button">
+                会员服务
+            </button>
+        </div>
+
+        <section class="store-grid">
+
+            <article class="store-card">
+                <div class="store-card-cover">
+                    E-BOOK
+                </div>
+
+                <div class="store-card-body">
+                    <h3>全球新闻行业电子书</h3>
+
+                    <p>
+                        新闻聚合、国际传播和媒体运营的
+                        系统化学习资料。
+                    </p>
+
+                    <div class="store-price-row">
+                        <span class="store-price">
+                            SGD 19.90
+                        </span>
+
+                        <button type="button" class="store-buy-button">
+                            立即购买
+                        </button>
+                    </div>
+                </div>
+            </article>
+
+            <article class="store-card">
+                <div class="store-card-cover">
+                    REPORT
+                </div>
+
+                <div class="store-card-body">
+                    <h3>全球市场研究报告</h3>
+
+                    <p>
+                        国际财经、科技和地缘政治趋势的
+                        专题分析报告。
+                    </p>
+
+                    <div class="store-price-row">
+                        <span class="store-price">
+                            SGD 29.90
+                        </span>
+
+                        <button type="button" class="store-buy-button">
+                            立即购买
+                        </button>
+                    </div>
+                </div>
+            </article>
+
+            <article class="store-card">
+                <div class="store-card-cover">
+                    VIDEO
+                </div>
+
+                <div class="store-card-body">
+                    <h3>新闻分析视频课程</h3>
+
+                    <p>
+                        新闻筛选、内容判断和视频新闻制作的
+                        实用课程。
+                    </p>
+
+                    <div class="store-price-row">
+                        <span class="store-price">
+                            SGD 39.90
+                        </span>
+
+                        <button type="button" class="store-buy-button">
+                            立即购买
+                        </button>
+                    </div>
+                </div>
+            </article>
+
+            <article class="store-card">
+                <div class="store-card-cover">
+                    VIP
+                </div>
+
+                <div class="store-card-body">
+                    <h3>Daily News VIP会员</h3>
+
+                    <p>
+                        解锁VIP新闻、AI分析、专题报告和
+                        更多会员专属功能。
+                    </p>
+
+                    <div class="store-price-row">
+                        <span class="store-price">
+                            SGD 9.90/月
+                        </span>
+
+                        <a class="store-buy-button" href="/subscribe.html" style="text-decoration: none;">
+                            开通会员
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+        </section>
+
+        <div class="store-note">
+            当前商品为展示数据，点击普通商品的
+            “立即购买”暂时不会扣款。
+            下一阶段将建立商品表、订单表、
+            后台商品管理和Stripe支付。
+        </div>
+
+    </main>
+
+</body>
+
+</html>

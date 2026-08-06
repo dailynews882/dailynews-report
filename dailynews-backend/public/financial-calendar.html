@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>财经日历 - Daily News</title>
+    <style>
+        :root {
+            --bg: #061426;
+            --panel: #0a2441;
+            --panel-2: #0d2f52;
+            --line: #1c5f8a;
+            --gold: #ffd447;
+            --blue: #12aee8;
+            --text: #ffffff;
+            --muted: #b8d3e6;
+            --danger: #ff5f6d;
+            --success: #35d58b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+        }
+
+        button,
+        select,
+        input {
+            font: inherit;
+        }
+
+        .calendar-page-header {
+            border-bottom: 2px solid #e8bd24;
+            background: #07111f;
+        }
+
+        .calendar-page-header-inner {
+            width: min(1280px, calc(100% - 30px));
+            min-height: 86px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .calendar-page-header h1 {
+            margin: 0;
+            color: var(--gold);
+            font-size: 30px;
+        }
+
+        .calendar-page-header a {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .calendar-main {
+            width: min(1280px, calc(100% - 30px));
+            margin: 28px auto 50px;
+        }
+
+        .calendar-hero {
+            padding: 26px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0c3f78, #081b32);
+        }
+
+        .calendar-hero h2 {
+            margin: 0 0 10px;
+            color: var(--gold);
+            font-size: 30px;
+        }
+
+        .calendar-hero p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .calendar-toolbar {
+            margin-top: 20px;
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel);
+        }
+
+        .calendar-date-row,
+        .calendar-filter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .calendar-filter-row {
+            margin-top: 14px;
+        }
+
+        .calendar-toolbar button,
+        .calendar-toolbar select,
+        .calendar-toolbar input {
+            min-height: 40px;
+            padding: 8px 13px;
+            border: 1px solid #2677a8;
+            border-radius: 7px;
+            background: #0a3155;
+            color: #fff;
+        }
+
+        .calendar-toolbar button {
+            cursor: pointer;
+        }
+
+        .calendar-toolbar button.is-active {
+            border-color: var(--gold);
+            background: #0e4f81;
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        .calendar-date-input {
+            color-scheme: dark;
+        }
+
+        .calendar-summary {
+            margin: 18px 0;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .calendar-summary-card {
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--panel);
+        }
+
+        .calendar-summary-card span {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .calendar-summary-card strong {
+            display: block;
+            margin-top: 8px;
+            color: var(--gold);
+            font-size: 24px;
+        }
+
+        .calendar-list-panel {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel);
+        }
+
+        .calendar-list-header {
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid var(--line);
+            background: #12395f;
+        }
+
+        .calendar-list-header h3 {
+            margin: 0;
+            color: var(--gold);
+        }
+
+        .calendar-status {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .calendar-table-wrap {
+            overflow-x: auto;
+        }
+
+        .calendar-table {
+            width: 100%;
+            min-width: 1050px;
+            border-collapse: collapse;
+        }
+
+        .calendar-table th,
+        .calendar-table td {
+            padding: 13px 14px;
+            border-right: 1px solid rgba(36, 105, 150, 0.55);
+            border-bottom: 1px solid rgba(36, 105, 150, 0.55);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .calendar-table th:last-child,
+        .calendar-table td:last-child {
+            border-right: 0;
+        }
+
+        .calendar-table th {
+            color: var(--gold);
+            background: #173f67;
+            white-space: nowrap;
+        }
+
+        .calendar-table tbody tr:nth-child(even) {
+            background: rgba(18, 62, 100, 0.55);
+        }
+
+        .calendar-table tbody tr:hover {
+            background: rgba(23, 87, 137, 0.5);
+        }
+
+        .event-country {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .country-code {
+            min-width: 32px;
+            padding: 4px 7px;
+            border-radius: 5px;
+            background: #0d5689;
+            color: #fff;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .event-title {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .event-type {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .importance {
+            letter-spacing: 2px;
+            color: #627d92;
+            white-space: nowrap;
+        }
+
+        .importance[data-level="2"] {
+            color: #f0b53c;
+        }
+
+        .importance[data-level="3"] {
+            color: #ff5f6d;
+        }
+
+        .actual-value {
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .event-status {
+            display: inline-block;
+            min-width: 64px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            text-align: center;
+            font-size: 12px;
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffd447;
+        }
+
+        .event-status[data-status="published"] {
+            background: rgba(53, 213, 139, 0.14);
+            color: var(--success);
+        }
+
+        .remind-btn {
+            padding: 7px 11px;
+            border: 1px solid #1c9dd5;
+            border-radius: 6px;
+            background: #0a6da3;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .remind-btn.is-active {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .empty-row td {
+            padding: 32px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        @media (max-width: 780px) {
+            .calendar-page-header-inner {
+                padding: 15px 0;
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .calendar-summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .calendar-hero {
+                padding: 20px;
+            }
+
+            .calendar-hero h2 {
+                font-size: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="calendar-page-header">
+        <div class="calendar-page-header-inner">
+            <h1>Daily News 财经日历</h1>
+            <a href="/">返回新闻首页</a>
+        </div>
+    </header>
+
+    <main class="calendar-main">
+        <section class="calendar-hero">
+            <h2>全球财经事件日历</h2>
+            <p>
+                查看各国经济数据、央行会议、利率决议、就业、通胀及重大财经事件。
+                当前第一版使用演示数据，后续接入授权财经日历 API。
+            </p>
+        </section>
+
+        <section class="calendar-toolbar" aria-label="财经日历筛选">
+            <div class="calendar-date-row">
+                <button type="button" data-date-action="previous">前一天</button>
+                <button type="button" data-date-action="today" class="is-active">今天</button>
+                <button type="button" data-date-action="next">后一天</button>
+                <input type="date" id="calendarDateInput" class="calendar-date-input" />
+            </div>
+
+            <div class="calendar-filter-row">
+                <select id="calendarCountryFilter">
+                    <option value="all">全部国家</option>
+                    <option value="US">美国</option>
+                    <option value="CN">中国</option>
+                    <option value="SG">新加坡</option>
+                    <option value="GB">英国</option>
+                    <option value="EU">欧元区</option>
+                    <option value="JP">日本</option>
+                </select>
+
+                <select id="calendarTypeFilter">
+                    <option value="all">全部类型</option>
+                    <option value="macro">宏观数据</option>
+                    <option value="central-bank">央行事件</option>
+                    <option value="holiday">假期</option>
+                    <option value="speech">重要讲话</option>
+                </select>
+
+                <select id="calendarImportanceFilter">
+                    <option value="all">全部重要程度</option>
+                    <option value="3">只看非常重要</option>
+                    <option value="2">中等及以上</option>
+                    <option value="1">全部事件</option>
+                </select>
+
+                <select id="calendarStatusFilter">
+                    <option value="all">全部状态</option>
+                    <option value="pending">未公布</option>
+                    <option value="published">已公布</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="calendar-summary">
+            <div class="calendar-summary-card">
+                <span>当日事件</span>
+                <strong id="calendarTotalCount">0</strong>
+            </div>
+            <div class="calendar-summary-card">
+                <span>重要事件</span>
+                <strong id="calendarImportantCount">0</strong>
+            </div>
+            <div class="calendar-summary-card">
+                <span>待公布</span>
+                <strong id="calendarPendingCount">0</strong>
+            </div>
+            <div class="calendar-summary-card">
+                <span>已公布</span>
+                <strong id="calendarPublishedCount">0</strong>
+            </div>
+        </section>
+
+        <section class="calendar-list-panel">
+            <div class="calendar-list-header">
+                <h3 id="calendarListTitle">今日财经事件</h3>
+                <span id="calendarStatusMessage" class="calendar-status">正在加载...</span>
+            </div>
+
+            <div class="calendar-table-wrap">
+                <table class="calendar-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>国家</th>
+                            <th>事件</th>
+                            <th>重要程度</th>
+                            <th>前值</th>
+                            <th>预测值</th>
+                            <th>公布值</th>
+                            <th>状态</th>
+                            <th>提醒</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendarEventsBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="/financial-calendar.js"></script>
+</body>
+
+</html>

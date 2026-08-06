@@ -357,7 +357,7 @@
         实时新闻
       </a>
 
-      <a href="#" data-page="financial-calendar">
+      <a href="/financial-calendar.html">
         财经日历
       </a>
 
@@ -365,73 +365,26 @@
         VIP专享
       </a>
 
-      <a href="#" data-page="publish">
+      <a href="/store.html" class="home-store-nav">
+        商城
+      </a>
+
+      <a href="/publish.html">
         发布
       </a>
     </div>
   </nav>
 
   <nav class="category-nav home-secondary-nav" aria-label="新闻细分类">
-    <div class="home-nav-inner home-secondary-nav-inner">
+    <div id="homeSecondaryNavInner" class="home-nav-inner home-secondary-nav-inner">
       <a href="#" class="home-secondary-link" data-category="country">
         <span>国家</span>
         <span class="home-nav-caret" aria-hidden="true"></span>
       </a>
 
-      <a href="#" class="home-secondary-link" data-category="politics">
-        <span>政治</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="economy">
-        <span>经济</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="military">
-        <span>军事与战争</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="crypto">
-        <span>数字货币</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="politics-figure">
-        <span>政要人物</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="semiconductor">
-        <span>半导体</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="think-tank">
-        <span>智库与论坛</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="influencer">
-        <span>大V博主</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="energy">
-        <span>能源</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="futures">
-        <span>期货</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
-
-      <a href="#" class="home-secondary-link" data-category="precious-metals">
-        <span>黄金与白银</span>
-        <span class="home-nav-caret" aria-hidden="true"></span>
-      </a>
+      <span id="homeCategoryLoading" class="home-category-loading">
+        正在加载分类...
+      </span>
     </div>
   </nav>
 
@@ -440,25 +393,9 @@
       全部国家
     </button>
 
-    <button type="button" data-country="sg">
-      新加坡
-    </button>
-
-    <button type="button" data-country="us">
-      美国
-    </button>
-
-    <button type="button" data-country="cn">
-      中国
-    </button>
-
-    <button type="button" data-country="gb">
-      英国
-    </button>
-
-    <button type="button" data-country="my">
-      马来西亚
-    </button>
+    <div id="countryFilterLoading" class="country-filter-loading">
+      正在加载国家...
+    </div>
   </div>
 
   <!-- 首页三栏内容区 -->
@@ -534,6 +471,27 @@
         </div>
 
         <div id="calendarDays" class="calendar-days" aria-label="月历日期"></div>
+      </section>
+
+
+      <!-- 今日重要财经事件 -->
+      <section class="home-side-card home-economic-events-card">
+        <div class="home-economic-events-header">
+          <div>
+            <span class="home-tool-kicker">ECONOMIC CALENDAR</span>
+            <h2>今日重要财经事件</h2>
+          </div>
+
+          <a class="home-economic-calendar-link" href="/financial-calendar.html">
+            查看完整日历
+          </a>
+        </div>
+
+        <p id="homeEconomicEventsStatus" class="home-economic-events-status" aria-live="polite">
+          正在读取今日财经事件...
+        </p>
+
+        <div id="homeEconomicEventsList" class="home-economic-events-list"></div>
       </section>
 
       <!-- 实时汇率 -->
