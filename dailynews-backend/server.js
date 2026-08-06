@@ -40,6 +40,7 @@ const adminNewsUploadRoute = require("./routes/adminNewsUploadRoute");
 const siteAdsRoute = require("./routes/siteAdsRoute");
 const holidayRoute = require("./routes/holidayRoute");
 const fxRateRoute = require("./routes/fxRateRoute");
+const economicCalendarRoute = require("./routes/economicCalendarRoute");
 
 const {
   startGNewsAutoFetchScheduler,
@@ -214,6 +215,7 @@ app.use("/api/site-ads", siteAdsRoute);
 app.use("/api/holidays", holidayRoute);
 app.use("/api/fx-rates", fxRateRoute);
 app.use("/api/central-bank-rates", centralBankRateRoute);
+app.use("/api/economic-calendar", economicCalendarRoute);
 
 app.use("/api/subscription", subscriptionRoutes);
 

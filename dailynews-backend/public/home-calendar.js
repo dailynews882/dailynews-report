@@ -796,3 +796,237 @@ async function initializeHomeCalendar() {
     updateTodaySummary();
     await refreshCalendar();
 }
+
+/*
+ * ============================================================
+ * 首页今日重要财经事件
+ * 与财经日历独立页面共用后端接口。
+ * ============================================================
+ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+        initializeHomeEconomicEvents();
+    }
+);
+
+async function initializeHomeEconomicEvents() {
+    const listElement =
+        document.getElementById(
+            "homeEconomicEventsList"
+        );
+
+    const statusElement =
+        document.getElementById(
+            "homeEconomicEventsStatus"
+        );
+
+    if (!listElement || !statusElement) {
+        return;
+    }
+
+    statusElement.textContent =
+        "正在读取今日财经事件...";
+
+    listElement.innerHTML = "";
+
+    try {
+        const today =
+            formatHomeEconomicDate(
+                new Date()
+            );
+
+        const params =
+            new URLSearchParams({
+                date: today,
+                importantOnly: "1",
+                limit: "4"
+            });
+
+        const response =
+            await fetch(
+                `/api/economic-calendar?${params.toString()}`,
+                {
+                    headers: {
+                        Accept:
+                            "application/json"
+                    },
+                    cache: "no-store"
+                }
+            );
+
+        const result =
+            await response
+                .json()
+                .catch(function () {
+                    return {};
+                });
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+            throw new Error(
+                result.message ||
+                "今日财经事件读取失败"
+            );
+        }
+
+        const events =
+            Array.isArray(result.events)
+                ? result.events
+                : [];
+
+        renderHomeEconomicEvents(
+            events,
+            listElement,
+            statusElement
+        );
+    } catch (error) {
+        console.error(
+            "Load home economic events error:",
+            error
+        );
+
+        statusElement.textContent =
+            "今日财经事件读取失败";
+
+        listElement.innerHTML = `
+      <div class="home-economic-events-empty">
+        暂时无法读取财经事件
+      </div>
+    `;
+    }
+}
+
+function renderHomeEconomicEvents(
+    events,
+    listElement,
+    statusElement
+) {
+    statusElement.textContent =
+        events.length > 0
+            ? `今日共有${events.length}条重要财经事件`
+            : "今日暂无重要财经事件";
+
+    if (events.length === 0) {
+        listElement.innerHTML = `
+      <div class="home-economic-events-empty">
+        今日暂无重要财经事件
+      </div>
+    `;
+
+        return;
+    }
+
+    listElement.innerHTML =
+        events
+            .map(function (event) {
+                const importance =
+                    Number(
+                        event.importance
+                    ) || 1;
+
+                const stars =
+                    "★".repeat(
+                        importance
+                    );
+
+                const valueText =
+                    event.status ===
+                        "published" &&
+                        event.actual &&
+                        event.actual !== "--"
+                        ? `公布值：${event.actual}`
+                        : "等待公布";
+
+                const eventUrl =
+                    `/financial-calendar.html?event=` +
+                    `${encodeURIComponent(
+                        event.id
+                    )}`;
+
+                return `
+          <a
+            class="home-economic-event-item"
+            href="${eventUrl}"
+            aria-label="${escapeHomeEconomicText(
+                    event.countryName
+                )} ${escapeHomeEconomicText(
+                    event.title
+                )}"
+          >
+            <span class="home-economic-event-time">
+              ${escapeHomeEconomicText(
+                    event.time
+                )}
+            </span>
+
+            <span class="home-economic-event-body">
+              <span class="home-economic-event-meta">
+                <span class="home-economic-event-country">
+                  ${escapeHomeEconomicText(
+                    event.countryCode
+                )}
+                </span>
+
+                <span>
+                  ${escapeHomeEconomicText(
+                    event.countryName
+                )}
+                </span>
+
+                <span
+                  class="home-economic-event-stars"
+                  aria-label="重要程度"
+                >
+                  ${stars}
+                </span>
+              </span>
+
+              <strong class="home-economic-event-title">
+                ${escapeHomeEconomicText(
+                    event.title
+                )}
+              </strong>
+
+              <span class="home-economic-event-value">
+                ${escapeHomeEconomicText(
+                    valueText
+                )}
+              </span>
+            </span>
+          </a>
+        `;
+            })
+            .join("");
+}
+
+function formatHomeEconomicDate(date) {
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(2, "0");
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(2, "0");
+
+    return (
+        `${year}-${month}-${day}`
+    );
+}
+
+function escapeHomeEconomicText(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}

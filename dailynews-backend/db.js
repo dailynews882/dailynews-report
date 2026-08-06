@@ -1200,4 +1200,194 @@ db.run(
   }
 );
 
+
+/*
+ * ============================================================
+ * 财经日历事件表
+ * ============================================================
+ *
+ * 当前先保存演示数据。
+ * 后续接入授权财经日历 API 时继续使用同一张表和接口。
+ */
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS economic_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_event_id TEXT UNIQUE,
+      event_date TEXT NOT NULL,
+      event_time TEXT NOT NULL DEFAULT '',
+      country_code TEXT NOT NULL,
+      country_name TEXT NOT NULL,
+      event_title TEXT NOT NULL,
+      event_type TEXT NOT NULL DEFAULT 'macro',
+      event_type_name TEXT NOT NULL DEFAULT '宏观数据',
+      importance INTEGER NOT NULL DEFAULT 1,
+      previous_value TEXT DEFAULT '--',
+      forecast_value TEXT DEFAULT '--',
+      actual_value TEXT DEFAULT '--',
+      unit TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending',
+      source_name TEXT DEFAULT 'Daily News Demo',
+      source_url TEXT DEFAULT '',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_economic_events_date_time
+    ON economic_events(event_date, event_time)
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_economic_events_filters
+    ON economic_events(
+      is_active,
+      country_code,
+      event_type,
+      importance,
+      status
+    )
+  `);
+
+  const demoEconomicEvents = [
+    [
+      "demo-sg-gdp",
+      "today",
+      "08:30",
+      "SG",
+      "新加坡",
+      "第二季度 GDP 年率终值",
+      "macro",
+      "宏观数据",
+      2,
+      "4.1%",
+      "4.3%",
+      "--",
+      "pending"
+    ],
+    [
+      "demo-gb-rate",
+      "today",
+      "14:00",
+      "GB",
+      "英国",
+      "英国央行利率决议",
+      "central-bank",
+      "央行事件",
+      3,
+      "4.00%",
+      "3.75%",
+      "--",
+      "pending"
+    ],
+    [
+      "demo-us-claims",
+      "today",
+      "20:30",
+      "US",
+      "美国",
+      "初请失业金人数",
+      "macro",
+      "宏观数据",
+      3,
+      "218K",
+      "220K",
+      "216K",
+      "published"
+    ],
+    [
+      "demo-us-inventory",
+      "today",
+      "22:00",
+      "US",
+      "美国",
+      "批发库存月率终值",
+      "macro",
+      "宏观数据",
+      1,
+      "0.2%",
+      "0.2%",
+      "--",
+      "pending"
+    ],
+    [
+      "demo-cn-meeting",
+      "today",
+      "全天",
+      "CN",
+      "中国",
+      "重要财经会议",
+      "speech",
+      "财经大事",
+      2,
+      "--",
+      "--",
+      "--",
+      "pending"
+    ],
+    [
+      "demo-cn-cpi",
+      "tomorrow",
+      "09:30",
+      "CN",
+      "中国",
+      "居民消费价格指数 CPI 年率",
+      "macro",
+      "宏观数据",
+      3,
+      "0.1%",
+      "0.2%",
+      "--",
+      "pending"
+    ]
+  ];
+
+  const insertDemoEventSql = `
+    INSERT OR IGNORE INTO economic_events (
+      source_event_id,
+      event_date,
+      event_time,
+      country_code,
+      country_name,
+      event_title,
+      event_type,
+      event_type_name,
+      importance,
+      previous_value,
+      forecast_value,
+      actual_value,
+      status
+    )
+    VALUES (
+      ?,
+      CASE
+        WHEN ? = 'tomorrow'
+          THEN date('now', '+8 hours', '+1 day')
+        ELSE date('now', '+8 hours')
+      END,
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+  `;
+
+  demoEconomicEvents.forEach((event) => {
+    db.run(insertDemoEventSql, event);
+  });
+
+  db.run(`
+    UPDATE economic_events
+    SET
+      event_date = CASE
+        WHEN source_event_id = 'demo-cn-cpi'
+          THEN date('now', '+8 hours', '+1 day')
+        ELSE date('now', '+8 hours')
+      END,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE source_event_id LIKE 'demo-%'
+  `);
+});
+
 module.exports = db;
