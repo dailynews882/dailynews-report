@@ -5,31 +5,13 @@ const cors = require("cors");
 const path = require("path");
 const centralBankRateRoute = require("./routes/centralBankRateRoute");
 
-/*
-
-* 加载并初始化数据库。
-  */
 require("./db");
 
-/*
-
-* 加载API路由。
-  */
-const authRoutes =
-  require("./routes/authRoute");
-
-const walletRoutes =
-  require("./routes/walletRoute");
-
-const subscriptionRoutes =
-  require("./routes/subscriptionRoute");
-
-const paymentRoutes =
-  require("./routes/paymentRoute");
-
-const newsRoutes =
-  require("./routes/newsRoute");
-
+const authRoutes = require("./routes/authRoute");
+const walletRoutes = require("./routes/walletRoute");
+const subscriptionRoutes = require("./routes/subscriptionRoute");
+const paymentRoutes = require("./routes/paymentRoute");
+const newsRoutes = require("./routes/newsRoute");
 const commentRoute = require("./routes/commentRoute");
 const adminCommentRoute = require("./routes/adminCommentRoute");
 const adminAuthRoute = require("./routes/adminAuthRoute");
@@ -41,6 +23,7 @@ const siteAdsRoute = require("./routes/siteAdsRoute");
 const holidayRoute = require("./routes/holidayRoute");
 const fxRateRoute = require("./routes/fxRateRoute");
 const economicCalendarRoute = require("./routes/economicCalendarRoute");
+const storeRoute = require("./routes/storeRoute");
 
 const {
   startGNewsAutoFetchScheduler,
@@ -49,19 +32,8 @@ const {
 
 const app = express();
 
-/*
-
-* 网站位于Nginx和DigitalOcean代理后面。
-* 启用trust proxy后，可以正确读取访问者IP和HTTPS状态。
-  */
 app.set("trust proxy", 1);
 
-/*
-
-* 跨域设置。
-*
-* 当前允许同源网站和开发环境访问API。
-  */
 app.use(
   cors({
     origin: true,
@@ -69,31 +41,12 @@ app.use(
   })
 );
 
-/*
-
-* =====================================
-* Stripe Webhook
-* =====================================
-*
-* 这个路由必须放在express.json()之前。
-*
-* Stripe签名验证必须使用未经JSON解析的
-* 原始请求体Buffer。
-  */
 app.post(
   "/api/payment/webhook",
   express.raw({
     type: "application/json"
   }),
   (req, res, next) => {
-    /*
-  
-    * 下一步修改paymentRoute.js后，
-    * paymentRoutes.webhookHandler会正式存在。
-    *
-    * 现在先保留安全检查，
-    * 避免server.js因为旧支付路由而启动失败。
-      */
     if (
       typeof paymentRoutes.webhookHandler !==
       "function"
@@ -113,14 +66,6 @@ app.post(
   }
 );
 
-/*
-
-* =====================================
-* 普通请求体解析
-* =====================================
-*
-* 必须放在Stripe Webhook路由之后。
-  */
 app.use(
   express.json({
     limit: "1mb"
@@ -134,19 +79,6 @@ app.use(
   })
 );
 
-/*
-
-* =====================================
-* 网站静态文件
-* =====================================
-*
-* 浏览器可以直接访问public文件夹里的文件。
-*
-* 例如：
-* public/index.html
-* public/subscribe.html
-* public/wallet.html
-  */
 app.use(
   express.static(
     path.join(__dirname, "public")
@@ -160,12 +92,6 @@ app.use(
   )
 );
 
-/*
-
-* =====================================
-* 后端状态测试接口
-* =====================================
-  */
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -175,12 +101,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-/*
-
-* =====================================
-* 网站首页
-* =====================================
-  */
 app.get("/", (req, res) => {
   res.sendFile(
     path.join(
@@ -191,20 +111,10 @@ app.get("/", (req, res) => {
   );
 });
 
-/*
-
-* =====================================
-* 普通API路由
-* =====================================
-  */
 app.use("/api/auth", authRoutes);
-
 app.use("/api/wallet", walletRoutes);
-
 app.use("/api/news", newsRoutes);
-
 app.use("/api/news-metadata", newsMetadataRoute);
-
 app.use("/api/comments", commentRoute);
 app.use("/api/admin/auth", adminAuthRoute);
 app.use("/api/admin/comments", adminCommentRoute);
@@ -216,17 +126,10 @@ app.use("/api/holidays", holidayRoute);
 app.use("/api/fx-rates", fxRateRoute);
 app.use("/api/central-bank-rates", centralBankRateRoute);
 app.use("/api/economic-calendar", economicCalendarRoute);
-
+app.use("/api/store", storeRoute);
 app.use("/api/subscription", subscriptionRoutes);
-
 app.use("/api/payment", paymentRoutes);
 
-/*
-
-* =====================================
-* 404处理
-* =====================================
-  */
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -234,12 +137,6 @@ app.use((req, res) => {
   });
 });
 
-/*
-
-* =====================================
-* 全局错误处理
-* =====================================
-  */
 app.use((err, req, res, next) => {
   console.error(
     "Unhandled server error:",
@@ -256,12 +153,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-/*
-
-* =====================================
-* 启动服务器
-* =====================================
-  */
 const PORT =
   Number(process.env.PORT) || 5000;
 
@@ -294,7 +185,6 @@ app.listen(
           error
         );
       });
-
   }
 );
 

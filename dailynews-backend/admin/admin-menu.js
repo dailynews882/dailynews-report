@@ -1,11 +1,7 @@
 // ===============================
 // 后台公共菜单 + 登录保护
-// 独立文件，避免 admin.js 报错导致菜单消失
 // ===============================
 
-
-
-// 渲染后台左侧菜单
 function renderAdminSidebar() {
   const sidebar = document.getElementById("adminSidebar");
 
@@ -13,7 +9,8 @@ function renderAdminSidebar() {
     return;
   }
 
-  const currentPage = window.location.pathname.split("/").pop();
+  const currentPage =
+    window.location.pathname.split("/").pop();
 
   const menuItems = [
     { name: "后台首页", link: "admin.html" },
@@ -23,6 +20,8 @@ function renderAdminSidebar() {
     { name: "提现管理", link: "admin-withdrawals.html" },
     { name: "API管理", link: "admin-api.html" },
     { name: "新闻管理", link: "admin-news.html" },
+    { name: "商城管理", link: "admin-store.html" },
+    { name: "广告管理", link: "admin-ads.html" },
     { name: "系统设置", link: "admin-settings.html" },
     { name: "操作日志", link: "admin-logs.html" },
     { name: "评论管理", link: "admin-comments.html" }
@@ -35,30 +34,46 @@ function renderAdminSidebar() {
   `;
 
   menuItems.forEach(function (item) {
-    const activeClass = currentPage === item.link ? "active" : "";
-    menuHtml += `<a href="${item.link}" class="${activeClass}">${item.name}</a>`;
+    const activeClass =
+      currentPage === item.link
+        ? "active"
+        : "";
+
+    menuHtml += `
+      <a
+        href="${item.link}"
+        class="${activeClass}"
+      >
+        ${item.name}
+      </a>
+    `;
   });
 
   menuHtml += `
     </nav>
-    <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+    <button
+      class="logout-btn"
+      onclick="adminLogout()"
+    >
+      退出登录
+    </button>
   `;
 
   sidebar.innerHTML = menuHtml;
 }
 
-
-// 退出登录
 window.adminLogout = function () {
   localStorage.removeItem("adminToken");
   localStorage.removeItem("adminUser");
   localStorage.removeItem("adminLoggedIn");
 
-  window.location.href = "./admin-login.html";
+  window.location.href =
+    "./admin-login.html";
 };
 
-
-// 页面加载后执行菜单渲染
-document.addEventListener("DOMContentLoaded", function () {
-  renderAdminSidebar();
-});
+document.addEventListener(
+  "DOMContentLoaded",
+  function () {
+    renderAdminSidebar();
+  }
+);
