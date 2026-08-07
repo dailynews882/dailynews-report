@@ -51,58 +51,12 @@
     });
 })();
 
-
 // ===============================
-// 渲染后台公共左侧菜单
+// 后台左侧菜单说明
 // ===============================
-function renderAdminSidebar() {
-  const sidebar = document.getElementById("adminSidebar");
-
-  if (!sidebar) {
-    return;
-  }
-
-  const currentPage = window.location.pathname.split("/").pop();
-
-  const menuItems = [
-    { name: "后台首页", link: "admin.html" },
-    { name: "用户管理", link: "admin-users.html" },
-    { name: "钱包管理", link: "admin-wallet.html" },
-    { name: "订阅管理", link: "admin-subscriptions.html" },
-    { name: "提现管理", link: "admin-withdrawals.html" },
-    { name: "API管理", link: "admin-api.html" },
-    { name: "新闻管理", link: "admin-news.html" },
-    { name: "广告管理", link: "admin-ads.html" },
-    { name: "系统设置", link: "admin-settings.html" },
-    { name: "操作日志", link: "admin-logs.html" },
-    { name: "评论管理", link: "admin-comments.html" }
-  ];
-
-  let menuHtml = `
-    <h2>Daily News</h2>
-    <p>后台管理系统</p>
-    <nav>
-  `;
-
-  menuItems.forEach(function (item) {
-    const activeClass = currentPage === item.link ? "active" : "";
-    menuHtml += `<a href="${item.link}" class="${activeClass}">${item.name}</a>`;
-  });
-
-  menuHtml += `
-    </nav>
-    <button class="logout-btn" onclick="adminLogout()">退出登录</button>
-  `;
-
-  sidebar.innerHTML = menuHtml;
-}
-
-
-// 页面加载后自动生成左侧菜单
-document.addEventListener("DOMContentLoaded", function () {
-  renderAdminSidebar();
-});
-
+// 左侧公共菜单统一由 admin-menu.js 渲染。
+// 请勿在本文件中再次定义 renderAdminSidebar 或 menuItems，
+// 避免覆盖商城管理、行情管理等公共菜单。
 
 // ===============================
 // 管理员登录
