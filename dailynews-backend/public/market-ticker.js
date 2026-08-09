@@ -135,9 +135,7 @@ function scheduleMarketTickerRefresh(
         );
 }
 
-function updateMarketTickerHeading(
-    label
-) {
+function updateMarketTickerHeading(label) {
     const heading =
         document.querySelector(
             ".market-ticker-heading"
@@ -147,15 +145,28 @@ function updateMarketTickerHeading(
         return;
     }
 
-    const statusElement =
-        heading.querySelector(
-            "span:last-child"
+    const safeLabel =
+        escapeMarketTickerHtml(
+            label
         );
 
-    if (statusElement) {
-        statusElement.textContent =
-            label;
-    }
+    heading.innerHTML = `
+      <div class="market-ticker-heading-top">
+        <span class="market-ticker-heading-dot"></span>
+  
+        <span class="market-ticker-heading-title">
+          全球市场
+        </span>
+  
+        <span class="market-ticker-status-text">
+          ${safeLabel}
+        </span>
+      </div>
+  
+      <div class="market-ticker-source-text">
+        Twelve Data · 30分钟缓存
+      </div>
+    `;
 }
 
 function renderMarketTicker(items) {

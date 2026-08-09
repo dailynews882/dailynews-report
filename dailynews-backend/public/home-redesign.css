@@ -4567,3 +4567,130 @@ Daily News 新版首页专用样式
         font-size: 13px;
     }
 }
+
+/* ========================================
+   全球市场行情左侧标题：最终两行布局
+   第一行：● 全球市场  实时/缓存行情
+   第二行：Twelve Data · 30分钟缓存
+   ======================================== */
+
+.market-ticker-heading {
+    align-self: stretch;
+    min-width: 190px;
+    padding: 0 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+    box-sizing: border-box;
+    border-right: 1px solid #1c5277;
+    background:
+        linear-gradient(135deg,
+            #0b3d68,
+            #072641);
+    white-space: nowrap;
+}
+
+/* 新版 JS 输出的第一行容器 */
+.market-ticker-heading-top {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    line-height: 1;
+}
+
+/* 新版 JS 输出的绿色状态圆点 */
+.market-ticker-heading-dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 50%;
+    background: #31d78c;
+    box-shadow: 0 0 0 4px rgba(49, 215, 140, 0.12);
+}
+
+/* 兼容原来的圆点类名 */
+.market-ticker-live-dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 50%;
+    background: #31d78c;
+    box-shadow: 0 0 0 4px rgba(49, 215, 140, 0.12);
+}
+
+/* “全球市场” */
+.market-ticker-heading-title,
+.market-ticker-heading strong {
+    color: #ffd447;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* “实时行情 / 缓存行情 / 参考行情” */
+.market-ticker-status-text {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    color: #8fd8ff;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* 第二行数据来源：位于“全球市场 + 行情状态”整组正下方 */
+.market-ticker-source-text {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0 0 0 14px;
+    box-sizing: border-box;
+    color: #769ab5;
+    font-size: 8px;
+    font-weight: 500;
+    line-height: 1.15;
+    text-align: left;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+/* 防止旧版规则继续改变最后一个 span 的位置 */
+.market-ticker-heading>span:last-child {
+    color: inherit;
+    font-size: inherit;
+}
+
+/* 平板和手机：隐藏数据来源，给行情价格更多横向空间 */
+@media (max-width: 900px) {
+    .market-ticker-heading {
+        min-width: auto;
+        padding: 0 12px;
+    }
+
+    .market-ticker-source-text {
+        display: none;
+    }
+}
+
+/* 手机进一步缩小标题 */
+@media (max-width: 520px) {
+    .market-ticker-heading {
+        padding: 0 10px;
+    }
+
+    .market-ticker-heading-title,
+    .market-ticker-heading strong {
+        font-size: 13px;
+    }
+
+    .market-ticker-status-text {
+        font-size: 10px;
+    }
+}
