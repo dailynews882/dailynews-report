@@ -11,7 +11,39 @@ const GNEWS_AUTO_FETCH_RUN_API =
 
 let adminNewsRecords = [];
 
+const DAILY_NEWS_MANUAL_CATEGORIES = [
+    { value: "all", label: "全部 / 自动分类" },
+    { value: "politics", label: "政治" },
+    { value: "economy", label: "经济" },
+    { value: "military", label: "军事/战争" },
+    { value: "crypto", label: "数字货币" },
+    { value: "politics-figure", label: "政要人物" },
+    { value: "semiconductor", label: "半导体" },
+    { value: "think-tank", label: "智库/论坛" },
+    { value: "influencer", label: "大V博主" },
+    { value: "energy", label: "能源" },
+    { value: "futures", label: "期货" },
+    { value: "precious-metals", label: "黄金/白银" },
+];
+
+const MANUAL_TARGET_TO_GNEWS_CATEGORY =
+    Object.freeze({
+        all: "general",
+        politics: "world",
+        economy: "business",
+        military: "world",
+        crypto: "business",
+        "politics-figure": "world",
+        semiconductor: "technology",
+        "think-tank": "world",
+        influencer: "general",
+        energy: "business",
+        futures: "business",
+        "precious-metals": "business",
+    });
+
 document.addEventListener("DOMContentLoaded", function () {
+    initializeManualGNewsCategoryOptions();
     loadAdminNewsRecords();
     initializeGNewsAutoFetchConfig();
 
@@ -912,7 +944,7 @@ async function runGNewsAutoFetchNow() {
 
     const confirmed = confirm(
         "确定立即执行一次 GNews 自动抓取吗？\n\n" +
-        "本次操作会消耗 1 次 GNews API 调用。"
+        "根据所选 Daily News 分类，系统可能调用多个 GNews 抓取入口。"
     );
 
     if (!confirmed) {
@@ -1054,7 +1086,7 @@ function applyGNewsAutoFetchConfig(config = {}) {
 
     if (elements.category) {
         elements.category.value =
-            config.category || "general";
+            config.category || "all";
     }
 
     if (elements.language) {
@@ -1096,7 +1128,7 @@ function getGNewsAutoFetchFormConfig() {
 
         category:
             elements.category?.value ||
-            "general",
+            "all",
 
         language:
             elements.language?.value ||
@@ -1262,32 +1294,133 @@ function initializeGNewsAutoFetchConfig() {
     loadGNewsAutoFetchConfig();
 }
 
+function initializeManualGNewsCategoryOptions() {
+    const categorySelect =
+        document.getElementById(
+            "gnewsCategory"
+        );
+
+    if (!categorySelect) {
+        return;
+    }
+
+    const currentValue =
+        String(
+            categorySelect.value || "all"
+        ).trim();
+
+    categorySelect.innerHTML = "";
+
+    DAILY_NEWS_MANUAL_CATEGORIES.forEach(
+        function (category) {
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                category.value;
+
+            option.textContent =
+                category.label;
+
+            categorySelect.appendChild(
+                option
+            );
+        }
+    );
+
+    const canKeepCurrentValue =
+        DAILY_NEWS_MANUAL_CATEGORIES.some(
+            function (category) {
+                return (
+                    category.value ===
+                    currentValue
+                );
+            }
+        );
+
+    categorySelect.value =
+        canKeepCurrentValue
+            ? currentValue
+            : "all";
+}
+
+function getManualGNewsCategoryLabel(
+    value
+) {
+    const category =
+        DAILY_NEWS_MANUAL_CATEGORIES.find(
+            function (item) {
+                return (
+                    item.value === value
+                );
+            }
+        );
+
+    return category
+        ? category.label
+        : value;
+}
+
 function getGNewsRequestSettings() {
+    const targetCategory =
+        document.getElementById(
+            "gnewsCategory"
+        )?.value || "all";
+
+    const gnewsCategory =
+        MANUAL_TARGET_TO_GNEWS_CATEGORY[
+        targetCategory
+        ] || "general";
+
     return {
+        targetCategory,
+
         category:
-            document.getElementById("gnewsCategory")?.value ||
-            "general",
+            gnewsCategory,
 
         lang:
-            document.getElementById("gnewsLanguage")?.value ||
-            "en",
+            document.getElementById(
+                "gnewsLanguage"
+            )?.value || "en",
 
         country:
-            document.getElementById("gnewsCountry")?.value ||
-            "sg",
+            document.getElementById(
+                "gnewsCountry"
+            )?.value || "sg",
 
         max:
-            document.getElementById("gnewsMax")?.value ||
-            "3"
+            document.getElementById(
+                "gnewsMax"
+            )?.value || "3",
+
+        status:
+            document.getElementById(
+                "gnewsImportStatus"
+            )?.value || "pending"
     };
 }
 
 function buildGNewsQueryString(settings) {
     return new URLSearchParams({
-        category: settings.category,
-        lang: settings.lang,
-        country: settings.country,
-        max: settings.max
+        targetCategory:
+            settings.targetCategory,
+
+        category:
+            settings.category,
+
+        lang:
+            settings.lang,
+
+        country:
+            settings.country,
+
+        max:
+            settings.max,
+
+        status:
+            settings.status
     }).toString();
 }
 
@@ -1423,6 +1556,10 @@ window.previewGNewsArticles = async function () {
                         ${escapeAdminNewsHtml(
                 article.source || "GNews"
             )}
+                        · 分类：
+                        ${escapeAdminNewsHtml(
+                article.category || "general"
+            )}
                         · 发布时间：
                         ${escapeAdminNewsHtml(
                 formatAdminNewsDate(
@@ -1465,15 +1602,29 @@ window.previewGNewsArticles = async function () {
     }
 };
 
+function getManualGNewsImportStatusLabel(
+    value
+) {
+    return value === "published"
+        ? "自动直接发布"
+        : "导入后进入待审核";
+}
+
 window.importGNewsArticles = async function () {
     const settings = getGNewsRequestSettings();
 
     const confirmed = confirm(
         `确定导入 GNews 新闻吗？\n\n` +
-        `分类：${settings.category}\n` +
+        `Daily News 分类：${getManualGNewsCategoryLabel(
+            settings.targetCategory
+        )}\n` +
+        `GNews 内部抓取入口：${settings.category}\n` +
         `语言：${settings.lang}\n` +
         `国家或地区：${settings.country}\n` +
-        `最多导入：${settings.max} 条`
+        `最多导入：${settings.max} 条\n` +
+        `导入后状态：${getManualGNewsImportStatusLabel(
+            settings.status
+        )}`
     );
 
     if (!confirmed) {

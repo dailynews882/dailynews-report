@@ -12,10 +12,52 @@ const {
     markGNewsFetchLogFailed,
 } = require("./gnewsFetchLogService");
 
+const TARGET_CATEGORY_PRIMARY_GNEWS =
+    Object.freeze({
+        all: "general",
+        politics: "world",
+        economy: "business",
+        military: "world",
+        crypto: "business",
+        "politics-figure": "world",
+        semiconductor: "technology",
+        "think-tank": "world",
+        influencer: "general",
+        energy: "business",
+        futures: "business",
+        "precious-metals": "business",
+    });
+
+
 let isAutoFetchRunning = false;
 
 function getAutoFetchLockStatus() {
     return isAutoFetchRunning;
+}
+
+function getPrimaryGNewsCategory(
+    targetCategory
+) {
+    return (
+        TARGET_CATEGORY_PRIMARY_GNEWS[
+        targetCategory
+        ] || "general"
+    );
+}
+
+function getCandidateFetchMax(
+    requestedMax
+) {
+    const candidateMax =
+        requestedMax * 5;
+
+    return Math.min(
+        25,
+        Math.max(
+            requestedMax,
+            candidateMax
+        )
+    );
 }
 
 async function runGNewsAutoFetch({
@@ -50,22 +92,62 @@ async function runGNewsAutoFetch({
             };
         }
 
+        const targetCategory =
+            config.category || "all";
+
+        const requestedMax =
+            Math.max(
+                1,
+                Number.parseInt(
+                    config.max,
+                    10
+                ) || 1
+            );
+
+        const gnewsCategory =
+            getPrimaryGNewsCategory(
+                targetCategory
+            );
+
+        const candidateFetchMax =
+            getCandidateFetchMax(
+                requestedMax
+            );
+
         const requestInput = {
-            category: config.category,
-            lang: config.language,
-            country: config.country,
-            max: config.max,
-            status: config.status,
+            category:
+                gnewsCategory,
+
+            targetCategory,
+
+            lang:
+                config.language,
+
+            country:
+                config.country,
+
+            max:
+                candidateFetchMax,
+
+            maxImports:
+                requestedMax,
+
+            status:
+                config.status,
         };
 
         try {
             const fetchLog =
                 await createGNewsFetchLog({
-                    triggerType: "automatic",
-                    requestParams: requestInput,
+                    triggerType:
+                        "automatic",
+
+                    requestParams:
+                        requestInput,
                 });
 
-            fetchLogId = fetchLog.id;
+            fetchLogId =
+                fetchLog.id;
         } catch (logError) {
             console.error(
                 "Create automatic GNews fetch log error:",
@@ -74,7 +156,9 @@ async function runGNewsAutoFetch({
         }
 
         const result =
-            await importGNews(requestInput);
+            await importGNews(
+                requestInput
+            );
 
         const runStatus =
             result.failedCount > 0
@@ -87,12 +171,16 @@ async function runGNewsAutoFetch({
                     fetchLogId,
                     {
                         runStatus,
+
                         receivedCount:
                             result.receivedCount,
+
                         importedCount:
                             result.importedCount,
+
                         skippedCount:
                             result.skippedCount,
+
                         failedCount:
                             result.failedCount,
                     }
@@ -110,12 +198,21 @@ async function runGNewsAutoFetch({
             skipped: false,
             runStatus,
             config,
+
+            targetCategory,
+            gnewsCategory,
+            requestedMax,
+            candidateFetchMax,
+
             receivedCount:
                 result.receivedCount,
+
             importedCount:
                 result.importedCount,
+
             skippedCount:
                 result.skippedCount,
+
             failedCount:
                 result.failedCount,
         };

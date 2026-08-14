@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const db = require("../db");
+const { classifyNews } = require("../utils/newsClassifier");
 const {
     reserveGNewsApiRequest,
     markGNewsApiRequestSuccess,
@@ -28,7 +29,13 @@ const ALLOWED_COUNTRIES = new Set([
     "us",
     "cn",
     "gb",
-    "my"
+    "my",
+    "jp",
+    "kr",
+    "de",
+    "fr",
+    "it",
+    "tw",
 ]);
 
 const COUNTRY_METADATA = Object.freeze({
@@ -52,11 +59,50 @@ const COUNTRY_METADATA = Object.freeze({
         name: "Malaysia",
         region: "Asia",
     },
+    jp: {
+        name: "Japan",
+        region: "Asia",
+    },
+    kr: {
+        name: "South Korea",
+        region: "Asia",
+    },
+    de: {
+        name: "Germany",
+        region: "Europe",
+    },
+    fr: {
+        name: "France",
+        region: "Europe",
+    },
+    it: {
+        name: "Italy",
+        region: "Europe",
+    },
+    tw: {
+        name: "Taiwan",
+        region: "Asia",
+    },
 });
 
 const ALLOWED_IMPORT_STATUSES = new Set([
     "published",
     "pending",
+]);
+
+const ALLOWED_TARGET_CATEGORIES = new Set([
+    "all",
+    "politics",
+    "economy",
+    "military",
+    "crypto",
+    "politics-figure",
+    "semiconductor",
+    "think-tank",
+    "influencer",
+    "energy",
+    "futures",
+    "precious-metals",
 ]);
 
 function resolveImportStatus(value) {
@@ -71,6 +117,28 @@ function resolveImportStatus(value) {
     )
         ? requestedStatus
         : "published";
+}
+
+function resolveTargetCategory(value) {
+    const requestedCategory =
+        String(value || "all")
+            .trim()
+            .toLowerCase();
+
+    if (
+        !ALLOWED_TARGET_CATEGORIES.has(
+            requestedCategory
+        )
+    ) {
+        const error = new Error(
+            "不支持该目标新闻分类"
+        );
+
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return requestedCategory;
 }
 
 function normalizeText(value) {
@@ -173,33 +241,129 @@ function normalizeArticle(article, category, status, countryCode) {
     const title = normalizeText(article?.title);
     const summary = normalizeText(article?.description);
     const apiContent = normalizeText(article?.content);
-    const normalizedCountryCode = normalizeText(countryCode).toLowerCase();
-    const countryMetadata = COUNTRY_METADATA[normalizedCountryCode] || {};
+
+    const fetchedCountryCode =
+        normalizeText(countryCode).toLowerCase();
+
+    const fetchedCountryMetadata =
+        COUNTRY_METADATA[fetchedCountryCode] || {};
+
+    /*
+     * =====================================
+     * Daily News 自动分类
+     * =====================================
+     *
+     * 不再直接把 GNews 的 category / country
+     * 当成新闻真实分类和真实所属国家。
+     *
+     * 分类器根据：
+     * title + summary + content
+     *
+     * 自动判断：
+     * 1. Daily News 新闻分类
+     * 2. 新闻主要国家
+     *
+     * 如果无法可靠判断国家，则继续使用
+     * GNews 本次抓取使用的国家作为安全回退。
+     */
+    const classification = classifyNews({
+        title,
+        summary,
+        content: apiContent
+    });
+
+    /*
+     * 分类无法判断时统一进入 general。
+     *
+     * 不使用 GNews 自带 business / technology
+     * 等分类，因为它们和 Daily News 的11个
+     * 正式分类代码并不一致。
+     */
+    const resolvedCategory =
+        normalizeText(
+            classification.categoryCode
+        ).toLowerCase() ||
+        "general";
+
+    /*
+     * 国家能够自动识别时，优先使用真实国家。
+     *
+     * 无法识别时，回退到本次 GNews
+     * 抓取使用的国家，避免 country_code 为空。
+     */
+    const resolvedCountryCode =
+        normalizeText(
+            classification.countryCode
+        ).toLowerCase();
+
+    const resolvedCountryName =
+        normalizeText(
+            classification.countryName
+        );
+
+    const resolvedRegion =
+        normalizeText(
+            classification.region
+        );
+
+    const resolvedStatus =
+        resolveImportStatus(status);
 
     return {
         title,
-        category,
-        country_code: normalizedCountryCode,
-        country_name: countryMetadata.name || "",
-        region: countryMetadata.region || "",
+
+        category: resolvedCategory,
+
+        country_code: resolvedCountryCode,
+        country_name: resolvedCountryName,
+        region: resolvedRegion,
+
         summary,
         content: apiContent || summary || title,
+
         image_url: normalizeText(article?.image),
         video_url: "",
+
         source: sourceName || "GNews",
         author: "GNews API",
-        status: resolveImportStatus(status),
+
+        status: resolvedStatus,
+
         is_vip: 0,
         views: 0,
+
         original_url: originalUrl,
+
         external_id: originalUrl
             ? createExternalId(originalUrl)
             : "",
+
         api_provider: "gnews",
+
         published_at:
-            resolveImportStatus(status) === "published"
+            resolvedStatus === "published"
                 ? normalizeText(article?.publishedAt)
                 : null,
+
+        classification: {
+            category_confidence:
+                classification.categoryConfidence || 0,
+
+            category_score:
+                classification.categoryScore || 0,
+
+            country_confidence:
+                classification.countryConfidence || 0,
+
+            country_score:
+                classification.countryScore || 0,
+
+            fetched_country_code:
+                fetchedCountryCode,
+
+            original_gnews_category:
+                normalizeText(category).toLowerCase()
+        }
     };
 }
 
@@ -404,17 +568,129 @@ async function fetchGNews(input = {}) {
 }
 
 async function previewGNews(input = {}) {
-    return fetchGNews(input);
+    const result = await fetchGNews(input);
+
+    const targetCategory =
+        resolveTargetCategory(
+            input.targetCategory
+        );
+
+    const filteredArticles =
+        targetCategory === "all"
+            ? result.articles
+            : result.articles.filter(
+                function (article) {
+                    return (
+                        article.category ===
+                        targetCategory
+                    );
+                }
+            );
+
+    return {
+        ...result,
+        targetCategory,
+        articles: filteredArticles,
+        previewCount:
+            filteredArticles.length,
+    };
+}
+
+function resolveImportLimit(value) {
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+        return Number.POSITIVE_INFINITY;
+    }
+
+    const parsedValue =
+        Number.parseInt(
+            value,
+            10
+        );
+
+    if (
+        !Number.isInteger(parsedValue) ||
+        parsedValue <= 0
+    ) {
+        return Number.POSITIVE_INFINITY;
+    }
+
+    return parsedValue;
 }
 
 async function importGNews(input = {}) {
     const result = await fetchGNews(input);
 
+    const targetCategory =
+        resolveTargetCategory(
+            input.targetCategory
+        );
+
+    const importLimit =
+        resolveImportLimit(
+            input.maxImports
+        );
+
     const importedArticles = [];
     const skippedArticles = [];
     const failedArticles = [];
 
+    const articlesToImport = [];
+
     for (const article of result.articles) {
+        if (
+            targetCategory !== "all" &&
+            article.category !== targetCategory
+        ) {
+            skippedArticles.push({
+                title: article.title,
+                reason: "target_category_mismatch",
+                detectedCategory:
+                    article.category || "general",
+                targetCategory,
+            });
+
+            continue;
+        }
+
+        articlesToImport.push(article);
+    }
+
+    const limitedArticlesToImport =
+        Number.isFinite(importLimit)
+            ? articlesToImport.slice(
+                0,
+                importLimit
+            )
+            : articlesToImport;
+
+    if (
+        Number.isFinite(importLimit) &&
+        articlesToImport.length >
+        limitedArticlesToImport.length
+    ) {
+        articlesToImport
+            .slice(importLimit)
+            .forEach(function (article) {
+                skippedArticles.push({
+                    title: article.title,
+                    reason:
+                        "import_limit_reached",
+                    detectedCategory:
+                        article.category ||
+                        "general",
+                    targetCategory,
+                });
+            });
+    }
+
+    for (
+        const article
+        of limitedArticlesToImport
+    ) {
         try {
             const existingArticle = await dbGet(
                 `
@@ -511,7 +787,9 @@ async function importGNews(input = {}) {
             importedArticles.push({
                 id: insertResult.id,
                 title: article.title,
-                original_url: article.original_url
+                category: article.category,
+                original_url:
+                    article.original_url
             });
         } catch (articleError) {
             console.error(
@@ -531,6 +809,11 @@ async function importGNews(input = {}) {
 
     return {
         filters: result.filters,
+        targetCategory,
+        importLimit:
+            Number.isFinite(importLimit)
+                ? importLimit
+                : null,
         totalArticles: result.totalArticles,
         receivedCount: result.articles.length,
         importedCount: importedArticles.length,

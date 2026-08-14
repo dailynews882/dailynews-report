@@ -91,9 +91,14 @@
                 <option value="cn">中国</option>
                 <option value="gb">英国</option>
                 <option value="my">马来西亚</option>
+                <option value="jp">日本</option>
+                <option value="kr">韩国</option>
+                <option value="de">德国</option>
+                <option value="fr">法国</option>
+                <option value="it">意大利</option>
+                <option value="tw">台湾</option>
               </select>
             </label>
-
             <label>
               获取数量
               <select id="gnewsMax">
@@ -103,6 +108,14 @@
                 <option value="15">15 条</option>
                 <option value="20">20 条</option>
                 <option value="25">25 条</option>
+              </select>
+            </label>
+
+            <label>
+              导入后状态
+              <select id="gnewsImportStatus">
+                <option value="pending" selected>导入后进入待审核</option>
+                <option value="published">自动直接发布</option>
               </select>
             </label>
 
@@ -188,15 +201,18 @@
             <label>
               分类
               <select id="gnewsAutoCategory">
-                <option value="general" selected>综合</option>
-                <option value="world">国际</option>
-                <option value="nation">国家</option>
-                <option value="business">财经</option>
-                <option value="technology">科技</option>
-                <option value="entertainment">娱乐</option>
-                <option value="sports">体育</option>
-                <option value="science">科学</option>
-                <option value="health">健康</option>
+                <option value="all">全部 / 自动分类</option>
+                <option value="politics">政治</option>
+                <option value="economy">经济</option>
+                <option value="military">军事/战争</option>
+                <option value="crypto">数字货币</option>
+                <option value="politics-figure">政要人物</option>
+                <option value="semiconductor">半导体</option>
+                <option value="think-tank">智库/论坛</option>
+                <option value="influencer">大V博主</option>
+                <option value="energy">能源</option>
+                <option value="futures">期货</option>
+                <option value="precious-metals">黄金/白银</option>
               </select>
             </label>
 
@@ -216,6 +232,13 @@
                 <option value="cn">中国</option>
                 <option value="gb">英国</option>
                 <option value="my">马来西亚</option>
+                <option value="jp">日本</option>
+                <option value="kr">韩国</option>
+                <option value="de">德国</option>
+                <option value="fr">法国</option>
+                <option value="it">意大利</option>
+                <option value="tw">台湾</option>
+
               </select>
             </label>
 
@@ -231,209 +254,210 @@
               </select>
             </label>
           </div>
-
-          <div class="gnews-auto-actions">
-            <button type="button" class="small-btn" id="gnewsAutoSaveButton">
-              保存自动抓取配置
-            </button>
-          </div>
-
-          <div id="gnewsAutoMessage" class="gnews-auto-message" aria-live="polite"></div>
-          <div class="gnews-auto-status-panel">
-            <div class="gnews-auto-status-header">
-              <div>
-                <h3>自动抓取运行状态</h3>
-                <p>
-                  查看调度器、最近运行结果和今日 GNews API 使用情况。
-                </p>
-              </div>
-
-              <div class="gnews-auto-status-actions">
-                <button type="button" class="small-btn" id="gnewsAutoRefreshStatusButton">
-                  刷新运行状态
-                </button>
-
-                <button type="button" class="small-btn gnews-auto-run-button" id="gnewsAutoRunNowButton">
-                  立即执行一次
-                </button>
-              </div>
-            </div>
-
-            <div class="gnews-auto-status-grid">
-              <div class="gnews-auto-status-item">
-                <span>调度器状态</span>
-                <strong id="gnewsAutoSchedulerState">读取中</strong>
-              </div>
-
-              <div class="gnews-auto-status-item">
-                <span>下一次运行</span>
-                <strong id="gnewsAutoNextRunAt">--</strong>
-              </div>
-
-              <div class="gnews-auto-status-item">
-                <span>上一次运行</span>
-                <strong id="gnewsAutoLastRunAt">--</strong>
-              </div>
-
-              <div class="gnews-auto-status-item">
-                <span>上次运行结果</span>
-                <strong id="gnewsAutoLastResult">--</strong>
-              </div>
-
-              <div class="gnews-auto-status-item">
-                <span>今日 API 已用</span>
-                <strong id="gnewsAutoApiUsed">0</strong>
-              </div>
-
-              <div class="gnews-auto-status-item">
-                <span>今日 API 剩余</span>
-                <strong id="gnewsAutoApiRemaining">950</strong>
-              </div>
-
-              <div class="gnews-auto-status-item">
-                <span>成功请求</span>
-                <strong id="gnewsAutoApiSuccess">0</strong>
-              </div>
-
-              <div class="gnews-auto-status-item">
-                <span>失败请求</span>
-                <strong id="gnewsAutoApiFailed">0</strong>
-              </div>
-            </div>
-
-            <div id="gnewsAutoRunMessage" class="gnews-auto-run-message" aria-live="polite"></div>
-          </div>
         </div>
 
-        <div class="table-tools">
-          <input type="text" id="newsSearchInput" placeholder="搜索新闻标题、分类或来源" onkeyup="filterNewsRecords()" />
+        <div class="gnews-auto-actions">
+          <button type="button" class="small-btn" id="gnewsAutoSaveButton">
+            保存自动抓取配置
+          </button>
+        </div>
 
-          <select id="newsStatusFilter" onchange="filterNewsRecords()">
-            <option value="all">全部发布状态</option>
-            <option value="published">已发布</option>
-            <option value="pending">待审核</option>
+        <div id="gnewsAutoMessage" class="gnews-auto-message" aria-live="polite"></div>
+        <div class="gnews-auto-status-panel">
+          <div class="gnews-auto-status-header">
+            <div>
+              <h3>自动抓取运行状态</h3>
+              <p>
+                查看调度器、最近运行结果和今日 GNews API 使用情况。
+              </p>
+            </div>
+
+            <div class="gnews-auto-status-actions">
+              <button type="button" class="small-btn" id="gnewsAutoRefreshStatusButton">
+                刷新运行状态
+              </button>
+
+              <button type="button" class="small-btn gnews-auto-run-button" id="gnewsAutoRunNowButton">
+                立即执行一次
+              </button>
+            </div>
+          </div>
+
+          <div class="gnews-auto-status-grid">
+            <div class="gnews-auto-status-item">
+              <span>调度器状态</span>
+              <strong id="gnewsAutoSchedulerState">读取中</strong>
+            </div>
+
+            <div class="gnews-auto-status-item">
+              <span>下一次运行</span>
+              <strong id="gnewsAutoNextRunAt">--</strong>
+            </div>
+
+            <div class="gnews-auto-status-item">
+              <span>上一次运行</span>
+              <strong id="gnewsAutoLastRunAt">--</strong>
+            </div>
+
+            <div class="gnews-auto-status-item">
+              <span>上次运行结果</span>
+              <strong id="gnewsAutoLastResult">--</strong>
+            </div>
+
+            <div class="gnews-auto-status-item">
+              <span>今日 API 已用</span>
+              <strong id="gnewsAutoApiUsed">0</strong>
+            </div>
+
+            <div class="gnews-auto-status-item">
+              <span>今日 API 剩余</span>
+              <strong id="gnewsAutoApiRemaining">950</strong>
+            </div>
+
+            <div class="gnews-auto-status-item">
+              <span>成功请求</span>
+              <strong id="gnewsAutoApiSuccess">0</strong>
+            </div>
+
+            <div class="gnews-auto-status-item">
+              <span>失败请求</span>
+              <strong id="gnewsAutoApiFailed">0</strong>
+            </div>
+          </div>
+
+          <div id="gnewsAutoRunMessage" class="gnews-auto-run-message" aria-live="polite"></div>
+        </div>
+  </div>
+
+  <div class="table-tools">
+    <input type="text" id="newsSearchInput" placeholder="搜索新闻标题、分类或来源" onkeyup="filterNewsRecords()" />
+
+    <select id="newsStatusFilter" onchange="filterNewsRecords()">
+      <option value="all">全部发布状态</option>
+      <option value="published">已发布</option>
+      <option value="pending">待审核</option>
+      <option value="draft">草稿</option>
+      <option value="unpublished">未发布</option>
+    </select>
+
+    <select id="newsAiFilter" onchange="filterNewsRecords()">
+      <option value="all">全部AI状态</option>
+      <option value="generated">已生成</option>
+      <option value="generating">生成中</option>
+      <option value="not_generated">未生成</option>
+    </select>
+  </div>
+
+  <table class="admin-table" id="newsTable">
+    <thead>
+      <tr>
+        <th>新闻ID</th>
+        <th>标题</th>
+        <th>分类</th>
+        <th>来源</th>
+        <th>AI摘要</th>
+        <th>状态</th>
+        <th>发布时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+
+    <tbody id="adminNewsTableBody">
+      <tr>
+        <td colspan="8" class="admin-news-loading">
+          正在加载真实新闻数据……
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </section>
+
+  <div class="modal-overlay" id="newsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>新闻详情</h2>
+        <button onclick="closeNewsModal()">×</button>
+      </div>
+
+      <div class="modal-content" id="newsModalContent"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="addNewsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>新增新闻</h2>
+        <button onclick="closeAddNewsModal()">×</button>
+      </div>
+
+      <div class="modal-content">
+        <div class="form-group">
+          <label>新闻标题</label>
+          <input type="text" id="newNewsTitle" placeholder="请输入新闻标题" />
+        </div>
+
+        <div class="form-group">
+          <label>新闻分类</label>
+          <select id="newNewsCategory">
+            <option value="">正在加载新闻分类...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>所属国家</label>
+          <select id="newNewsCountryCode">
+            <option value="">正在加载国家...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>新闻来源</label>
+          <input type="text" id="newNewsSource" placeholder="例如：Reuters / CNBC / BBC" />
+        </div>
+
+        <div class="form-group">
+          <label>发布状态</label>
+          <select id="newNewsStatus">
             <option value="draft">草稿</option>
+            <option value="pending">待审核</option>
+            <option value="published">已发布</option>
             <option value="unpublished">未发布</option>
           </select>
-
-          <select id="newsAiFilter" onchange="filterNewsRecords()">
-            <option value="all">全部AI状态</option>
-            <option value="generated">已生成</option>
-            <option value="generating">生成中</option>
-            <option value="not_generated">未生成</option>
-          </select>
         </div>
 
-        <table class="admin-table" id="newsTable">
-          <thead>
-            <tr>
-              <th>新闻ID</th>
-              <th>标题</th>
-              <th>分类</th>
-              <th>来源</th>
-              <th>AI摘要</th>
-              <th>状态</th>
-              <th>发布时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
+        <div class="form-group">
+          <label>新闻正文编辑器</label>
 
-          <tbody id="adminNewsTableBody">
-            <tr>
-              <td colspan="8" class="admin-news-loading">
-                正在加载真实新闻数据……
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <div class="modal-overlay" id="newsModal">
-        <div class="modal-box">
-          <div class="modal-header">
-            <h2>新闻详情</h2>
-            <button onclick="closeNewsModal()">×</button>
+          <div class="editor-toolbar">
+            <button type="button" onclick="formatNewsContent('bold')">加粗</button>
+            <button type="button" onclick="formatNewsContent('italic')">斜体</button>
+            <button type="button" onclick="formatNewsContent('underline')">下划线</button>
+            <button type="button" onclick="formatNewsContent('formatBlock', 'h2')">标题</button>
+            <button type="button" onclick="formatNewsContent('formatBlock', 'p')">正文</button>
+            <button type="button" onclick="selectNewsImageFile()">插入图片</button>
+            <button type="button" onclick="selectNewsVideoFile()">插入视频</button>
+            <button type="button" onclick="insertNewsLink()">插入链接</button>
+            <button type="button" onclick="formatNewsContent('removeFormat')">清除格式</button>
           </div>
 
-          <div class="modal-content" id="newsModalContent"></div>
+          <input type="file" id="newsImageFileInput" accept="image/*" style="display: none;"
+            onchange="insertSelectedNewsImage(event)" />
+
+          <input type="file" id="newsVideoFileInput" accept="video/*" style="display: none;"
+            onchange="insertSelectedNewsVideo(event)" />
+
+          <div id="newNewsContent" class="news-editor" contenteditable="true">
+            请在这里输入新闻正文内容……
+          </div>
+
         </div>
+
+        <button class="small-btn full-btn" onclick="saveNewNews()">保存新闻</button>
       </div>
+    </div>
+  </div>
 
-      <div class="modal-overlay" id="addNewsModal">
-        <div class="modal-box">
-          <div class="modal-header">
-            <h2>新增新闻</h2>
-            <button onclick="closeAddNewsModal()">×</button>
-          </div>
-
-          <div class="modal-content">
-            <div class="form-group">
-              <label>新闻标题</label>
-              <input type="text" id="newNewsTitle" placeholder="请输入新闻标题" />
-            </div>
-
-            <div class="form-group">
-              <label>新闻分类</label>
-              <select id="newNewsCategory">
-                <option value="">正在加载新闻分类...</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>所属国家</label>
-              <select id="newNewsCountryCode">
-                <option value="">正在加载国家...</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>新闻来源</label>
-              <input type="text" id="newNewsSource" placeholder="例如：Reuters / CNBC / BBC" />
-            </div>
-
-            <div class="form-group">
-              <label>发布状态</label>
-              <select id="newNewsStatus">
-                <option value="draft">草稿</option>
-                <option value="pending">待审核</option>
-                <option value="published">已发布</option>
-                <option value="unpublished">未发布</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>新闻正文编辑器</label>
-
-              <div class="editor-toolbar">
-                <button type="button" onclick="formatNewsContent('bold')">加粗</button>
-                <button type="button" onclick="formatNewsContent('italic')">斜体</button>
-                <button type="button" onclick="formatNewsContent('underline')">下划线</button>
-                <button type="button" onclick="formatNewsContent('formatBlock', 'h2')">标题</button>
-                <button type="button" onclick="formatNewsContent('formatBlock', 'p')">正文</button>
-                <button type="button" onclick="selectNewsImageFile()">插入图片</button>
-                <button type="button" onclick="selectNewsVideoFile()">插入视频</button>
-                <button type="button" onclick="insertNewsLink()">插入链接</button>
-                <button type="button" onclick="formatNewsContent('removeFormat')">清除格式</button>
-              </div>
-
-              <input type="file" id="newsImageFileInput" accept="image/*" style="display: none;"
-                onchange="insertSelectedNewsImage(event)" />
-
-              <input type="file" id="newsVideoFileInput" accept="video/*" style="display: none;"
-                onchange="insertSelectedNewsVideo(event)" />
-
-              <div id="newNewsContent" class="news-editor" contenteditable="true">
-                请在这里输入新闻正文内容……
-              </div>
-
-            </div>
-
-            <button class="small-btn full-btn" onclick="saveNewNews()">保存新闻</button>
-          </div>
-        </div>
-      </div>
-
-    </main>
+  </main>
 
   </div>
 

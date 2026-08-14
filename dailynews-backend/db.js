@@ -778,9 +778,40 @@ db.serialize(() => {
     ["us", "美国", "United States", "North America", 20, 1, 1],
     ["cn", "中国", "China", "Asia", 30, 1, 1],
     ["gb", "英国", "United Kingdom", "Europe", 40, 1, 1],
-    ["my", "马来西亚", "Malaysia", "Asia", 50, 1, 1]
-  ];
+    ["my", "马来西亚", "Malaysia", "Asia", 50, 1, 1],
 
+    ["jp", "日本", "Japan", "Asia", 60, 1, 1],
+    ["kr", "韩国", "South Korea", "Asia", 70, 1, 1],
+    ["kp", "朝鲜", "North Korea", "Asia", 80, 1, 1],
+    ["tw", "台湾", "Taiwan", "Asia", 90, 1, 1],
+    ["hk", "香港", "Hong Kong", "Asia", 100, 1, 1],
+
+    ["in", "印度", "India", "Asia", 110, 1, 1],
+    ["id", "印度尼西亚", "Indonesia", "Asia", 120, 1, 1],
+    ["ph", "菲律宾", "Philippines", "Asia", 130, 1, 1],
+    ["th", "泰国", "Thailand", "Asia", 140, 1, 1],
+    ["vn", "越南", "Vietnam", "Asia", 150, 1, 1],
+
+    ["au", "澳大利亚", "Australia", "Oceania", 160, 1, 1],
+    ["ca", "加拿大", "Canada", "North America", 170, 1, 1],
+
+    ["ru", "俄罗斯", "Russia", "Europe", 180, 1, 1],
+    ["ua", "乌克兰", "Ukraine", "Europe", 190, 1, 1],
+    ["de", "德国", "Germany", "Europe", 200, 1, 1],
+    ["fr", "法国", "France", "Europe", 210, 1, 1],
+    ["it", "意大利", "Italy", "Europe", 220, 1, 1],
+
+    ["il", "以色列", "Israel", "Middle East", 230, 1, 1],
+    ["ir", "伊朗", "Iran", "Middle East", 240, 1, 1],
+    ["sa", "沙特阿拉伯", "Saudi Arabia", "Middle East", 250, 1, 1],
+    ["ae", "阿联酋", "United Arab Emirates", "Middle East", 260, 1, 1],
+
+    ["ye", "也门", "Yemen", "Middle East", 270, 1, 1],
+    ["om", "阿曼", "Oman", "Middle East", 280, 1, 1],
+    ["qa", "卡塔尔", "Qatar", "Middle East", 290, 1, 1],
+    ["tr", "土耳其", "Turkey", "Middle East", 300, 1, 1],
+    ["pk", "巴基斯坦", "Pakistan", "Asia", 310, 1, 1]
+  ];
   const insertDefaultCountrySql = `
   INSERT OR IGNORE INTO news_countries (
     country_code,

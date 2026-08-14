@@ -12,7 +12,7 @@ const DEFAULT_GNEWS_AUTO_FETCH_CONFIG =
         enabled: false,
         intervalMinutes: 15,
         max: 25,
-        category: "general",
+        category: "all",
         language: "en",
         country: "sg",
         status: "published",
@@ -35,6 +35,22 @@ const ALLOWED_AUTO_FETCH_MAX_VALUES =
         15,
         20,
         25,
+    ]);
+
+const ALLOWED_AUTO_FETCH_CATEGORIES =
+    new Set([
+        "all",
+        "politics",
+        "economy",
+        "military",
+        "crypto",
+        "politics-figure",
+        "semiconductor",
+        "think-tank",
+        "influencer",
+        "energy",
+        "futures",
+        "precious-metals",
     ]);
 
 const ALLOWED_AUTO_FETCH_STATUSES =
@@ -160,10 +176,15 @@ function validateGNewsAutoFetchConfig(
         throw error;
     }
 
-    const requestedCategory =
+    const rawRequestedCategory =
         normalizeConfigText(
             input.category
         );
+
+    const requestedCategory =
+        rawRequestedCategory === "general"
+            ? "all"
+            : rawRequestedCategory;
 
     const requestedLanguage =
         normalizeConfigText(
@@ -178,6 +199,19 @@ function validateGNewsAutoFetchConfig(
     if (!requestedCategory) {
         const error = new Error(
             "请选择新闻分类"
+        );
+
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (
+        !ALLOWED_AUTO_FETCH_CATEGORIES.has(
+            requestedCategory
+        )
+    ) {
+        const error = new Error(
+            "不支持该新闻分类"
         );
 
         error.statusCode = 400;
@@ -204,23 +238,11 @@ function validateGNewsAutoFetchConfig(
 
     const resolvedFilters =
         resolveFilters({
-            category: requestedCategory,
+            category: "general",
             lang: requestedLanguage,
             country: requestedCountry,
             max,
         });
-
-    if (
-        resolvedFilters.category !==
-        requestedCategory
-    ) {
-        const error = new Error(
-            "不支持该新闻分类"
-        );
-
-        error.statusCode = 400;
-        throw error;
-    }
 
     if (
         resolvedFilters.lang !==
@@ -246,9 +268,10 @@ function validateGNewsAutoFetchConfig(
         throw error;
     }
 
-    const status = normalizeConfigText(
-        input.status
-    );
+    const status =
+        normalizeConfigText(
+            input.status
+        );
 
     if (
         !ALLOWED_AUTO_FETCH_STATUSES.has(
@@ -267,8 +290,7 @@ function validateGNewsAutoFetchConfig(
         enabled: input.enabled,
         intervalMinutes,
         max,
-        category:
-            resolvedFilters.category,
+        category: requestedCategory,
         language:
             resolvedFilters.lang,
         country:
