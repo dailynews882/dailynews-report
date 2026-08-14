@@ -400,6 +400,122 @@ function dbRun(sql, parameters = []) {
     });
 }
 
+function waitMilliseconds(milliseconds) {
+    return new Promise(function (resolve) {
+        setTimeout(resolve, milliseconds);
+    });
+}
+
+function getNestedErrorCodes(error) {
+    const codes = new Set();
+
+    function collect(currentError) {
+        if (!currentError) {
+            return;
+        }
+
+        if (currentError.code) {
+            codes.add(
+                String(
+                    currentError.code
+                ).toUpperCase()
+            );
+        }
+
+        if (currentError.cause) {
+            collect(
+                currentError.cause
+            );
+        }
+
+        if (
+            Array.isArray(
+                currentError.errors
+            )
+        ) {
+            currentError.errors.forEach(
+                collect
+            );
+        }
+    }
+
+    collect(error);
+
+    return codes;
+}
+
+function isRetryableGNewsNetworkError(
+    error
+) {
+    if (!error) {
+        return false;
+    }
+
+    if (
+        error.name === "TimeoutError" ||
+        error.name === "AbortError"
+    ) {
+        return true;
+    }
+
+    const codes =
+        getNestedErrorCodes(error);
+
+    const retryableCodes = [
+        "ETIMEDOUT",
+        "ECONNRESET",
+        "ECONNREFUSED",
+        "EAI_AGAIN",
+        "ENETUNREACH",
+        "EHOSTUNREACH",
+    ];
+
+    if (
+        retryableCodes.some(
+            function (code) {
+                return codes.has(code);
+            }
+        )
+    ) {
+        return true;
+    }
+
+    return (
+        error instanceof TypeError &&
+        String(
+            error.message || ""
+        )
+            .toLowerCase()
+            .includes("fetch failed")
+    );
+}
+
+function isRetryableGNewsHttpStatus(
+    statusCode
+) {
+    return [
+        500,
+        502,
+        503,
+        504,
+    ].includes(
+        Number(statusCode)
+    );
+}
+
+function createFinalGNewsNetworkError(
+    originalError
+) {
+    const error = new Error(
+        "GNews API连接超时，系统已自动重试3次，本轮抓取失败，将在下一轮自动重试。"
+    );
+
+    error.statusCode = 503;
+    error.cause = originalError;
+
+    return error;
+}
+
 async function fetchGNews(input = {}) {
     const filters = resolveFilters(input);
 
@@ -428,143 +544,266 @@ async function fetchGNews(input = {}) {
     const apiUrl =
         `https://gnews.io/api/v4/top-headlines?${query.toString()}`;
 
-    /*
-     * 在真正发送请求前预占一次调用额度。
-     * 达到每日950次时，这里会直接抛出429，
-     * 后面的 fetch 不会执行。
-     */
-    const reservation =
-        await reserveGNewsApiRequest();
+    const retryDelays = [
+        0,
+        2000,
+        5000,
+    ];
 
-    let apiResponse = null;
-    let responseData = {};
-    let requestFailureRecorded = false;
+    let lastError = null;
 
-    try {
-        apiResponse = await fetch(apiUrl, {
-            method: "GET",
-            headers: {
-                Accept: "application/json",
-            },
-            signal:
-                AbortSignal.timeout(15000),
-        });
+    for (
+        let attemptIndex = 0;
+        attemptIndex <
+        retryDelays.length;
+        attemptIndex += 1
+    ) {
+        const attemptNumber =
+            attemptIndex + 1;
 
-        responseData =
-            await apiResponse
-                .json()
-                .catch(function () {
-                    return {};
-                });
+        const delay =
+            retryDelays[
+            attemptIndex
+            ];
 
-        if (!apiResponse.ok) {
-            const apiError = new Error(
-                responseData?.errors?.[0] ||
-                responseData?.message ||
-                "Failed to fetch GNews articles"
+        if (delay > 0) {
+            console.warn(
+                `[GNews] Retry ${attemptNumber}/3 after ${delay}ms`
             );
 
-            apiError.statusCode =
-                apiResponse.status;
-
-            try {
-                await markGNewsApiRequestFailed({
-                    usageDate:
-                        reservation.usageDate,
-                    statusCode:
-                        apiResponse.status,
-                    errorMessage:
-                        apiError.message,
-                });
-
-                requestFailureRecorded = true;
-            } catch (usageError) {
-                console.error(
-                    "Record failed GNews API request error:",
-                    usageError
-                );
-            }
-
-            throw apiError;
+            await waitMilliseconds(
+                delay
+            );
         }
+
+        /*
+         * 每一次真实 HTTP 请求都单独预占额度，
+         * 因此重试不会造成 API 使用统计失真。
+         */
+        const reservation =
+            await reserveGNewsApiRequest();
+
+        let apiResponse = null;
+        let requestFailureRecorded =
+            false;
 
         try {
-            await markGNewsApiRequestSuccess({
-                usageDate:
-                    reservation.usageDate,
-                statusCode:
-                    apiResponse.status,
-            });
-        } catch (usageError) {
-            console.error(
-                "Record successful GNews API request error:",
-                usageError
+            apiResponse = await fetch(
+                apiUrl,
+                {
+                    method: "GET",
+
+                    headers: {
+                        Accept:
+                            "application/json",
+                    },
+
+                    signal:
+                        AbortSignal.timeout(
+                            15000
+                        ),
+                }
             );
-        }
 
-        const rawArticles =
-            Array.isArray(
-                responseData.articles
-            )
-                ? responseData.articles
-                : [];
+            const responseData =
+                await apiResponse
+                    .json()
+                    .catch(function () {
+                        return {};
+                    });
 
-        const articles = rawArticles
-            .map(function (article) {
-                return normalizeArticle(
-                    article,
-                    filters.category,
-                    input.status,
-                    filters.country
-                );
-            })
-            .filter(function (article) {
-                return Boolean(
-                    article.title &&
-                    article.original_url
-                );
-            });
+            if (!apiResponse.ok) {
+                const apiError =
+                    new Error(
+                        responseData
+                            ?.errors?.[0] ||
+                        responseData
+                            ?.message ||
+                        "Failed to fetch GNews articles"
+                    );
 
-        return {
-            filters,
-            totalArticles:
-                Number(
-                    responseData.totalArticles
-                ) || articles.length,
-            articles,
-        };
-    } catch (error) {
-        /*
-         * 非成功 HTTP 响应已经在上面记录，
-         * 这里不要重复增加 failed_count。
-         *
-         * 网络断开、DNS错误和超时会在这里记录。
-         */
-        if (!requestFailureRecorded) {
+                apiError.statusCode =
+                    apiResponse.status;
+
+                try {
+                    await markGNewsApiRequestFailed({
+                        usageDate:
+                            reservation
+                                .usageDate,
+
+                        statusCode:
+                            apiResponse
+                                .status,
+
+                        errorMessage:
+                            apiError
+                                .message,
+                    });
+
+                    requestFailureRecorded =
+                        true;
+                } catch (usageError) {
+                    console.error(
+                        "Record failed GNews API request error:",
+                        usageError
+                    );
+                }
+
+                if (
+                    isRetryableGNewsHttpStatus(
+                        apiResponse.status
+                    ) &&
+                    attemptNumber < 3
+                ) {
+                    lastError =
+                        apiError;
+
+                    console.warn(
+                        `[GNews] HTTP ${apiResponse.status}, retrying (${attemptNumber}/3)`
+                    );
+
+                    continue;
+                }
+
+                throw apiError;
+            }
+
             try {
-                await markGNewsApiRequestFailed({
+                await markGNewsApiRequestSuccess({
                     usageDate:
                         reservation.usageDate,
+
                     statusCode:
-                        apiResponse?.status ||
-                        null,
-                    errorMessage:
-                        error?.name ===
-                            "TimeoutError"
-                            ? "GNews API request timed out"
-                            : error?.message ||
-                            "GNews API request failed",
+                        apiResponse.status,
                 });
             } catch (usageError) {
                 console.error(
-                    "Record GNews API network failure error:",
+                    "Record successful GNews API request error:",
                     usageError
                 );
             }
-        }
 
-        throw error;
+            if (attemptNumber > 1) {
+                console.info(
+                    `[GNews] Request succeeded on attempt ${attemptNumber}/3`
+                );
+            }
+
+            const rawArticles =
+                Array.isArray(
+                    responseData.articles
+                )
+                    ? responseData.articles
+                    : [];
+
+            const articles =
+                rawArticles
+                    .map(function (
+                        article
+                    ) {
+                        return normalizeArticle(
+                            article,
+                            filters.category,
+                            input.status,
+                            filters.country
+                        );
+                    })
+                    .filter(function (
+                        article
+                    ) {
+                        return Boolean(
+                            article.title &&
+                            article.original_url
+                        );
+                    });
+
+            return {
+                filters,
+
+                totalArticles:
+                    Number(
+                        responseData
+                            .totalArticles
+                    ) ||
+                    articles.length,
+
+                articles,
+            };
+        } catch (error) {
+            lastError = error;
+
+            /*
+             * HTTP 非成功响应如果已经记录，
+             * 这里不要重复增加 failed_count。
+             * 网络断开、DNS错误和超时则在这里记录。
+             */
+            if (
+                !requestFailureRecorded
+            ) {
+                try {
+                    await markGNewsApiRequestFailed({
+                        usageDate:
+                            reservation
+                                .usageDate,
+
+                        statusCode:
+                            apiResponse
+                                ?.status ||
+                            null,
+
+                        errorMessage:
+                            isRetryableGNewsNetworkError(
+                                error
+                            )
+                                ? "GNews API network timeout or connection failure"
+                                : error
+                                    ?.message ||
+                                "GNews API request failed",
+                    });
+                } catch (usageError) {
+                    console.error(
+                        "Record GNews API network failure error:",
+                        usageError
+                    );
+                }
+            }
+
+            const canRetry =
+                isRetryableGNewsNetworkError(
+                    error
+                ) &&
+                attemptNumber < 3;
+
+            if (canRetry) {
+                console.warn(
+                    `[GNews] Network request failed, retrying (${attemptNumber}/3):`,
+                    error?.cause?.code ||
+                    error?.code ||
+                    error?.message ||
+                    "unknown error"
+                );
+
+                continue;
+            }
+
+            if (
+                isRetryableGNewsNetworkError(
+                    error
+                ) &&
+                attemptNumber >= 3
+            ) {
+                throw createFinalGNewsNetworkError(
+                    error
+                );
+            }
+
+            throw error;
+        }
     }
+
+    throw createFinalGNewsNetworkError(
+        lastError
+    );
 }
 
 async function previewGNews(input = {}) {
