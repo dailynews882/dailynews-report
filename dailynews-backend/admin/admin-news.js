@@ -1096,7 +1096,7 @@ function applyGNewsAutoFetchConfig(config = {}) {
 
     if (elements.country) {
         elements.country.value =
-            config.country || "sg";
+            config.country || "all";
     }
 
     if (elements.status) {
@@ -1136,7 +1136,7 @@ function getGNewsAutoFetchFormConfig() {
 
         country:
             elements.country?.value ||
-            "sg",
+            "all",
 
         status:
             elements.status?.value ||
@@ -1388,7 +1388,7 @@ function getGNewsRequestSettings() {
         country:
             document.getElementById(
                 "gnewsCountry"
-            )?.value || "sg",
+            )?.value || "all",
 
         max:
             document.getElementById(

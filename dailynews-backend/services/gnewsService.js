@@ -216,7 +216,16 @@ function resolveFilters(input = {}) {
 
     const requestedCountry =
         normalizeText(input.country).toLowerCase() ||
-        "sg";
+        "all";
+
+    const resolvedCountry =
+        requestedCountry === "all"
+            ? "all"
+            : ALLOWED_COUNTRIES.has(
+                requestedCountry
+            )
+                ? requestedCountry
+                : "sg";
 
     return {
         category: ALLOWED_CATEGORIES.has(requestedCategory)
@@ -227,9 +236,7 @@ function resolveFilters(input = {}) {
             ? requestedLanguage
             : "en",
 
-        country: ALLOWED_COUNTRIES.has(requestedCountry)
-            ? requestedCountry
-            : "sg",
+        country: resolvedCountry,
 
         max: clampMax(input.max)
     };
@@ -536,10 +543,16 @@ async function fetchGNews(input = {}) {
     const query = new URLSearchParams({
         category: filters.category,
         lang: filters.lang,
-        country: filters.country,
         max: String(filters.max),
         apikey: apiKey,
     });
+
+    if (filters.country !== "all") {
+        query.set(
+            "country",
+            filters.country
+        );
+    }
 
     const apiUrl =
         `https://gnews.io/api/v4/top-headlines?${query.toString()}`;

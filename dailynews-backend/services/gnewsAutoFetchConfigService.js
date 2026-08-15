@@ -14,7 +14,7 @@ const DEFAULT_GNEWS_AUTO_FETCH_CONFIG =
         max: 25,
         category: "all",
         language: "en",
-        country: "sg",
+        country: "all",
         status: "published",
     });
 
@@ -236,11 +236,17 @@ function validateGNewsAutoFetchConfig(
         throw error;
     }
 
+    const isAllCountries =
+        requestedCountry === "all";
+
     const resolvedFilters =
         resolveFilters({
             category: "general",
             lang: requestedLanguage,
-            country: requestedCountry,
+            country:
+                isAllCountries
+                    ? "all"
+                    : requestedCountry,
             max,
         });
 
@@ -257,6 +263,7 @@ function validateGNewsAutoFetchConfig(
     }
 
     if (
+        !isAllCountries &&
         resolvedFilters.country !==
         requestedCountry
     ) {
@@ -294,7 +301,9 @@ function validateGNewsAutoFetchConfig(
         language:
             resolvedFilters.lang,
         country:
-            resolvedFilters.country,
+            isAllCountries
+                ? "all"
+                : resolvedFilters.country,
         status,
     };
 }
