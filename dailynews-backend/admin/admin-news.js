@@ -1,4 +1,12 @@
 const ADMIN_NEWS_API = "/api/news";
+const NEWS_METADATA_CATEGORIES_API =
+    "/api/news-metadata/categories";
+
+const NEWS_METADATA_COUNTRIES_API =
+    "/api/news-metadata/countries";
+
+let dynamicNewsCategories = [];
+let dynamicNewsCountries = [];
 
 const GNEWS_AUTO_FETCH_CONFIG_API =
     "/api/site-settings/gnews-auto-fetch";
@@ -10,21 +18,6 @@ const GNEWS_AUTO_FETCH_RUN_API =
     "/api/site-settings/gnews-auto-fetch/run";
 
 let adminNewsRecords = [];
-
-const DAILY_NEWS_MANUAL_CATEGORIES = [
-    { value: "all", label: "全部 / 自动分类" },
-    { value: "politics", label: "政治" },
-    { value: "economy", label: "经济" },
-    { value: "military", label: "军事/战争" },
-    { value: "crypto", label: "数字货币" },
-    { value: "politics-figure", label: "政要人物" },
-    { value: "semiconductor", label: "半导体" },
-    { value: "think-tank", label: "智库/论坛" },
-    { value: "influencer", label: "大V博主" },
-    { value: "energy", label: "能源" },
-    { value: "futures", label: "期货" },
-    { value: "precious-metals", label: "黄金/白银" },
-];
 
 const MANUAL_TARGET_TO_GNEWS_CATEGORY =
     Object.freeze({
@@ -42,8 +35,9 @@ const MANUAL_TARGET_TO_GNEWS_CATEGORY =
         "precious-metals": "business",
     });
 
-document.addEventListener("DOMContentLoaded", function () {
-    initializeManualGNewsCategoryOptions();
+document.addEventListener("DOMContentLoaded", async function () {
+    await loadGNewsMetadataOptions();
+
     loadAdminNewsRecords();
     initializeGNewsAutoFetchConfig();
 
@@ -1294,72 +1288,304 @@ function initializeGNewsAutoFetchConfig() {
     loadGNewsAutoFetchConfig();
 }
 
-function initializeManualGNewsCategoryOptions() {
-    const categorySelect =
-        document.getElementById(
-            "gnewsCategory"
+function createMetadataOption(
+    value,
+    label
+) {
+    const option =
+        document.createElement(
+            "option"
         );
 
-    if (!categorySelect) {
+    option.value = value;
+    option.textContent = label;
+
+    return option;
+}
+
+function populateCategorySelect(
+    selectElement,
+    preferredValue = "all"
+) {
+    if (!selectElement) {
         return;
     }
 
-    const currentValue =
-        String(
-            categorySelect.value || "all"
-        ).trim();
+    selectElement.innerHTML = "";
 
-    categorySelect.innerHTML = "";
+    selectElement.appendChild(
+        createMetadataOption(
+            "all",
+            "全部 / 自动分类"
+        )
+    );
 
-    DAILY_NEWS_MANUAL_CATEGORIES.forEach(
+    dynamicNewsCategories.forEach(
         function (category) {
-            const option =
-                document.createElement(
-                    "option"
-                );
+            const code =
+                String(
+                    category.category_code ||
+                    ""
+                ).trim();
 
-            option.value =
-                category.value;
+            const name =
+                String(
+                    category.category_name ||
+                    category.category_name_en ||
+                    code
+                ).trim();
 
-            option.textContent =
-                category.label;
+            if (!code || code === "all") {
+                return;
+            }
 
-            categorySelect.appendChild(
-                option
+            selectElement.appendChild(
+                createMetadataOption(
+                    code,
+                    name
+                )
             );
         }
     );
 
-    const canKeepCurrentValue =
-        DAILY_NEWS_MANUAL_CATEGORIES.some(
-            function (category) {
+    const optionExists =
+        Array.from(
+            selectElement.options
+        ).some(
+            function (option) {
                 return (
-                    category.value ===
-                    currentValue
+                    option.value ===
+                    preferredValue
                 );
             }
         );
 
-    categorySelect.value =
-        canKeepCurrentValue
-            ? currentValue
+    selectElement.value =
+        optionExists
+            ? preferredValue
             : "all";
+}
+
+function populateCountrySelect(
+    selectElement,
+    preferredValue = "all"
+) {
+    if (!selectElement) {
+        return;
+    }
+
+    selectElement.innerHTML = "";
+
+    selectElement.appendChild(
+        createMetadataOption(
+            "all",
+            "全部 / 自动识别"
+        )
+    );
+
+    dynamicNewsCountries.forEach(
+        function (country) {
+            const code =
+                String(
+                    country.country_code ||
+                    ""
+                ).trim();
+
+            const name =
+                String(
+                    country.country_name ||
+                    country.country_name_en ||
+                    code
+                ).trim();
+
+            if (!code || code === "all") {
+                return;
+            }
+
+            selectElement.appendChild(
+                createMetadataOption(
+                    code,
+                    name
+                )
+            );
+        }
+    );
+
+    const optionExists =
+        Array.from(
+            selectElement.options
+        ).some(
+            function (option) {
+                return (
+                    option.value ===
+                    preferredValue
+                );
+            }
+        );
+
+    selectElement.value =
+        optionExists
+            ? preferredValue
+            : "all";
+}
+
+async function loadGNewsMetadataOptions() {
+    const manualCategory =
+        document.getElementById(
+            "gnewsCategory"
+        );
+
+    const autoCategory =
+        document.getElementById(
+            "gnewsAutoCategory"
+        );
+
+    const manualCountry =
+        document.getElementById(
+            "gnewsCountry"
+        );
+
+    const autoCountry =
+        document.getElementById(
+            "gnewsAutoCountry"
+        );
+
+    const manualCategoryValue =
+        manualCategory?.value ||
+        "all";
+
+    const autoCategoryValue =
+        autoCategory?.value ||
+        "all";
+
+    const manualCountryValue =
+        manualCountry?.value ||
+        "all";
+
+    const autoCountryValue =
+        autoCountry?.value ||
+        "all";
+
+    try {
+        const [
+            categoryResponse,
+            countryResponse
+        ] = await Promise.all([
+            fetch(
+                NEWS_METADATA_CATEGORIES_API,
+                {
+                    cache: "no-store"
+                }
+            ),
+            fetch(
+                NEWS_METADATA_COUNTRIES_API,
+                {
+                    cache: "no-store"
+                }
+            )
+        ]);
+
+        const categoryResult =
+            await categoryResponse.json();
+
+        const countryResult =
+            await countryResponse.json();
+
+        if (
+            !categoryResponse.ok ||
+            !categoryResult.success
+        ) {
+            throw new Error(
+                categoryResult.message ||
+                "读取新闻分类失败"
+            );
+        }
+
+        if (
+            !countryResponse.ok ||
+            !countryResult.success
+        ) {
+            throw new Error(
+                countryResult.message ||
+                "读取国家列表失败"
+            );
+        }
+
+        dynamicNewsCategories =
+            Array.isArray(
+                categoryResult.categories
+            )
+                ? categoryResult.categories
+                : [];
+
+        dynamicNewsCountries =
+            Array.isArray(
+                countryResult.countries
+            )
+                ? countryResult.countries
+                : [];
+
+        populateCategorySelect(
+            manualCategory,
+            manualCategoryValue
+        );
+
+        populateCategorySelect(
+            autoCategory,
+            autoCategoryValue
+        );
+
+        populateCountrySelect(
+            manualCountry,
+            manualCountryValue
+        );
+
+        populateCountrySelect(
+            autoCountry,
+            autoCountryValue
+        );
+
+        console.log(
+            "[GNews Metadata] Loaded",
+            {
+                categories:
+                    dynamicNewsCategories.length,
+
+                countries:
+                    dynamicNewsCountries.length
+            }
+        );
+    } catch (error) {
+        console.error(
+            "Load GNews metadata options error:",
+            error
+        );
+    }
 }
 
 function getManualGNewsCategoryLabel(
     value
 ) {
+    if (value === "all") {
+        return "全部 / 自动分类";
+    }
+
     const category =
-        DAILY_NEWS_MANUAL_CATEGORIES.find(
+        dynamicNewsCategories.find(
             function (item) {
                 return (
-                    item.value === value
+                    item.category_code ===
+                    value
                 );
             }
         );
 
     return category
-        ? category.label
+        ? (
+            category.category_name ||
+            category.category_name_en ||
+            value
+        )
         : value;
 }
 
