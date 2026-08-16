@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const centralBankRateRoute = require("./routes/centralBankRateRoute");
+const lotteryRoute = require("./routes/lotteryRoute");
 
 require("./db");
 
@@ -131,6 +132,7 @@ app.use("/api/store", storeRoute);
 app.use("/api/market-tickers", marketTickerRoute);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/lottery", lotteryRoute);
 
 app.use((req, res) => {
   res.status(404).json({

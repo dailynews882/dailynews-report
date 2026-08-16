@@ -833,6 +833,187 @@ db.serialize(() => {
   });
 });
 
+db.serialize(() => {
+
+  /*
+   * =========================================
+   * 彩票游戏基础数据表
+   * Lottery Games
+   * =========================================
+   */
+
+  db.run(`
+  CREATE TABLE IF NOT EXISTS lottery_games (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    game_code TEXT NOT NULL UNIQUE,
+
+    country_code TEXT NOT NULL DEFAULT '',
+    country_name TEXT NOT NULL DEFAULT '',
+
+    game_name TEXT NOT NULL,
+    game_name_en TEXT NOT NULL DEFAULT '',
+
+    main_number_min INTEGER NOT NULL DEFAULT 1,
+    main_number_max INTEGER NOT NULL,
+
+    main_number_count INTEGER NOT NULL,
+
+    special_number_min INTEGER,
+    special_number_max INTEGER,
+    special_number_count INTEGER NOT NULL DEFAULT 0,
+
+    zone_count INTEGER NOT NULL DEFAULT 0,
+
+    draw_schedule TEXT DEFAULT '',
+    timezone TEXT DEFAULT '',
+
+    source_name TEXT DEFAULT '',
+    source_url TEXT DEFAULT '',
+
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    show_on_home INTEGER NOT NULL DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+  db.run(`
+  CREATE INDEX IF NOT EXISTS
+  idx_lottery_games_country_active
+  ON lottery_games(
+    country_code,
+    is_active,
+    sort_order
+  )
+`);
+
+  /*
+   * =========================================
+   * 彩票开奖结果表
+   * Lottery Draws
+   * =========================================
+   */
+
+  db.run(`
+  CREATE TABLE IF NOT EXISTS lottery_draws (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    game_code TEXT NOT NULL,
+
+    draw_number TEXT NOT NULL,
+    draw_date DATE NOT NULL,
+
+    draw_datetime DATETIME,
+
+    main_numbers TEXT NOT NULL,
+
+    special_numbers TEXT DEFAULT '[]',
+
+    jackpot TEXT DEFAULT '',
+
+    currency TEXT DEFAULT '',
+
+    source_name TEXT DEFAULT '',
+    source_url TEXT DEFAULT '',
+
+    source_status TEXT DEFAULT 'official',
+
+    fetched_at DATETIME,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(game_code, draw_number)
+  )
+`);
+
+  db.run(`
+  CREATE INDEX IF NOT EXISTS
+  idx_lottery_draws_game_date
+  ON lottery_draws(
+    game_code,
+    draw_date DESC
+  )
+`);
+
+  db.run(`
+  CREATE INDEX IF NOT EXISTS
+  idx_lottery_draws_game_number
+  ON lottery_draws(
+    game_code,
+    draw_number
+  )
+`);
+
+  /*
+   * =========================================
+   * 默认彩票游戏：Singapore TOTO
+   * =========================================
+   */
+
+  db.run(
+    `
+    INSERT OR IGNORE INTO lottery_games (
+      game_code,
+      country_code,
+      country_name,
+      game_name,
+      game_name_en,
+      main_number_min,
+      main_number_max,
+      main_number_count,
+      special_number_min,
+      special_number_max,
+      special_number_count,
+      zone_count,
+      draw_schedule,
+      timezone,
+      source_name,
+      source_url,
+      sort_order,
+      is_active,
+      show_on_home
+    )
+    VALUES (
+      ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?
+    )
+  `,
+    [
+      "sg-toto",
+      "sg",
+      "新加坡",
+      "TOTO",
+      "Singapore TOTO",
+
+      1,
+      49,
+      6,
+
+      1,
+      49,
+      1,
+
+      7,
+
+      "Monday, Thursday",
+      "Asia/Singapore",
+
+      "Singapore Pools",
+      "https://www.singaporepools.com.sg",
+
+      10,
+      1,
+      1
+    ]
+  );
+
+});
+
 /*
  * ================================
  * GNews 抓取运行日志表
