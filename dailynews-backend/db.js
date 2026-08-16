@@ -904,6 +904,7 @@ db.serialize(() => {
     game_code TEXT NOT NULL,
 
     draw_number TEXT NOT NULL,
+    official_draw_number TEXT DEFAULT '',
     draw_date DATE NOT NULL,
 
     draw_datetime DATETIME,
@@ -913,7 +914,7 @@ db.serialize(() => {
     special_numbers TEXT DEFAULT '[]',
 
     jackpot TEXT DEFAULT '',
-
+    prize_structure TEXT DEFAULT '{}',
     currency TEXT DEFAULT '',
 
     source_name TEXT DEFAULT '',
@@ -929,6 +930,18 @@ db.serialize(() => {
     UNIQUE(game_code, draw_number)
   )
 `);
+
+  addColumnIfMissing(
+    `ALTER TABLE lottery_draws
+   ADD COLUMN official_draw_number TEXT DEFAULT ''`,
+    "lottery_draws.official_draw_number"
+  );
+
+  addColumnIfMissing(
+    `ALTER TABLE lottery_draws
+   ADD COLUMN prize_structure TEXT DEFAULT '{}'`,
+    "lottery_draws.prize_structure"
+  );
 
   db.run(`
   CREATE INDEX IF NOT EXISTS

@@ -3175,7 +3175,7 @@ Daily News 新版首页专用样式
     max-width: 100%;
     overflow: hidden;
     color: #8fb7d1;
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 500;
     line-height: 1.15;
     text-align: center;
@@ -4692,5 +4692,520 @@ Daily News 新版首页专用样式
 
     .market-ticker-status-text {
         font-size: 10px;
+    }
+}
+
+/* =========================================================
+   HOME LOTTERY / 全球彩票开奖
+   ========================================================= */
+
+.home-lottery-card {
+    padding: 16px 14px 14px;
+    background:
+        linear-gradient(180deg,
+            rgba(10, 43, 73, 0.98) 0%,
+            rgba(5, 31, 55, 0.98) 100%);
+    border: 1px solid #17628f;
+    border-radius: 14px;
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+/* 顶部国家 / 彩票玩法选择 */
+
+.home-lottery-game-selector {
+    margin-bottom: 12px;
+}
+
+.home-lottery-game-selector {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.home-lottery-game-selector select {
+    width: 100%;
+    height: 34px;
+
+    padding:
+        0 44px 0 12px;
+
+    border: 1px solid #4b7798;
+    border-radius: 18px;
+
+    background: #f7f9fb;
+    color: #13283b;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    outline: none;
+    cursor: pointer;
+
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.home-lottery-game-selector::after {
+    content: "";
+
+    position: absolute;
+
+    right: 18px;
+    top: 50%;
+
+    width: 7px;
+    height: 7px;
+
+    border-right: 2px solid #20374a;
+    border-bottom: 2px solid #20374a;
+
+    transform:
+        translateY(-65%) rotate(45deg);
+
+    pointer-events: none;
+}
+
+.home-lottery-game-selector select:focus {
+    border-color: #18b8ff;
+    box-shadow:
+        0 0 0 2px rgba(24, 184, 255, 0.16);
+}
+
+/* 开奖期号 / 日期 */
+
+.home-lottery-draw-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-bottom: 13px;
+
+    color: #c9d9e7;
+    font-size: 12px;
+}
+
+.home-lottery-draw-meta>div {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.home-lottery-draw-meta span {
+    color: #91abc0;
+}
+
+.home-lottery-draw-meta strong {
+    color: #ffffff;
+    font-weight: 800;
+}
+
+/* Winning NO 标题 */
+
+.home-lottery-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    margin: 7px 0 12px;
+
+    color: #ffffff;
+}
+
+.home-lottery-title strong {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+}
+
+.home-lottery-title span {
+    font-size: 15px;
+    font-weight: 800;
+    color: #ffd34e;
+}
+
+/* 开奖号码整体区域 */
+
+.home-lottery-number-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+
+    margin-bottom: 15px;
+}
+
+.home-lottery-main-numbers {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    min-width: 0;
+}
+
+/* 6 个基本号码：橙黄色圆球 */
+
+.home-lottery-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(145deg,
+            #ffd95b 0%,
+            #ffb526 55%,
+            #f59a16 100%);
+
+    border: 1px solid #d9890b;
+
+    color: #111820;
+
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
+
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.55),
+        0 3px 8px rgba(0, 0, 0, 0.22);
+}
+
+/* 额外号码：红色圆球 */
+
+.home-lottery-special-number {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+
+    margin-left: 8px;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(145deg,
+            #ff6262 0%,
+            #e52f3c 58%,
+            #b91627 100%);
+
+    border: 1px solid #ff7474;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
+
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.35),
+        0 3px 9px rgba(0, 0, 0, 0.28);
+}
+
+/* 额外号旁的小 + 标记 */
+
+.home-lottery-special-number::before {
+    content: "+";
+
+    position: absolute;
+    left: -9px;
+
+    color: #7f9bb0;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+/* 三个功能按钮 */
+
+.home-lottery-action-row {
+    display: grid;
+    grid-template-columns:
+        1fr 1fr 1.18fr;
+    gap: 6px;
+
+    margin-bottom: 16px;
+}
+
+.home-lottery-action-button,
+.home-lottery-ai-button {
+    min-height: 36px;
+    padding: 5px 7px;
+
+    border-radius: 7px;
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        border-color 0.15s ease,
+        background 0.15s ease;
+}
+
+.home-lottery-action-button {
+    border: 1px solid #286b96;
+    background: #103e61;
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.home-lottery-action-button:hover {
+    background: #15527e;
+    border-color: #27b8ff;
+    transform: translateY(-1px);
+}
+
+.home-lottery-ai-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #d8971d;
+
+    background:
+        linear-gradient(145deg,
+            #f1b527,
+            #ce7f12);
+
+    color: #17212a;
+}
+
+.home-lottery-ai-button strong {
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.home-lottery-ai-button span {
+    margin-top: 2px;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.home-lottery-ai-button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+}
+
+/* Prize Structure */
+
+.home-lottery-prize-section {
+    padding-top: 13px;
+    border-top: 1px solid rgba(76, 132, 170, 0.4);
+}
+
+.home-lottery-prize-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    margin-bottom: 9px;
+}
+
+.home-lottery-prize-title strong {
+    color: #ffffff;
+
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.home-lottery-prize-title span {
+    color: #ffd34e;
+
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.home-lottery-prize-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 54px;
+    padding: 10px;
+
+    border: 1px dashed #306788;
+    border-radius: 8px;
+
+    background: rgba(3, 24, 42, 0.55);
+
+    color: #8eabc0;
+    font-size: 11px;
+    text-align: center;
+}
+
+/* 数据状态 / 数据来源 */
+
+.home-lottery-source {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    margin-top: 10px;
+
+    font-size: 9px;
+}
+
+#homeLotteryStatus {
+    color: #38d99c;
+    font-weight: 700;
+}
+
+.home-lottery-source small {
+    color: #718da3;
+    font-size: 9px;
+    text-align: right;
+}
+
+/* 小尺寸右栏兼容 */
+
+@media (max-width: 1280px) {
+    .home-lottery-number {
+        flex-basis: 31px;
+        width: 31px;
+        height: 31px;
+        font-size: 13px;
+    }
+
+    .home-lottery-special-number {
+        flex-basis: 33px;
+        width: 33px;
+        height: 33px;
+        font-size: 13px;
+    }
+
+    .home-lottery-main-numbers {
+        gap: 4px;
+    }
+}
+
+/* =========================================================
+   LOTTERY PRIZE TABLE / 奖金表优化
+   ========================================================= */
+
+.home-lottery-prize-placeholder {
+    display: block;
+    min-height: auto;
+    padding: 0;
+    overflow: hidden;
+
+    border: 1px solid rgba(66, 139, 184, 0.55);
+    border-radius: 8px;
+
+    background: rgba(2, 24, 42, 0.72);
+}
+
+.home-lottery-prize-table {
+    width: 100%;
+}
+
+.home-lottery-prize-row {
+    display: grid;
+    grid-template-columns:
+        0.9fr 1.35fr 1.15fr;
+
+    align-items: center;
+
+    min-height: 38px;
+
+    border-bottom:
+        1px solid rgba(74, 126, 158, 0.28);
+
+    color: #dceaf4;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.home-lottery-prize-row:last-child {
+    border-bottom: 0;
+}
+
+.home-lottery-prize-row>span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 0;
+    height: 100%;
+
+    padding: 9px 4px;
+
+    text-align: center;
+    white-space: nowrap;
+}
+
+.home-lottery-prize-row>span+span {
+    border-left:
+        1px solid rgba(74, 126, 158, 0.25);
+}
+
+.home-lottery-prize-head {
+    min-height: 34px;
+
+    background:
+        rgba(15, 67, 102, 0.72);
+
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.home-lottery-prize-head>span {
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.home-lottery-prize-row:not(.home-lottery-prize-head):hover {
+    background:
+        rgba(24, 92, 132, 0.25);
+}
+
+.home-lottery-prize-row:not(.home-lottery-prize-head)>span:first-child {
+    color: #ffffff;
+    font-weight: 800;
+}
+
+.home-lottery-prize-row:not(.home-lottery-prize-head)>span:nth-child(2) {
+    color: #ffd45a;
+    font-weight: 800;
+}
+
+.home-lottery-prize-row:not(.home-lottery-prize-head)>span:nth-child(3) {
+    color: #dceaf4;
+    font-weight: 700;
+}
+
+@media (max-width: 1280px) {
+    .home-lottery-prize-row {
+        min-height: 28px;
+        font-size: 9px;
+    }
+
+    .home-lottery-prize-head {
+        font-size: 8px;
+    }
+
+    .home-lottery-prize-row>span {
+        padding: 5px 3px;
     }
 }

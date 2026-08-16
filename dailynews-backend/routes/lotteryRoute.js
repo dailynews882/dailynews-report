@@ -29,6 +29,35 @@ function parseJsonArray(value) {
     }
 }
 
+function parseJsonObject(value) {
+    if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+    ) {
+        return value;
+    }
+
+    if (typeof value !== "string") {
+        return {};
+    }
+
+    try {
+        const parsed =
+            JSON.parse(value);
+
+        return (
+            parsed &&
+            typeof parsed === "object" &&
+            !Array.isArray(parsed)
+        )
+            ? parsed
+            : {};
+    } catch (error) {
+        return {};
+    }
+}
+
 function formatDraw(row) {
     if (!row) {
         return null;
@@ -49,8 +78,19 @@ function formatDraw(row) {
             row.special_numbers
         ),
 
-        jackpot: row.jackpot || "",
-        currency: row.currency || "",
+        official_draw_number:
+            row.official_draw_number || "",
+
+        jackpot:
+            row.jackpot || "",
+
+        prize_structure:
+            parseJsonObject(
+                row.prize_structure
+            ),
+
+        currency:
+            row.currency || "",
 
         source_name: row.source_name || "",
         source_url: row.source_url || "",

@@ -648,6 +648,112 @@
         </div>
       </section>
 
+      <!-- 全球彩票开奖 -->
+      <section class="home-side-card home-lottery-card" id="homeLotteryCard" aria-label="全球彩票开奖">
+
+        <div class="home-lottery-game-selector">
+          <select id="homeLotteryGameSelect" aria-label="选择彩票国家和玩法">
+            <option value="sg-toto">
+              Singapore 新加坡 · TOTO
+            </option>
+
+            <option value="us-powerball" disabled>
+              USA 美国 · Powerball（即将接入）
+            </option>
+
+            <option value="my-magnum-4d" disabled>
+              Malaysia 马来西亚 · Magnum 4D（即将接入）
+            </option>
+          </select>
+        </div>
+
+        <div class="home-lottery-draw-meta">
+          <div>
+            <span>Draw NO:</span>
+            <strong id="homeLotteryDrawNumber">
+              --
+            </strong>
+          </div>
+
+          <strong id="homeLotteryDrawDate">
+            ----/--/--
+          </strong>
+        </div>
+
+        <div class="home-lottery-title">
+          <strong>
+            Winning NO
+          </strong>
+
+          <span>
+            开奖号码
+          </span>
+        </div>
+
+        <div class="home-lottery-number-row">
+
+          <div class="home-lottery-main-numbers" id="homeLotteryMainNumbers" aria-label="TOTO 基本号码">
+            <span class="home-lottery-number">--</span>
+            <span class="home-lottery-number">--</span>
+            <span class="home-lottery-number">--</span>
+            <span class="home-lottery-number">--</span>
+            <span class="home-lottery-number">--</span>
+            <span class="home-lottery-number">--</span>
+          </div>
+
+          <div class="home-lottery-special-number" id="homeLotterySpecialNumber" title="额外号码">
+            --
+          </div>
+
+        </div>
+
+        <div class="home-lottery-action-row">
+
+          <button type="button" class="home-lottery-action-button" id="homeLotteryHistoryButton">
+            历史开奖
+          </button>
+
+          <button type="button" class="home-lottery-action-button" id="homeLotteryTrendButton">
+            走势分析
+          </button>
+
+          <button type="button" class="home-lottery-ai-button" id="homeLotteryAiButton">
+            <strong>AI分析</strong>
+            <span>AI Analysis</span>
+          </button>
+
+        </div>
+
+        <div class="home-lottery-prize-section">
+
+          <div class="home-lottery-prize-title">
+            <strong>
+              Prize Structure
+            </strong>
+
+            <span>
+              中奖情况
+            </span>
+          </div>
+
+          <div class="home-lottery-prize-placeholder" id="homeLotteryPrizePlaceholder">
+            奖金数据接入中
+          </div>
+
+        </div>
+
+        <div class="home-lottery-source">
+          <span id="homeLotteryStatus">
+            正在读取开奖结果...
+          </span>
+
+          <small>
+            Source: Singapore Pools
+          </small>
+        </div>
+
+      </section>
+
     </aside>
 
   </div>
@@ -853,6 +959,8 @@
   <script src="/home-fx-rates.js"></script>
 
   <script src="/home-central-bank-rates.js"></script>
+
+  <script src="/home-lottery.js"></script>
 
   <script src="/site-settings.js"></script>
 
