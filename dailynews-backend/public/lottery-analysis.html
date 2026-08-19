@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Singapore TOTO 走势图 - Daily News
+    </title>
+
+    <link rel="stylesheet" href="/lottery-analysis.css" />
+</head>
+
+<body>
+    <div class="lottery-analysis-page">
+
+        <header class="lottery-analysis-header">
+
+            <div class="lottery-analysis-header-left">
+
+                <a href="/" class="lottery-analysis-back">
+                    ← 返回首页
+                </a>
+
+                <div>
+                    <span class="lottery-analysis-kicker">
+                        LOTTERY DATA LAB
+                    </span>
+
+                    <h1>
+                        Singapore TOTO 走势图
+                    </h1>
+
+                    <p>
+                        Historical Trend Analysis
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="lottery-analysis-game-select">
+
+                <label for="lotteryAnalysisGameSelect">
+                    彩票种类
+                </label>
+
+                <select id="lotteryAnalysisGameSelect">
+                    <option value="sg-toto">
+                        Singapore 新加坡 · TOTO
+                    </option>
+
+                    <option value="us-powerball">
+                        USA 美国 · Powerball
+                    </option>
+
+                    <option value="my-magnum-4d">
+                        Malaysia 马来西亚 · Magnum 4D
+                    </option>
+
+                </select>
+
+            </div>
+
+        </header>
+
+        <main class="lottery-analysis-main">
+
+            <!-- 最新一期 + 走势分析设置 -->
+            <section class="lottery-analysis-card lottery-top-card">
+
+                <div class="lottery-top-inline">
+
+                    <!-- 左侧：最新一期 -->
+                    <div class="lottery-top-latest">
+
+                        <div>
+                            <span class="lottery-card-kicker">
+                                LATEST DRAW
+                            </span>
+
+                            <h2>
+                                最新一期
+                            </h2>
+                        </div>
+
+                        <div class="lottery-latest-meta">
+
+                            <div>
+                                <span>
+                                    开奖日期
+                                </span>
+
+                                <strong id="lotteryAnalysisDrawDate">
+                                    ---- -- --
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <div class="lottery-latest-numbers" id="lotteryAnalysisLatestNumbers">
+                            <span class="lottery-ball">--</span>
+                            <span class="lottery-ball">--</span>
+                            <span class="lottery-ball">--</span>
+                            <span class="lottery-ball">--</span>
+                            <span class="lottery-ball">--</span>
+                            <span class="lottery-ball">--</span>
+
+                            <span class="lottery-ball lottery-ball-special">
+                                --
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <!-- 中间竖线 -->
+                    <div class="lottery-top-divider"></div>
+
+                    <!-- 右侧：走势分析设置 -->
+                    <div class="lottery-top-controls">
+
+                        <div class="lottery-control-title-row">
+
+                            <div>
+                                <span class="lottery-card-kicker">
+                                    ANALYSIS SETTINGS
+                                </span>
+
+                                <h2>
+                                    走势分析设置
+                                </h2>
+                            </div>
+
+                            <span class="lottery-data-status" id="lotteryAnalysisStatus">
+                                正在读取
+                            </span>
+
+                        </div>
+
+                        <div class="lottery-analysis-controls">
+
+                            <label>
+                                显示期数
+
+                                <select id="lotteryAnalysisLimit">
+
+                                    <option value="20">
+                                        最近 20 期
+                                    </option>
+
+                                    <option value="30">
+                                        最近 30 期
+                                    </option>
+
+                                    <option value="50" selected>
+                                        最近 50 期
+                                    </option>
+
+                                    <option value="100">
+                                        最近 100 期
+                                    </option>
+
+                                </select>
+                            </label>
+
+                            <button type="button" id="lotteryAnalysisRefreshButton">
+                                刷新走势
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 历史开奖 + 1-49 号码分布走势 -->
+            <section class="lottery-analysis-card lottery-history-matrix-card">
+
+                <div class="lottery-card-heading">
+
+                    <div class="lottery-history-heading-left">
+
+                        <span class="lottery-card-kicker">
+                            DRAW HISTORY & NUMBER DISTRIBUTION
+                        </span>
+
+                        <div class="lottery-history-title-row">
+
+                            <h2>
+                                历史开奖 / 1–49 号码分布走势
+                            </h2>
+
+                            <span class="lottery-analysis-mode-divider"></span>
+
+                            <div class="lottery-analysis-mode-tabs" id="lotteryAnalysisModeTabs">
+                                <button type="button" class="lottery-analysis-mode-button active"
+                                    data-analysis-mode="basic">
+                                    基本走势
+                                </button>
+
+                                <button type="button" class="lottery-analysis-mode-button"
+                                    data-analysis-mode="consecutive">
+                                    连号走势
+                                </button>
+
+                                <button type="button" class="lottery-analysis-mode-button" data-analysis-mode="repeat">
+                                    重号走势
+                                </button>
+
+                                <button type="button" class="lottery-analysis-mode-button" data-analysis-mode="wuxing">
+                                    五行走势
+                                </button>
+
+                                <button type="button" class="lottery-analysis-mode-button" data-analysis-mode="pattern">
+                                    形态走势
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="lottery-matrix-legend">
+
+                        <span>
+                            <i class="legend-main"></i>
+                            主号码
+                        </span>
+
+                        <span>
+                            <i class="legend-special"></i>
+                            额外号码
+                        </span>
+
+                        <span>
+                            <i class="legend-miss"></i>
+                            未中奖号码
+                        </span>
+
+                    </div>
+                </div>
+
+                <div class="lottery-history-table-wrap lottery-history-matrix-wrap">
+
+                    <table class="lottery-history-table lottery-history-matrix-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th class="history-fixed-column history-date-column">
+                                    日期
+                                </th>
+
+                                <th class="history-fixed-column history-summary-column">
+                                    获胜号码
+                                </th>
+
+                                <th class="matrix-zone-start">
+                                    01
+                                </th>
+
+                                <th>
+                                    02
+                                </th>
+
+                                <th>
+                                    03
+                                </th>
+
+                                <th>
+                                    04
+                                </th>
+
+                                <th>
+                                    05
+                                </th>
+
+                                <th>
+                                    06
+                                </th>
+
+                                <th>
+                                    07
+                                </th>
+
+                                <th class="matrix-zone-start">
+                                    08
+                                </th>
+
+                                <th>
+                                    09
+                                </th>
+
+                                <th>
+                                    10
+                                </th>
+
+                                <th>
+                                    11
+                                </th>
+
+                                <th>
+                                    12
+                                </th>
+
+                                <th>
+                                    13
+                                </th>
+
+                                <th>
+                                    14
+                                </th>
+
+                                <th class="matrix-zone-start">
+                                    15
+                                </th>
+
+                                <th>
+                                    16
+                                </th>
+
+                                <th>
+                                    17
+                                </th>
+
+                                <th>
+                                    18
+                                </th>
+
+                                <th>
+                                    19
+                                </th>
+
+                                <th>
+                                    20
+                                </th>
+
+                                <th>
+                                    21
+                                </th>
+
+                                <th class="matrix-zone-start">
+                                    22
+                                </th>
+
+                                <th>
+                                    23
+                                </th>
+
+                                <th>
+                                    24
+                                </th>
+
+                                <th>
+                                    25
+                                </th>
+
+                                <th>
+                                    26
+                                </th>
+
+                                <th>
+                                    27
+                                </th>
+
+                                <th>
+                                    28
+                                </th>
+
+                                <th class="matrix-zone-start">
+                                    29
+                                </th>
+
+                                <th>
+                                    30
+                                </th>
+
+                                <th>
+                                    31
+                                </th>
+
+                                <th>
+                                    32
+                                </th>
+
+                                <th>
+                                    33
+                                </th>
+
+                                <th>
+                                    34
+                                </th>
+
+                                <th>
+                                    35
+                                </th>
+
+                                <th class="matrix-zone-start">
+                                    36
+                                </th>
+
+                                <th>
+                                    37
+                                </th>
+
+                                <th>
+                                    38
+                                </th>
+
+                                <th>
+                                    39
+                                </th>
+
+                                <th>
+                                    40
+                                </th>
+
+                                <th>
+                                    41
+                                </th>
+
+                                <th>
+                                    42
+                                </th>
+
+                                <th class="matrix-zone-start">
+                                    43
+                                </th>
+
+                                <th>
+                                    44
+                                </th>
+
+                                <th>
+                                    45
+                                </th>
+
+                                <th>
+                                    46
+                                </th>
+
+                                <th>
+                                    47
+                                </th>
+
+                                <th>
+                                    48
+                                </th>
+
+                                <th>
+                                    49
+                                </th>
+
+                                <th class="history-zone-ratio-column">
+                                    区间比
+                                </th>
+
+                                <th class="history-sum-column">
+                                    和值
+                                </th>
+
+                                <th class="history-odd-even-column">
+                                    奇偶比
+                                </th>
+
+                                <th class="history-big-small-column">
+                                    大小比
+                                </th>
+
+                                <th class="history-span-column">
+                                    跨度
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="lotteryHistoryTableBody">
+
+                            <tr>
+                                <td colspan="58">
+                                    正在读取历史数据...
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="/lottery-patterns.js"></script>
+    <script src="/lottery-pattern-engine.js"></script>
+    <script src="/lottery-analysis.js"></script>
+
+</body>
+
+</html>
