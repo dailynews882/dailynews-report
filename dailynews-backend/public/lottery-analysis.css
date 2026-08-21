@@ -952,6 +952,179 @@ select {
     background: #031f34;
 }
 
+/* ==============================
+   走势图底部预选区
+   ============================== */
+
+.lottery-preselect-panel {
+    width: max-content;
+    min-width: 100%;
+
+    border-top: 2px solid #2ea7e0;
+    border-bottom: 1px solid #175c80;
+
+    background: #031f34;
+}
+
+.lottery-preselect-row {
+    display: flex;
+    align-items: stretch;
+
+    width: max-content;
+    min-width: 100%;
+
+    min-height: 34px;
+
+    border-bottom: 1px solid #175c80;
+}
+
+.lottery-preselect-row:last-child {
+    border-bottom: 0;
+}
+
+.lottery-preselect-label {
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+
+    min-height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    padding: 0 10px;
+
+    box-sizing: border-box;
+
+    border-right: 2px solid #2ea7e0;
+
+    background: #083854;
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.lottery-preselect-wuxing-row .lottery-preselect-label {
+    color: #ffd84d;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.lottery-preselect-name {
+    min-width: 62px;
+
+    text-align: center;
+}
+
+.lottery-preselect-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.lottery-preselect-action {
+    width: 22px;
+    height: 22px;
+
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 50%;
+
+    background: #ffffff;
+    color: #0b3f61;
+
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.lottery-preselect-action:hover {
+    background: #ffd84d;
+    color: #071b2b;
+
+    transform: scale(1.06);
+}
+
+.lottery-preselect-action:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.lottery-preselect-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(49, 34px);
+
+    width: 1666px;
+    min-width: 1666px;
+
+    min-height: 34px;
+
+    background: #5d5277;
+}
+
+.lottery-preselect-cell {
+    width: 34px;
+    min-width: 34px;
+    max-width: 34px;
+
+    height: 34px;
+
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-right: 1px solid rgba(8, 25, 41, 0.55);
+    border-bottom: 1px solid rgba(8, 25, 41, 0.55);
+
+    background: #75688f;
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.lottery-preselect-cell:hover {
+    background: rgba(255, 216, 77, 0.22);
+}
+
+.lottery-preselect-cell.wuxing-suggested {
+    background: #fff176;
+    color: #071b2b;
+}
+
+.lottery-preselect-cell.selected {
+    background: #ffd84d;
+    color: #071b2b;
+}
+
+.lottery-preselect-cell.matrix-zone-start {
+    border-left: 2px solid #2ea7e0;
+}
+
 .history-matrix-number {
     width: 26px;
     height: 26px;
@@ -967,6 +1140,8 @@ select {
     font-size: 12px;
     line-height: 1;
     font-weight: 700;
+
+    cursor: pointer;
 }
 
 /* 未中奖号码：淡灰数字底衬 */
