@@ -455,19 +455,10 @@ function validateParsedResult(
     }
 }
 
-async function fetchSingaporeTotoResult(
-    officialDrawNumber
+async function fetchSingaporeTotoPage(
+    url,
+    requestLabel
 ) {
-    const drawNumber =
-        String(
-            officialDrawNumber || ""
-        ).trim();
-
-    const url =
-        buildSingaporePoolsDrawUrl(
-            drawNumber
-        );
-
     let lastError = null;
 
     for (
@@ -488,7 +479,7 @@ async function fetchSingaporeTotoResult(
 
         try {
             console.log(
-                `[Singapore TOTO] 请求 Draw ${drawNumber}，` +
+                `[Singapore TOTO] ${requestLabel}，` +
                 `第 ${attempt + 1} 次尝试`
             );
 
@@ -553,68 +544,7 @@ async function fetchSingaporeTotoResult(
                 );
             }
 
-            const text =
-                stripHtml(
-                    html
-                );
-
-            const result = {
-                game_code:
-                    "sg-toto",
-
-                official_draw_number:
-                    extractDrawNumber(
-                        text
-                    ),
-
-                draw_date:
-                    extractDrawDate(
-                        text
-                    ),
-
-                main_numbers:
-                    extractWinningNumbers(
-                        text
-                    ),
-
-                special_number:
-                    extractAdditionalNumber(
-                        text
-                    ),
-
-                group1_prize:
-                    extractGroup1Prize(
-                        text
-                    ),
-
-                prize_structure: {
-                    groups:
-                        extractPrizeStructure(
-                            text
-                        )
-                },
-
-                source_name:
-                    "Singapore Pools",
-
-                source_url:
-                    url,
-
-                fetched_at:
-                    new Date()
-                        .toISOString()
-            };
-
-            validateParsedResult(
-                result,
-                drawNumber
-            );
-
-            console.log(
-                `[Singapore TOTO] Draw ${drawNumber} 获取成功`
-            );
-
-            return result;
+            return html;
         } catch (error) {
             lastError = error;
 
@@ -712,7 +642,216 @@ async function fetchSingaporeTotoResult(
     );
 }
 
+function buildParsedResult(
+    text,
+    sourceUrl
+) {
+    const group1Prize =
+        extractGroup1Prize(
+            text
+        );
+
+    const prizeGroups =
+        extractPrizeStructure(
+            text
+        );
+
+    /*
+     * Singapore Pools 页面部分期次的
+     * Prize Structure 第一组可能不会重复显示金额。
+     * 如果 Group 1 表格金额为空，
+     * 使用页面单独解析出的 Group 1 Prize 补齐。
+     */
+    if (
+        prizeGroups.length > 0 &&
+        prizeGroups[0].group === 1 &&
+        prizeGroups[0].share_amount === null &&
+        group1Prize !== null
+    ) {
+        prizeGroups[0].share_amount =
+            group1Prize;
+    }
+
+    return {
+        game_code:
+            "sg-toto",
+
+        official_draw_number:
+            extractDrawNumber(
+                text
+            ),
+
+        draw_date:
+            extractDrawDate(
+                text
+            ),
+
+        main_numbers:
+            extractWinningNumbers(
+                text
+            ),
+
+        special_number:
+            extractAdditionalNumber(
+                text
+            ),
+
+        group1_prize:
+            group1Prize,
+
+        prize_structure: {
+            groups:
+                prizeGroups
+        },
+
+        source_name:
+            "Singapore Pools",
+
+        source_url:
+            sourceUrl,
+
+        fetched_at:
+            new Date()
+                .toISOString()
+    };
+}
+
+async function fetchSingaporeTotoResult(
+    officialDrawNumber
+) {
+    const drawNumber =
+        String(
+            officialDrawNumber || ""
+        ).trim();
+
+    if (
+        !/^\d+$/.test(
+            drawNumber
+        )
+    ) {
+        throw new Error(
+            "Singapore TOTO Draw No. 必须是数字。"
+        );
+    }
+
+    const url =
+        buildSingaporePoolsDrawUrl(
+            drawNumber
+        );
+
+    const html =
+        await fetchSingaporeTotoPage(
+            url,
+            `请求 Draw ${drawNumber}`
+        );
+
+    const text =
+        stripHtml(
+            html
+        );
+
+    const result =
+        buildParsedResult(
+            text,
+            url
+        );
+
+    validateParsedResult(
+        result,
+        drawNumber
+    );
+
+    console.log(
+        `[Singapore TOTO] Draw ${drawNumber} 获取成功`
+    );
+
+    return result;
+}
+
+/*
+ * ==========================================
+ * 自动读取 Singapore Pools 当前最新一期
+ * ==========================================
+ *
+ * 不需要管理员提前知道 Draw No.
+ *
+ * 工作流程：
+ *
+ * Singapore Pools TOTO Results 首页
+ *          ↓
+ * 解析页面当前 Draw No.
+ *          ↓
+ * 再使用正式 Draw URL 读取该期
+ *          ↓
+ * 使用现有严格校验逻辑确认开奖结果
+ */
+async function fetchLatestSingaporeTotoResult() {
+    console.log(
+        "[Singapore TOTO] 正在识别官网最新一期..."
+    );
+
+    /*
+     * 不传 sppl 参数，
+     * 访问 Singapore Pools TOTO Results 主页面。
+     *
+     * 正常情况下页面首先展示当前最新一期。
+     */
+    const latestPageHtml =
+        await fetchSingaporeTotoPage(
+            SINGAPORE_POOLS_TOTO_RESULT_URL,
+            "请求最新开奖结果页面"
+        );
+
+    const latestPageText =
+        stripHtml(
+            latestPageHtml
+        );
+
+    const latestDrawNumber =
+        extractDrawNumber(
+            latestPageText
+        );
+
+    if (
+        !latestDrawNumber ||
+        !/^\d+$/.test(
+            String(
+                latestDrawNumber
+            )
+        )
+    ) {
+        throw new Error(
+            "无法从 Singapore Pools 最新结果页面识别 Draw No."
+        );
+    }
+
+    console.log(
+        `[Singapore TOTO] 官网当前最新 Draw No.：${latestDrawNumber}`
+    );
+
+    /*
+     * 不直接相信首页解析出来的其他字段。
+     *
+     * 找到最新 Draw No. 后，
+     * 再走我们已经验证成功的指定期抓取函数。
+     *
+     * 这样 4209、4210 已经通过测试的严格校验逻辑
+     * 会继续得到保留。
+     */
+    const result =
+        await fetchSingaporeTotoResult(
+            latestDrawNumber
+        );
+
+    console.log(
+        `[Singapore TOTO] 最新一期 ${latestDrawNumber} 读取完成`
+    );
+
+    return result;
+}
+
 module.exports = {
     buildSingaporePoolsDrawUrl,
-    fetchSingaporeTotoResult
+    fetchSingaporeTotoResult,
+    fetchLatestSingaporeTotoResult
 };

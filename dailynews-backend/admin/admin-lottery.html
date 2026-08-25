@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>彩票管理 - Daily News</title>
+
+    <link rel="stylesheet" href="admin.css" />
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>彩票管理</h1>
+
+                <span>
+                    管理彩票开奖数据、手动录入和官方数据同步
+                </span>
+            </header>
+
+            <section class="admin-section">
+                <h2>最新开奖状态</h2>
+
+                <div id="lotteryLatestStatus">
+                    正在读取最新开奖数据...
+                </div>
+            </section>
+
+            <section class="admin-section">
+                <h2>手动添加开奖</h2>
+
+                <form id="lotteryManualForm">
+                    <div>
+                        <label for="lotteryGameCode">
+                            彩票类型
+                        </label>
+
+                        <select id="lotteryGameCode">
+                            <option value="sg-toto">
+                                Singapore TOTO
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="lotteryDrawNumber">
+                            Draw No.
+                        </label>
+
+                        <input type="text" id="lotteryDrawNumber" placeholder="例如 4209" />
+                    </div>
+
+                    <div>
+                        <label for="lotteryDrawDate">
+                            开奖日期
+                        </label>
+
+                        <input type="date" id="lotteryDrawDate" />
+                    </div>
+
+                    <div>
+                        <label>
+                            6个主号码
+                        </label>
+
+                        <div>
+                            <input type="number" min="1" max="49" id="mainNumber1" />
+                            <input type="number" min="1" max="49" id="mainNumber2" />
+                            <input type="number" min="1" max="49" id="mainNumber3" />
+                            <input type="number" min="1" max="49" id="mainNumber4" />
+                            <input type="number" min="1" max="49" id="mainNumber5" />
+                            <input type="number" min="1" max="49" id="mainNumber6" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="specialNumber">
+                            额外号
+                        </label>
+
+                        <input type="number" min="1" max="49" id="specialNumber" />
+                    </div>
+
+                    <button type="submit" id="lotteryManualSubmitButton">
+                        保存开奖数据
+                    </button>
+                </form>
+
+                <div id="lotteryManualMessage"></div>
+            </section>
+
+            <section class="admin-section">
+                <h2>官方数据同步</h2>
+
+                <button type="button" id="lotterySyncButton">
+                    立即同步最新开奖
+                </button>
+
+                <div id="lotterySyncMessage"></div>
+            </section>
+
+            <section class="admin-section">
+                <h2>历史开奖记录</h2>
+
+                <div id="lotteryHistoryList">
+                    正在读取历史开奖记录...
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="admin-menu.js"></script>
+    <script src="admin-lottery.js"></script>
+</body>
+
+</html>

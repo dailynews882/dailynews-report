@@ -305,10 +305,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     gameSelect?.value ||
                     "sg-toto";
 
-                window.location.href =
+                window.open(
                     `/lottery-analysis.html?game=${encodeURIComponent(
                         selectedGame
-                    )}`;
+                    )}`,
+                    "_blank",
+                    "noopener,noreferrer"
+                );
             }
         );
     }

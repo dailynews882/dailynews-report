@@ -2334,3 +2334,209 @@ body {
   color: #9fc9f5;
   font-size: 13px;
 }
+
+/* ================================
+   彩票管理 - 中奖情况
+   ================================ */
+
+.admin-lottery-prize-card {
+  width: 100%;
+  max-width: 760px;
+  margin-top: 24px;
+  background: #0d223d;
+  border: 1px solid #1d5f8a;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.admin-lottery-prize-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 16px 20px;
+
+  background: linear-gradient(90deg,
+      #103357,
+      #0d223d);
+
+  border-bottom: 1px solid #1d5f8a;
+}
+
+.admin-lottery-prize-title span {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.admin-lottery-prize-title strong {
+  color: #ffd84d;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.admin-lottery-prize-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-lottery-prize-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.admin-lottery-prize-table th {
+  padding: 14px 16px;
+
+  background: #102b49;
+  color: #d9efff;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  text-align: center;
+
+  border-bottom: 1px solid #1d5f8a;
+}
+
+.admin-lottery-prize-table td {
+  padding: 14px 16px;
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  text-align: center;
+
+  border-bottom: 1px solid rgba(46, 167, 224, 0.18);
+}
+
+.admin-lottery-prize-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-lottery-prize-table tbody tr:hover {
+  background: rgba(46, 167, 224, 0.08);
+}
+
+.admin-lottery-prize-amount {
+  color: #ffd84d !important;
+  font-weight: 900 !important;
+}
+
+/* ================================
+   彩票管理 - 通用卡片
+   ================================ */
+
+.admin-section {
+  width: 100%;
+  max-width: 760px;
+
+  margin-top: 24px;
+  padding: 20px;
+
+  background: #0d223d;
+  border: 1px solid #1d5f8a;
+  border-radius: 14px;
+
+  box-sizing: border-box;
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.admin-section h2 {
+  margin: 0 0 16px 0;
+
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+#lotteryLatestStatus {
+  line-height: 1.8;
+  font-size: 15px;
+  color: #ffffff;
+}
+
+#lotteryLatestStatus strong {
+  color: #ffd84d;
+  font-size: 18px;
+}
+
+/* ================================
+   彩票管理 - 手动添加开奖表单
+   ================================ */
+
+#lotteryManualForm {
+  display: grid;
+  gap: 16px;
+}
+
+#lotteryManualForm>div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#lotteryManualForm label {
+  min-width: 100px;
+
+  color: #d9efff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+#lotteryManualForm input,
+#lotteryManualForm select {
+  height: 38px;
+
+  padding: 0 10px;
+
+  background: #071b2b;
+  color: #ffffff;
+
+  border: 1px solid #2a6f9e;
+  border-radius: 7px;
+
+  outline: none;
+
+  box-sizing: border-box;
+}
+
+#lotteryManualForm input:focus,
+#lotteryManualForm select:focus {
+  border-color: #ffd84d;
+}
+
+#lotteryManualForm input[type="number"] {
+  width: 72px;
+  text-align: center;
+}
+
+#lotteryManualSubmitButton,
+#lotterySyncButton {
+  min-height: 40px;
+
+  padding: 0 18px;
+
+  background: #ffd84d;
+  color: #071b2b;
+
+  border: none;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  cursor: pointer;
+}
+
+#lotteryManualSubmitButton:hover,
+#lotterySyncButton:hover {
+  filter: brightness(1.06);
+}

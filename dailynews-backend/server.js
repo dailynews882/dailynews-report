@@ -17,6 +17,7 @@ const commentRoute = require("./routes/commentRoute");
 const adminCommentRoute = require("./routes/adminCommentRoute");
 const adminAuthRoute = require("./routes/adminAuthRoute");
 const adminSettingsRoute = require("./routes/adminSettingsRoute");
+const adminLotteryRoute = require("./routes/adminLotteryRoute");
 const newsMetadataRoute = require("./routes/newsMetadataRoute");
 const adminNewsImportRoute = require("./routes/adminNewsImportRoute");
 const adminNewsUploadRoute = require("./routes/adminNewsUploadRoute");
@@ -31,6 +32,11 @@ const {
   startGNewsAutoFetchScheduler,
   stopGNewsAutoFetchScheduler,
 } = require("./services/gnewsAutoFetchScheduler");
+
+const {
+  startSingaporeTotoAutoSyncScheduler,
+  stopSingaporeTotoAutoSyncScheduler,
+} = require("./services/sgTotoAutoSyncScheduler");
 
 const app = express();
 
@@ -121,6 +127,7 @@ app.use("/api/comments", commentRoute);
 app.use("/api/admin/auth", adminAuthRoute);
 app.use("/api/admin/comments", adminCommentRoute);
 app.use("/api/site-settings", adminSettingsRoute);
+app.use("/api/admin/lottery", adminLotteryRoute);
 app.use("/api/admin/news-import", adminNewsImportRoute);
 app.use("/api/admin/news-upload", adminNewsUploadRoute);
 app.use("/api/site-ads", siteAdsRoute);
@@ -189,6 +196,21 @@ app.listen(
           error
         );
       });
+
+    try {
+      const totoSchedulerResult =
+        startSingaporeTotoAutoSyncScheduler();
+
+      console.log(
+        "[Singapore TOTO Scheduler] Startup result:",
+        totoSchedulerResult
+      );
+    } catch (error) {
+      console.error(
+        "[Singapore TOTO Scheduler] Startup error:",
+        error
+      );
+    }
   }
 );
 
@@ -198,6 +220,8 @@ function shutdownServer(signal) {
   );
 
   stopGNewsAutoFetchScheduler();
+  stopSingaporeTotoAutoSyncScheduler();
+
   process.exit(0);
 }
 
