@@ -1237,6 +1237,18 @@ select {
         0 0 10px rgba(255, 79, 216, 0.80);
 }
 
+.history-matrix-cell.is-pattern {
+    background: #fff04a;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 255, 255, 0.5),
+        inset 0 0 12px rgba(255, 196, 0, 0.45);
+}
+
+.history-matrix-cell.is-pattern .history-matrix-number {
+    position: relative;
+    z-index: 1;
+}
+
 /* 额外号：蓝色球 */
 .history-matrix-special {
     color: #ffffff;

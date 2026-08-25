@@ -1694,8 +1694,9 @@ document.addEventListener(
                                     " is-pattern";
 
                                 numberClass =
-                                    "history-matrix-number history-matrix-pattern";
-                            } else if (
+                                    "history-matrix-number history-matrix-main";
+                            }
+                            else if (
                                 currentAnalysisMode === "consecutive" &&
                                 consecutiveTrend
                             ) {
