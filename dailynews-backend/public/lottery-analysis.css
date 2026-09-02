@@ -1304,6 +1304,42 @@ select {
     z-index: 1;
 }
 
+.legend-five-element {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.legend-element {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.legend-element-metal {
+    background: #d9d9d9;
+}
+
+.legend-element-wood {
+    background: #49a65a;
+}
+
+.legend-element-water {
+    background: #2788d8;
+}
+
+.legend-element-fire {
+    background: #e94b45;
+}
+
+.legend-element-earth {
+    background: #d6a83a;
+}
+
 /* 额外号：蓝色球 */
 .history-matrix-special {
     color: #ffffff;
