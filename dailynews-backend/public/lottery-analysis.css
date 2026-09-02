@@ -38,9 +38,10 @@ select {
    ================================ */
 
 .lottery-analysis-header {
-    width: min(1500px, calc(100% - 40px));
+    width: calc(100% - 24px);
+    max-width: none;
     margin: 0 auto;
-    padding: 28px 0 22px;
+    padding: 28px 22px;
 
     display: flex;
     align-items: center;
@@ -150,7 +151,8 @@ select {
    ================================ */
 
 .lottery-analysis-main {
-    width: min(1500px, calc(100% - 40px));
+    width: calc(100% - 24px);
+    max-width: none;
 
     margin: 0 auto;
 
