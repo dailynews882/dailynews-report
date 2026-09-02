@@ -1249,6 +1249,61 @@ select {
     z-index: 1;
 }
 
+/* =========================================================
+   五行走势：数字合成五行（Digital Root）
+   金 = 4 / 9
+   木 = 3 / 8
+   水 = 1 / 6
+   火 = 2 / 7
+   土 = 5
+   ========================================================= */
+
+/* 金 */
+.history-matrix-cell.is-element-metal {
+    background: #d9d9d9;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 255, 255, 0.65),
+        inset 0 0 12px rgba(255, 255, 255, 0.35);
+}
+
+/* 木 */
+.history-matrix-cell.is-element-wood {
+    background: #49a65a;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 255, 255, 0.45),
+        inset 0 0 12px rgba(33, 110, 52, 0.45);
+}
+
+/* 水 */
+.history-matrix-cell.is-element-water {
+    background: #2788d8;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 255, 255, 0.45),
+        inset 0 0 12px rgba(16, 79, 145, 0.45);
+}
+
+/* 火 */
+.history-matrix-cell.is-element-fire {
+    background: #e94b45;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 255, 255, 0.45),
+        inset 0 0 12px rgba(170, 30, 25, 0.45);
+}
+
+/* 土 */
+.history-matrix-cell.is-element-earth {
+    background: #d6a83a;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 255, 255, 0.45),
+        inset 0 0 12px rgba(135, 92, 15, 0.45);
+}
+
+/* 五行模式下，号码球保持在彩色方格上层 */
+.history-matrix-cell.is-element .history-matrix-number {
+    position: relative;
+    z-index: 1;
+}
+
 /* 额外号：蓝色球 */
 .history-matrix-special {
     color: #ffffff;

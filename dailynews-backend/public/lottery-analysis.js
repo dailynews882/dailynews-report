@@ -70,6 +70,71 @@ document.addEventListener(
             return String(date);
         }
 
+        function getNumberDigitalRoot(number) {
+            let value = Math.abs(
+                Number(number)
+            );
+
+            if (
+                !Number.isInteger(value) ||
+                value < 1 ||
+                value > 49
+            ) {
+                return null;
+            }
+
+            while (value >= 10) {
+                value = String(value)
+                    .split("")
+                    .reduce(
+                        (sum, digit) =>
+                            sum + Number(digit),
+                        0
+                    );
+            }
+
+            return value;
+        }
+
+        function getNumberFiveElement(number) {
+            const digitalRoot =
+                getNumberDigitalRoot(number);
+
+            if (
+                digitalRoot === 4 ||
+                digitalRoot === 9
+            ) {
+                return "metal";
+            }
+
+            if (
+                digitalRoot === 3 ||
+                digitalRoot === 8
+            ) {
+                return "wood";
+            }
+
+            if (
+                digitalRoot === 1 ||
+                digitalRoot === 6
+            ) {
+                return "water";
+            }
+
+            if (
+                digitalRoot === 2 ||
+                digitalRoot === 7
+            ) {
+                return "fire";
+            }
+
+            if (digitalRoot === 5) {
+                return "earth";
+            }
+
+            return null;
+        }
+
         function normalizeNumbers(
             numbers
         ) {
@@ -1687,6 +1752,19 @@ document.addEventListener(
                                 ) || [];
 
                             if (
+                                currentAnalysisMode === "element"
+                            ) {
+                                const fiveElement =
+                                    getNumberFiveElement(number);
+
+                                if (fiveElement) {
+                                    cellClass +=
+                                        ` is-element is-element-${fiveElement}`;
+                                }
+
+                                numberClass =
+                                    "history-matrix-number history-matrix-main";
+                            } else if (
                                 currentAnalysisMode === "pattern" &&
                                 patternNodeInfo.length > 0
                             ) {
@@ -1695,8 +1773,7 @@ document.addEventListener(
 
                                 numberClass =
                                     "history-matrix-number history-matrix-main";
-                            }
-                            else if (
+                            } else if (
                                 currentAnalysisMode === "consecutive" &&
                                 consecutiveTrend
                             ) {
