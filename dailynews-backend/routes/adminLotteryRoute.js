@@ -11,6 +11,12 @@ const {
     "../services/sgTotoSyncService"
 );
 
+const {
+    syncLatestSingapore4dDraw
+} = require(
+    "../services/sg4dSyncService"
+);
+
 const router = express.Router();
 
 function normalizeNumber(value) {
@@ -371,6 +377,65 @@ router.post(
                     message:
                         error.message ||
                         "同步最新期开奖数据失败"
+                });
+        }
+    }
+);
+
+/*
+ * ==========================================
+ * 自动同步 Singapore Pools 4D 最新一期
+ * POST /api/admin/lottery/sync-4d
+ * ==========================================
+ */
+router.post(
+    "/sync-4d",
+    verifyAdminToken,
+    async (
+        req,
+        res
+    ) => {
+        try {
+            const result =
+                await syncLatestSingapore4dDraw();
+
+            let message =
+                "Singapore 4D 最新期开奖数据同步完成";
+
+            if (
+                result.action ===
+                "inserted"
+            ) {
+                message =
+                    `已新增 Singapore 4D 最新一期 Draw ${result.official_draw_number}`;
+            } else if (
+                result.action ===
+                "updated"
+            ) {
+                message =
+                    `Singapore 4D Draw ${result.official_draw_number} 已存在，官方数据已重新校验并更新`;
+            }
+
+            return res.json({
+                success: true,
+                message,
+                result
+            });
+        } catch (
+        error
+        ) {
+            console.error(
+                "Sync latest Singapore 4D error:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    success: false,
+                    message:
+                        error.message ||
+                        "同步 Singapore 4D 最新期开奖数据失败"
                 });
         }
     }
