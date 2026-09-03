@@ -795,8 +795,7 @@ document.addEventListener(
             return trendMap;
         }
 
-        const LOTTERY_WUXING_BY_LAST_DIGIT = {
-            0: "土",
+        const LOTTERY_WUXING_BY_DIGITAL_ROOT = {
             1: "水",
             2: "火",
             3: "木",
@@ -811,27 +810,20 @@ document.addEventListener(
         function getNumberWuxing(
             number
         ) {
-            const normalizedNumber =
-                Number(
+            const digitalRoot =
+                getNumberDigitalRoot(
                     number
                 );
 
-            if (
-                !Number.isInteger(
-                    normalizedNumber
-                ) ||
-                normalizedNumber < 1 ||
-                normalizedNumber > 49
-            ) {
+            if (!digitalRoot) {
                 return null;
             }
 
-            const lastDigit =
-                normalizedNumber % 10;
-
-            return LOTTERY_WUXING_BY_LAST_DIGIT[
-                lastDigit
-            ] || null;
+            return (
+                LOTTERY_WUXING_BY_DIGITAL_ROOT[
+                digitalRoot
+                ] || null
+            );
         }
 
         window.getNumberWuxing =
@@ -1092,6 +1084,53 @@ document.addEventListener(
                     clearWuxingPreselectGrid();
                 }
             );
+
+            historyTableBody.addEventListener(
+                "click",
+                event => {
+                    const numberElement =
+                        event.target.closest(
+                            ".history-matrix-number"
+                        );
+
+                    if (!numberElement) {
+                        return;
+                    }
+
+                    const row =
+                        numberElement.closest(
+                            "tr"
+                        );
+
+                    const latestRow =
+                        historyTableBody.lastElementChild;
+
+                    if (
+                        !row ||
+                        row !== latestRow
+                    ) {
+                        return;
+                    }
+
+                    const number =
+                        Number(
+                            numberElement.textContent.trim()
+                        );
+
+                    if (
+                        !Number.isInteger(number) ||
+                        number < 1 ||
+                        number > 49
+                    ) {
+                        return;
+                    }
+
+                    lockWuxingSourceNumber(
+                        number
+                    );
+                }
+            );
+
         }
 
         function buildPreselectGridCells(
@@ -1153,6 +1192,180 @@ document.addEventListener(
                     cell
                 );
             }
+        }
+
+        function fillWuxingPreselectRow(
+            rowNumber,
+            sourceNumber
+        ) {
+            const sourceWuxing =
+                getNumberWuxing(
+                    sourceNumber
+                );
+
+            if (!sourceWuxing) {
+                return false;
+            }
+
+            const generatedWuxing =
+                getGeneratedWuxing(
+                    sourceWuxing
+                );
+
+            if (!generatedWuxing) {
+                return false;
+            }
+
+            const candidateNumbers =
+                getNumbersByWuxing(
+                    generatedWuxing
+                );
+
+            const candidateSet =
+                new Set(
+                    candidateNumbers
+                );
+
+            const gridElement =
+                document.querySelector(
+                    `.lottery-preselect-grid[data-preselect-grid="${rowNumber}"]`
+                );
+
+            if (!gridElement) {
+                return false;
+            }
+
+            const cells =
+                gridElement.querySelectorAll(
+                    ".lottery-preselect-cell"
+                );
+
+            cells.forEach(
+                cell => {
+                    const number =
+                        Number(
+                            cell.dataset.number
+                        );
+
+                    cell.classList.remove(
+                        "selected"
+                    );
+
+                    cell.textContent =
+                        "";
+
+                    if (
+                        candidateSet.has(
+                            number
+                        )
+                    ) {
+                        cell.classList.add(
+                            "selected"
+                        );
+
+                        cell.textContent =
+                            formatNumber(
+                                number
+                            );
+                    }
+                }
+            );
+
+            gridElement.dataset.sourceNumber =
+                String(sourceNumber);
+
+            gridElement.dataset.sourceWuxing =
+                sourceWuxing;
+
+            gridElement.dataset.generatedWuxing =
+                generatedWuxing;
+
+            return true;
+        }
+
+        function findNextEmptyPreselectRow() {
+            const grids =
+                document.querySelectorAll(
+                    "#lotteryPreselectRows .lottery-preselect-grid"
+                );
+
+            for (
+                let index = 0;
+                index < grids.length;
+                index += 1
+            ) {
+                const grid =
+                    grids[index];
+
+                if (
+                    !grid.dataset.sourceNumber
+                ) {
+                    return index + 1;
+                }
+            }
+
+            return null;
+        }
+
+        function lockWuxingSourceNumber(
+            sourceNumber
+        ) {
+            const existingGrid =
+                document.querySelector(
+                    `#lotteryPreselectRows .lottery-preselect-grid[data-source-number="${sourceNumber}"]`
+                );
+
+            /*
+             * 同一个来源号码再次点击：
+             * 取消锁定，并清空它所在的预选行。
+             */
+            if (existingGrid) {
+                const cells =
+                    existingGrid.querySelectorAll(
+                        ".lottery-preselect-cell"
+                    );
+
+                cells.forEach(
+                    cell => {
+                        cell.classList.remove(
+                            "selected"
+                        );
+
+                        cell.textContent =
+                            "";
+                    }
+                );
+
+                delete existingGrid.dataset.sourceNumber;
+                delete existingGrid.dataset.sourceWuxing;
+                delete existingGrid.dataset.generatedWuxing;
+
+                console.log(
+                    `号码 ${sourceNumber} 的五行预选已取消。`
+                );
+
+                return;
+            }
+
+            /*
+             * 第一次点击：
+             * 找到下一条空预选行并锁定。
+             */
+            const nextRowNumber =
+                findNextEmptyPreselectRow();
+
+            if (!nextRowNumber) {
+                console.warn(
+                    "没有可用的五行预选行。"
+                );
+
+                return;
+            }
+
+            fillWuxingPreselectRow(
+                nextRowNumber,
+                sourceNumber
+            );
         }
 
         function initializePreselectGrids() {
@@ -1880,6 +2093,7 @@ document.addEventListener(
                         );
                 }
             );
+
         }
 
         function renderNumberMatrix(
