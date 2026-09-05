@@ -1392,3 +1392,373 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     );
 });
+
+/*
+ * ============================================================
+ * Singapore 4D · 手工新增 / 修正开奖记录
+ * POST /api/admin/lottery/manual-4d
+ * ============================================================
+ */
+document.addEventListener("DOMContentLoaded", () => {
+    const manualForm =
+        document.getElementById(
+            "lottery4dManualForm"
+        );
+
+    const manualMessage =
+        document.getElementById(
+            "lottery4dManualMessage"
+        );
+
+    const submitButton =
+        document.getElementById(
+            "lottery4dManualSubmitButton"
+        );
+
+    if (!manualForm) {
+        return;
+    }
+
+    function getAdminTokenFor4DManual() {
+        return (
+            localStorage.getItem(
+                "adminToken"
+            ) ||
+            sessionStorage.getItem(
+                "adminToken"
+            ) ||
+            ""
+        );
+    }
+
+    function getFieldValue(id) {
+        return String(
+            document.getElementById(id)?.value || ""
+        ).trim();
+    }
+
+    function collectPrizeNumbers(prefix) {
+        const values = [];
+
+        for (
+            let index = 1;
+            index <= 10;
+            index += 1
+        ) {
+            values.push(
+                getFieldValue(
+                    `${prefix}${index}`
+                )
+            );
+        }
+
+        return values;
+    }
+
+    function isValid4DNumber(value) {
+        return /^\d{4}$/.test(value);
+    }
+
+    manualForm.addEventListener(
+        "submit",
+        async event => {
+            event.preventDefault();
+
+            const drawNumber =
+                getFieldValue(
+                    "lottery4dDrawNumber"
+                );
+
+            const drawDate =
+                getFieldValue(
+                    "lottery4dDrawDate"
+                );
+
+            const firstPrize =
+                getFieldValue(
+                    "lottery4dFirstPrize"
+                );
+
+            const secondPrize =
+                getFieldValue(
+                    "lottery4dSecondPrize"
+                );
+
+            const thirdPrize =
+                getFieldValue(
+                    "lottery4dThirdPrize"
+                );
+
+            const starterPrizes =
+                collectPrizeNumbers(
+                    "lottery4dStarter"
+                );
+
+            const consolationPrizes =
+                collectPrizeNumbers(
+                    "lottery4dConsolation"
+                );
+
+            if (
+                !/^\d{4}$/.test(
+                    drawNumber
+                )
+            ) {
+                if (manualMessage) {
+                    manualMessage.textContent =
+                        "Draw No. 必须是4位数字";
+                }
+
+                document
+                    .getElementById(
+                        "lottery4dDrawNumber"
+                    )
+                    ?.focus();
+
+                return;
+            }
+
+            if (!drawDate) {
+                if (manualMessage) {
+                    manualMessage.textContent =
+                        "请选择开奖日期";
+                }
+
+                document
+                    .getElementById(
+                        "lottery4dDrawDate"
+                    )
+                    ?.focus();
+
+                return;
+            }
+
+            const topPrizes = [
+                firstPrize,
+                secondPrize,
+                thirdPrize
+            ];
+
+            const invalidTopIndex =
+                topPrizes.findIndex(
+                    value =>
+                        !isValid4DNumber(
+                            value
+                        )
+                );
+
+            if (
+                invalidTopIndex !== -1
+            ) {
+                if (manualMessage) {
+                    manualMessage.textContent =
+                        "1st / 2nd / 3rd Prize 必须全部输入4位数字";
+                }
+
+                const topIds = [
+                    "lottery4dFirstPrize",
+                    "lottery4dSecondPrize",
+                    "lottery4dThirdPrize"
+                ];
+
+                document
+                    .getElementById(
+                        topIds[
+                        invalidTopIndex
+                        ]
+                    )
+                    ?.focus();
+
+                return;
+            }
+
+            const invalidStarterIndex =
+                starterPrizes.findIndex(
+                    value =>
+                        !isValid4DNumber(
+                            value
+                        )
+                );
+
+            if (
+                invalidStarterIndex !== -1
+            ) {
+                if (manualMessage) {
+                    manualMessage.textContent =
+                        "Starter Prizes 必须完整输入10个4位号码";
+                }
+
+                document
+                    .getElementById(
+                        `lottery4dStarter${invalidStarterIndex + 1}`
+                    )
+                    ?.focus();
+
+                return;
+            }
+
+            const invalidConsolationIndex =
+                consolationPrizes.findIndex(
+                    value =>
+                        !isValid4DNumber(
+                            value
+                        )
+                );
+
+            if (
+                invalidConsolationIndex !== -1
+            ) {
+                if (manualMessage) {
+                    manualMessage.textContent =
+                        "Consolation Prizes 必须完整输入10个4位号码";
+                }
+
+                document
+                    .getElementById(
+                        `lottery4dConsolation${invalidConsolationIndex + 1}`
+                    )
+                    ?.focus();
+
+                return;
+            }
+
+            const originalButtonText =
+                submitButton
+                    ? submitButton.textContent
+                    : "";
+
+            if (submitButton) {
+                submitButton.disabled =
+                    true;
+
+                submitButton.textContent =
+                    "正在保存...";
+            }
+
+            if (manualMessage) {
+                manualMessage.textContent =
+                    `正在保存 Singapore 4D Draw ${drawNumber}...`;
+            }
+
+            try {
+                const token =
+                    getAdminTokenFor4DManual();
+
+                if (!token) {
+                    throw new Error(
+                        "管理员登录状态已失效，请重新登录"
+                    );
+                }
+
+                const response =
+                    await fetch(
+                        "/api/admin/lottery/manual-4d",
+                        {
+                            method:
+                                "POST",
+
+                            headers: {
+                                Accept:
+                                    "application/json",
+
+                                "Content-Type":
+                                    "application/json",
+
+                                Authorization:
+                                    `Bearer ${token}`
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    draw_number:
+                                        drawNumber,
+
+                                    draw_date:
+                                        drawDate,
+
+                                    first_prize:
+                                        firstPrize,
+
+                                    second_prize:
+                                        secondPrize,
+
+                                    third_prize:
+                                        thirdPrize,
+
+                                    starter_prizes:
+                                        starterPrizes,
+
+                                    consolation_prizes:
+                                        consolationPrizes
+                                })
+                        }
+                    );
+
+                let data = {};
+
+                try {
+                    data =
+                        await response.json();
+                } catch (
+                parseError
+                ) {
+                    throw new Error(
+                        `服务器返回数据格式异常，HTTP ${response.status}`
+                    );
+                }
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+                    throw new Error(
+                        data.message ||
+                        "保存 / 修正 Singapore 4D 开奖数据失败"
+                    );
+                }
+
+                if (manualMessage) {
+                    manualMessage.textContent =
+                        data.message ||
+                        `Singapore 4D Draw ${drawNumber} 已保存`;
+                }
+
+                manualForm.reset();
+
+                if (
+                    typeof window.loadLatestSingapore4DAdmin ===
+                    "function"
+                ) {
+                    await window.loadLatestSingapore4DAdmin();
+                }
+
+                if (
+                    typeof window.loadSingapore4DHistoryAdmin ===
+                    "function"
+                ) {
+                    await window.loadSingapore4DHistoryAdmin();
+                }
+            } catch (
+            error
+            ) {
+                console.error(
+                    "Manual Singapore 4D save error:",
+                    error
+                );
+
+                if (manualMessage) {
+                    manualMessage.textContent =
+                        `保存失败：${error.message}`;
+                }
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled =
+                        false;
+
+                    submitButton.textContent =
+                        originalButtonText;
+                }
+            }
+        }
+    );
+});

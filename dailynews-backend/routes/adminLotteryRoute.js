@@ -34,6 +34,24 @@ function normalizeNumber(value) {
     return number;
 }
 
+function normalize4dManualNumber(value) {
+    const text =
+        String(
+            value === undefined ||
+                value === null
+                ? ""
+                : value
+        ).trim();
+
+    if (
+        !/^\d{4}$/.test(text)
+    ) {
+        return null;
+    }
+
+    return text;
+}
+
 /*
  * ==========================================
  * 手动添加开奖记录
@@ -315,6 +333,426 @@ router.post(
                                 special_numbers: [
                                     normalizedSpecialNumber
                                 ]
+                            }
+                        });
+                    }
+                );
+            }
+        );
+    }
+);
+
+/*
+ * ==========================================
+ * Singapore 4D 手工新增 / 修正开奖记录
+ * POST /api/admin/lottery/manual-4d
+ * ==========================================
+ */
+router.post(
+    "/manual-4d",
+    verifyAdminToken,
+    (req, res) => {
+        const {
+            draw_number,
+            draw_date,
+            first_prize,
+            second_prize,
+            third_prize,
+            starter_prizes,
+            consolation_prizes
+        } = req.body || {};
+
+        const normalizedDrawNumber =
+            String(draw_number || "").trim();
+
+        const normalizedDrawDate =
+            String(draw_date || "").trim();
+
+        if (
+            !/^\d{4}$/.test(
+                normalizedDrawNumber
+            )
+        ) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Draw No. 必须是4位数字"
+                });
+        }
+
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(
+                normalizedDrawDate
+            )
+        ) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "开奖日期格式不正确"
+                });
+        }
+
+        const normalizedFirstPrize =
+            normalize4dManualNumber(
+                first_prize
+            );
+
+        const normalizedSecondPrize =
+            normalize4dManualNumber(
+                second_prize
+            );
+
+        const normalizedThirdPrize =
+            normalize4dManualNumber(
+                third_prize
+            );
+
+        if (
+            !normalizedFirstPrize ||
+            !normalizedSecondPrize ||
+            !normalizedThirdPrize
+        ) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "1st / 2nd / 3rd Prize 必须全部是4位数字"
+                });
+        }
+
+        if (
+            !Array.isArray(
+                starter_prizes
+            ) ||
+            starter_prizes.length !== 10
+        ) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Starter Prizes 必须输入10个号码"
+                });
+        }
+
+        if (
+            !Array.isArray(
+                consolation_prizes
+            ) ||
+            consolation_prizes.length !== 10
+        ) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Consolation Prizes 必须输入10个号码"
+                });
+        }
+
+        const normalizedStarterPrizes =
+            starter_prizes.map(
+                normalize4dManualNumber
+            );
+
+        const normalizedConsolationPrizes =
+            consolation_prizes.map(
+                normalize4dManualNumber
+            );
+
+        if (
+            normalizedStarterPrizes.some(
+                number => number === null
+            )
+        ) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Starter Prizes 的10个号码必须全部是4位数字"
+                });
+        }
+
+        if (
+            normalizedConsolationPrizes.some(
+                number => number === null
+            )
+        ) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Consolation Prizes 的10个号码必须全部是4位数字"
+                });
+        }
+
+        const mainNumbers = [
+            normalizedFirstPrize,
+            normalizedSecondPrize,
+            normalizedThirdPrize
+        ];
+
+        const prizeStructure = {
+            first:
+                normalizedFirstPrize,
+
+            second:
+                normalizedSecondPrize,
+
+            third:
+                normalizedThirdPrize,
+
+            starter:
+                normalizedStarterPrizes,
+
+            consolation:
+                normalizedConsolationPrizes
+        };
+
+        const mainNumbersJson =
+            JSON.stringify(
+                mainNumbers
+            );
+
+        const specialNumbersJson =
+            JSON.stringify([]);
+
+        const prizeStructureJson =
+            JSON.stringify(
+                prizeStructure
+            );
+
+        const nowIso =
+            new Date().toISOString();
+
+        const checkSql = `
+            SELECT
+                id,
+                draw_number,
+                draw_date
+            FROM lottery_draws
+            WHERE
+                game_code = 'sg-4d'
+                AND (
+                    draw_number = ?
+                    OR official_draw_number = ?
+                    OR draw_date = ?
+                )
+            LIMIT 1
+        `;
+
+        db.get(
+            checkSql,
+            [
+                normalizedDrawNumber,
+                normalizedDrawNumber,
+                normalizedDrawDate
+            ],
+            (
+                checkError,
+                existingRow
+            ) => {
+                if (checkError) {
+                    console.error(
+                        "Check manual Singapore 4D draw error:",
+                        checkError
+                    );
+
+                    return res
+                        .status(500)
+                        .json({
+                            success: false,
+                            message:
+                                "检查 Singapore 4D 开奖记录失败"
+                        });
+                }
+
+                if (existingRow) {
+                    const updateSql = `
+                        UPDATE lottery_draws
+                        SET
+                            draw_number = ?,
+                            official_draw_number = ?,
+                            draw_date = ?,
+                            main_numbers = ?,
+                            special_numbers = ?,
+                            prize_structure = ?,
+                            source_name = ?,
+                            source_url = ?,
+                            source_status = ?,
+                            fetched_at = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    `;
+
+                    db.run(
+                        updateSql,
+                        [
+                            normalizedDrawNumber,
+                            normalizedDrawNumber,
+                            normalizedDrawDate,
+                            mainNumbersJson,
+                            specialNumbersJson,
+                            prizeStructureJson,
+                            "Manual Admin Entry",
+                            "",
+                            "manual_verified",
+                            nowIso,
+                            existingRow.id
+                        ],
+                        function (
+                            updateError
+                        ) {
+                            if (updateError) {
+                                console.error(
+                                    "Update manual Singapore 4D draw error:",
+                                    updateError
+                                );
+
+                                return res
+                                    .status(500)
+                                    .json({
+                                        success: false,
+                                        message:
+                                            "修正 Singapore 4D 开奖记录失败"
+                                    });
+                            }
+
+                            return res.json({
+                                success: true,
+                                action:
+                                    "updated",
+                                message:
+                                    `Singapore 4D Draw ${normalizedDrawNumber} 已手工修正并保存`,
+                                draw: {
+                                    id:
+                                        existingRow.id,
+
+                                    game_code:
+                                        "sg-4d",
+
+                                    draw_number:
+                                        normalizedDrawNumber,
+
+                                    draw_date:
+                                        normalizedDrawDate,
+
+                                    main_numbers:
+                                        mainNumbers,
+
+                                    prize_structure:
+                                        prizeStructure,
+
+                                    source_status:
+                                        "manual_verified"
+                                }
+                            });
+                        }
+                    );
+
+                    return;
+                }
+
+                const insertSql = `
+                    INSERT INTO lottery_draws (
+                        game_code,
+                        draw_number,
+                        official_draw_number,
+                        draw_date,
+                        main_numbers,
+                        special_numbers,
+                        prize_structure,
+                        source_name,
+                        source_url,
+                        source_status,
+                        fetched_at,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        CURRENT_TIMESTAMP,
+                        CURRENT_TIMESTAMP
+                    )
+                `;
+
+                db.run(
+                    insertSql,
+                    [
+                        "sg-4d",
+                        normalizedDrawNumber,
+                        normalizedDrawNumber,
+                        normalizedDrawDate,
+                        mainNumbersJson,
+                        specialNumbersJson,
+                        prizeStructureJson,
+                        "Manual Admin Entry",
+                        "",
+                        "manual_verified",
+                        nowIso
+                    ],
+                    function (
+                        insertError
+                    ) {
+                        if (insertError) {
+                            console.error(
+                                "Insert manual Singapore 4D draw error:",
+                                insertError
+                            );
+
+                            return res
+                                .status(500)
+                                .json({
+                                    success: false,
+                                    message:
+                                        "新增 Singapore 4D 开奖记录失败"
+                                });
+                        }
+
+                        return res.json({
+                            success: true,
+                            action:
+                                "inserted",
+                            message:
+                                `Singapore 4D Draw ${normalizedDrawNumber} 已手工新增并保存`,
+                            draw: {
+                                id:
+                                    this.lastID,
+
+                                game_code:
+                                    "sg-4d",
+
+                                draw_number:
+                                    normalizedDrawNumber,
+
+                                draw_date:
+                                    normalizedDrawDate,
+
+                                main_numbers:
+                                    mainNumbers,
+
+                                prize_structure:
+                                    prizeStructure,
+
+                                source_status:
+                                    "manual_verified"
                             }
                         });
                     }
