@@ -1027,6 +1027,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    window.loadLatestSingapore4DAdmin =
+        loadLatest4D;
+
+    window.loadSingapore4DHistoryAdmin =
+        load4DHistory;
+
     async function syncLatest4D() {
         if (!fourDSyncLatestButton) {
             return;
@@ -1351,16 +1357,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         `Draw ${drawNumber} 同步完成`;
                 }
 
-                /*
-                 * 同步完成后直接刷新当前页面，
-                 * 让最新开奖和历史记录重新读取数据库。
-                 */
-                window.setTimeout(
-                    () => {
-                        window.location.reload();
-                    },
-                    800
-                );
+                if (
+                    typeof window.loadLatestSingapore4DAdmin ===
+                    "function"
+                ) {
+                    await window.loadLatestSingapore4DAdmin();
+                }
+
+                if (
+                    typeof window.loadSingapore4DHistoryAdmin ===
+                    "function"
+                ) {
+                    await window.loadSingapore4DHistoryAdmin();
+                }
             } catch (
             error
             ) {
