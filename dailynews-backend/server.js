@@ -38,6 +38,11 @@ const {
   stopSingaporeTotoAutoSyncScheduler,
 } = require("./services/sgTotoAutoSyncScheduler");
 
+const {
+  startSingapore4dAutoSyncScheduler,
+  stopSingapore4dAutoSyncScheduler,
+} = require("./services/sg4dAutoSyncScheduler");
+
 const app = express();
 
 app.set("trust proxy", 1);
@@ -211,6 +216,21 @@ app.listen(
         error
       );
     }
+
+    try {
+      const sg4dSchedulerResult =
+        startSingapore4dAutoSyncScheduler();
+
+      console.log(
+        "[Singapore 4D Scheduler] Startup result:",
+        sg4dSchedulerResult
+      );
+    } catch (error) {
+      console.error(
+        "[Singapore 4D Scheduler] Startup error:",
+        error
+      );
+    }
   }
 );
 
@@ -221,6 +241,7 @@ function shutdownServer(signal) {
 
   stopGNewsAutoFetchScheduler();
   stopSingaporeTotoAutoSyncScheduler();
+  stopSingapore4dAutoSyncScheduler();
 
   process.exit(0);
 }
