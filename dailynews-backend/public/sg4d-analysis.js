@@ -4,6 +4,7 @@ let sg4dDraws = [];
 let currentPrizeType = "first";
 let currentAnalysisMode = "basic";
 let currentQueryMode = "recent";
+const expanded4dDrawNumbers = new Set();
 
 const sg4dElements = {
     drawDate: document.getElementById("sg4dAnalysisDrawDate"),
@@ -294,6 +295,69 @@ function calculate4dOddEven(number) {
     return `${odd}:${even}`;
 }
 
+function buildPrizeDetailNumbers(numbers) {
+    if (
+        !Array.isArray(numbers) ||
+        numbers.length === 0
+    ) {
+        return `
+            <span class="sg4d-detail-empty">
+                暂无数据
+            </span>
+        `;
+    }
+
+    return numbers
+        .map(
+            (number) => `
+                <span class="sg4d-detail-number">
+                    ${normalize4dNumber(number)}
+                </span>
+            `
+        )
+        .join("");
+}
+
+function buildHistoryDetailRow(
+    drawNumber,
+    prize
+) {
+    return `
+        <tr
+            class="sg4d-detail-row"
+            data-detail-draw-number="${drawNumber}"
+        >
+            <td colspan="46">
+                <div class="sg4d-detail-grid">
+                    <div class="sg4d-detail-group">
+                        <strong>
+                            Starter Prizes（入围奖）
+                        </strong>
+
+                        <div class="sg4d-detail-numbers">
+                            ${buildPrizeDetailNumbers(
+        prize.starter
+    )}
+                        </div>
+                    </div>
+
+                    <div class="sg4d-detail-group">
+                        <strong>
+                            Consolation Prizes（安慰奖）
+                        </strong>
+
+                        <div class="sg4d-detail-numbers">
+                            ${buildPrizeDetailNumbers(
+        prize.consolation
+    )}
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
 function renderHistoryTable() {
     if (!sg4dElements.tableBody) {
         return;
@@ -335,6 +399,18 @@ function renderHistoryTable() {
                 const prize =
                     parsePrizeStructure(draw);
 
+                const drawNumber =
+                    String(
+                        draw.official_draw_number ||
+                        draw.draw_number ||
+                        ""
+                    );
+
+                const isExpanded =
+                    expanded4dDrawNumbers.has(
+                        drawNumber
+                    );
+
                 const selectedNumber =
                     getSelectedPrizeNumber(
                         draw
@@ -365,18 +441,15 @@ function renderHistoryTable() {
                         ? " active"
                         : "";
 
-                return `
+                const mainRow = `
                     <tr
                         class="sg4d-history-row"
-                        data-draw-number="${draw.official_draw_number ||
-                    draw.draw_number ||
-                    ""
-                    }"
+                        data-draw-number="${drawNumber}"
                     >
                         <td class="sg4d-date-value">
                             ${formatDisplayDate(
-                        draw.draw_date
-                    )}
+                    draw.draw_date
+                )}
                         </td>
 
                         <td class="sg4d-prize-value${firstActive}">
@@ -387,8 +460,27 @@ function renderHistoryTable() {
                             ${prize.second}
                         </td>
 
-                        <td class="sg4d-prize-value${thirdActive}">
-                            ${prize.third}
+                        <td class="sg4d-prize-value sg4d-third-prize-value${thirdActive}">
+                            <span>
+                                ${prize.third}
+                            </span>
+
+                            <button
+                                type="button"
+                                class="sg4d-row-expand-button"
+                                data-draw-number="${drawNumber}"
+                                aria-expanded="${isExpanded ? "true" : "false"}"
+                                aria-label="${isExpanded
+                        ? `收起 Draw ${drawNumber} 入围奖和安慰奖`
+                        : `展开 Draw ${drawNumber} 入围奖和安慰奖`
+                    }"
+                                title="${isExpanded
+                        ? "收起入围奖和安慰奖"
+                        : "查看入围奖和安慰奖"
+                    }"
+                            >
+                                ${isExpanded ? "▲" : "▼"}
+                            </button>
                         </td>
 
                         ${buildDigitCells(
@@ -404,9 +496,78 @@ function renderHistoryTable() {
                         </td>
                     </tr>
                 `;
+
+                const detailRow =
+                    isExpanded
+                        ? buildHistoryDetailRow(
+                            drawNumber,
+                            prize
+                        )
+                        : "";
+
+                return (
+                    mainRow +
+                    detailRow
+                );
             })
             .join("");
 }
+
+function bindHistoryDetailToggle() {
+    if (!sg4dElements.tableBody) {
+        return;
+    }
+
+    sg4dElements.tableBody.addEventListener(
+        "click",
+        (event) => {
+            const button =
+                event.target.closest(
+                    ".sg4d-row-expand-button"
+                );
+
+            if (
+                !button ||
+                !sg4dElements.tableBody.contains(
+                    button
+                )
+            ) {
+                return;
+            }
+
+            const drawNumber =
+                String(
+                    button.dataset.drawNumber ||
+                    ""
+                ).trim();
+
+            if (!drawNumber) {
+                return;
+            }
+
+            if (
+                expanded4dDrawNumbers.has(
+                    drawNumber
+                )
+            ) {
+                expanded4dDrawNumbers.delete(
+                    drawNumber
+                );
+            } else {
+                expanded4dDrawNumbers.add(
+                    drawNumber
+                );
+            }
+
+            renderHistoryTable();
+
+            requestAnimationFrame(
+                syncPreselectWithHistoryTable
+            );
+        }
+    );
+}
+
 
 function updatePrizeButtons() {
     sg4dElements.prizeButtons.forEach(
@@ -776,6 +937,7 @@ function initSingapore4dAnalysis() {
 
     bindQueryModeButtons();
     bindDateRangeQuery();
+    bindHistoryDetailToggle();
     updateQueryModeUI();
 
     initializePreselectGrids();

@@ -1287,3 +1287,123 @@ body {
     font-weight: 800;
     text-align: center;
 }
+
+/* =========================================================
+   Singapore 4D 每期 Starter / Consolation 独立展开
+   ========================================================= */
+
+/* 表头原来的装饰小三角隐藏，改为每一期三奖后独立按钮 */
+.sg4d-history-table thead .sg4d-expand-indicator {
+    display: none;
+}
+
+.sg4d-third-prize-value {
+    position: relative;
+}
+
+.sg4d-row-expand-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 18px;
+    height: 18px;
+
+    margin-left: 3px;
+    padding: 0;
+
+    border: 0;
+    border-radius: 4px;
+
+    background: transparent;
+    color: #ffd84d;
+
+    font-size: 9px;
+    line-height: 1;
+
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.sg4d-row-expand-button:hover,
+.sg4d-row-expand-button:focus-visible {
+    background: rgba(255, 216, 77, 0.14);
+    outline: 1px solid rgba(255, 216, 77, 0.65);
+}
+
+.sg4d-row-expand-button[aria-expanded="true"] {
+    background: rgba(255, 216, 77, 0.12);
+    color: #ffe36c;
+}
+
+/* 详情行用一个 colspan=46 单元格，不改变原46列表格宽度 */
+.sg4d-history-table tbody tr.sg4d-detail-row>td {
+    height: auto;
+    padding: 14px 16px;
+
+    text-align: left;
+    white-space: normal;
+
+    background: #062942 !important;
+
+    border-bottom: 2px solid #2ea7e0;
+}
+
+.sg4d-detail-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.sg4d-detail-group {
+    min-width: 0;
+}
+
+.sg4d-detail-group strong {
+    display: block;
+
+    margin-bottom: 9px;
+
+    color: #9cc9e3;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.sg4d-detail-numbers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.sg4d-detail-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 50px;
+    height: 28px;
+
+    padding: 0 8px;
+
+    border: 1px solid #287da9;
+    border-radius: 6px;
+
+    background: #083854;
+    color: #ffffff;
+
+    font-weight: 800;
+    letter-spacing: 0.6px;
+}
+
+.sg4d-detail-empty {
+    color: #86bad8;
+    font-size: 12px;
+}
+
+@media (max-width: 900px) {
+    .sg4d-detail-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+}
