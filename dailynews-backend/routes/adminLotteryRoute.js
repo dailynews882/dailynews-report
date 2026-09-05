@@ -12,6 +12,7 @@ const {
 );
 
 const {
+    syncSingapore4dDraw,
     syncLatestSingapore4dDraw
 } = require(
     "../services/sg4dSyncService"
@@ -436,6 +437,86 @@ router.post(
                     message:
                         error.message ||
                         "同步 Singapore 4D 最新期开奖数据失败"
+                });
+        }
+    }
+);
+
+/*
+ * ==========================================
+ * 同步 Singapore Pools 4D 指定 Draw
+ * POST /api/admin/lottery/sync-4d-draw
+ * ==========================================
+ */
+router.post(
+    "/sync-4d-draw",
+    verifyAdminToken,
+    async (
+        req,
+        res
+    ) => {
+        try {
+            const drawNumber =
+                String(
+                    req.body?.draw_number || ""
+                ).trim();
+
+            if (
+                !/^\d{4}$/.test(
+                    drawNumber
+                )
+            ) {
+                return res
+                    .status(400)
+                    .json({
+                        success: false,
+                        message:
+                            "请输入正确的4位 Draw No."
+                    });
+            }
+
+            const result =
+                await syncSingapore4dDraw(
+                    drawNumber
+                );
+
+            let message =
+                `Singapore 4D Draw ${drawNumber} 同步完成`;
+
+            if (
+                result.action ===
+                "inserted"
+            ) {
+                message =
+                    `Singapore 4D Draw ${drawNumber} 已新增`;
+            } else if (
+                result.action ===
+                "updated"
+            ) {
+                message =
+                    `Singapore 4D Draw ${drawNumber} 已重新校验并更新`;
+            }
+
+            return res.json({
+                success: true,
+                message,
+                result
+            });
+        } catch (
+        error
+        ) {
+            console.error(
+                "Sync Singapore 4D specified draw error:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    success: false,
+                    message:
+                        error.message ||
+                        "同步指定 Singapore 4D Draw 失败"
                 });
         }
     }

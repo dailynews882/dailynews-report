@@ -8,6 +8,276 @@
     <title>彩票管理 - Daily News</title>
 
     <link rel="stylesheet" href="admin.css" />
+
+    <style>
+        /* =========================================================
+               彩票管理页面专用样式
+               只影响 admin-lottery.html，不改动其他后台页面
+            ========================================================= */
+
+        .admin-main {
+            padding-bottom: 48px;
+        }
+
+        .admin-section {
+            max-width: 1180px;
+            margin-bottom: 24px;
+            padding: 24px 28px;
+            border: 1px solid #1f5f86;
+            border-radius: 14px;
+            background:
+                linear-gradient(180deg,
+                    rgba(16, 49, 82, 0.98),
+                    rgba(11, 39, 67, 0.98));
+            box-shadow:
+                0 10px 28px rgba(0, 0, 0, 0.14);
+        }
+
+        .admin-section h2 {
+            margin: 0 0 18px;
+            font-size: 22px;
+            line-height: 1.35;
+            color: #ffffff;
+        }
+
+        .admin-section h3 {
+            margin: 0 0 12px;
+            font-size: 17px;
+            color: #d9efff;
+        }
+
+        .admin-section label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #d8ecfb;
+        }
+
+        .admin-section input,
+        .admin-section select {
+            min-height: 38px;
+            padding: 8px 10px;
+            border: 1px solid #3679a4;
+            border-radius: 7px;
+            outline: none;
+            box-sizing: border-box;
+            background: #071f35;
+            color: #ffffff;
+            font-size: 14px;
+            transition:
+                border-color 0.18s ease,
+                box-shadow 0.18s ease,
+                background 0.18s ease;
+        }
+
+        .admin-section input::placeholder {
+            color: #7fa7c4;
+        }
+
+        .admin-section input:focus,
+        .admin-section select:focus {
+            border-color: #20baff;
+            box-shadow: 0 0 0 3px rgba(32, 186, 255, 0.14);
+            background: #092943;
+        }
+
+        .admin-section button {
+            min-height: 38px;
+            padding: 8px 16px;
+            border: 1px solid #138cc4;
+            border-radius: 7px;
+            cursor: pointer;
+            background:
+                linear-gradient(180deg,
+                    #11aee8,
+                    #078ac6);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            transition:
+                transform 0.15s ease,
+                filter 0.15s ease,
+                opacity 0.15s ease;
+        }
+
+        .admin-section button:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+        }
+
+        .admin-section button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+        }
+
+        .admin-lottery-game-switcher {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .admin-lottery-game-switcher label {
+            margin: 0;
+            min-width: 80px;
+        }
+
+        .admin-lottery-game-switcher select {
+            min-width: 320px;
+            max-width: 100%;
+        }
+
+        .admin-lottery-panel[hidden] {
+            display: none !important;
+        }
+
+        .admin-lottery-inline-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .admin-lottery-inline-form>div {
+            min-width: 210px;
+        }
+
+        .admin-lottery-inline-form input {
+            width: 100%;
+        }
+
+        .admin-lottery-subsection {
+            margin-top: 22px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(70, 139, 184, 0.28);
+        }
+
+        .admin-lottery-subsection:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        .admin-lottery-4d-top-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .admin-lottery-4d-number-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(120px, 1fr));
+            gap: 10px 12px;
+        }
+
+        .admin-lottery-4d-top-grid>div,
+        .admin-lottery-4d-number-grid input {
+            min-width: 0;
+        }
+
+        .admin-lottery-4d-top-grid input,
+        .admin-lottery-4d-number-grid input {
+            width: 100%;
+            text-align: center;
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
+
+        #lottery4dLatestStatus {
+            line-height: 1.6;
+        }
+
+        #lottery4dSyncLatestMessage,
+        #lottery4dSyncDrawMessage,
+        #lottery4dManualMessage,
+        #lotteryManualMessage,
+        #lotterySyncMessage {
+            margin-top: 12px;
+            min-height: 20px;
+            color: #8fd8ff;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        #lottery4dSchedulerStatus {
+            padding: 14px 16px;
+            border: 1px solid rgba(73, 153, 205, 0.32);
+            border-radius: 9px;
+            background: rgba(4, 25, 44, 0.56);
+            color: #d7edfb;
+        }
+
+        #lottery4dHistoryList {
+            max-height: 620px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        #lottery4dHistoryList::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #lottery4dHistoryList::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: #235f85;
+        }
+
+        .admin-lottery-help {
+            margin: 10px 0 14px;
+            color: #8db7d2;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        #lottery4dManualSubmitButton {
+            margin-top: 8px;
+            min-width: 190px;
+        }
+
+        @media (max-width: 1100px) {
+            .admin-lottery-4d-number-grid {
+                grid-template-columns: repeat(3, minmax(120px, 1fr));
+            }
+        }
+
+        @media (max-width: 820px) {
+            .admin-section {
+                padding: 20px;
+            }
+
+            .admin-lottery-4d-top-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-lottery-4d-number-grid {
+                grid-template-columns: repeat(2, minmax(110px, 1fr));
+            }
+
+            .admin-lottery-inline-form {
+                align-items: stretch;
+            }
+
+            .admin-lottery-inline-form>div {
+                min-width: 100%;
+            }
+
+            .admin-lottery-game-switcher {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .admin-lottery-game-switcher label {
+                min-width: 0;
+            }
+
+            .admin-lottery-game-switcher select {
+                min-width: 0;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -23,94 +293,318 @@
                 </span>
             </header>
 
+            <!-- 彩票种类总切换 -->
             <section class="admin-section">
-                <h2>最新开奖状态</h2>
+                <h2>彩票种类</h2>
 
-                <div id="lotteryLatestStatus">
-                    正在读取最新开奖数据...
+                <div class="admin-lottery-game-switcher">
+                    <label for="adminLotteryGameSelector">
+                        选择彩票
+                    </label>
+
+                    <select id="adminLotteryGameSelector">
+                        <option value="sg-toto">
+                            Singapore 新加坡 · TOTO
+                        </option>
+
+                        <option value="sg-4d">
+                            Singapore 新加坡 · 4D
+                        </option>
+                    </select>
                 </div>
             </section>
 
-            <section class="admin-section">
-                <h2>手动添加开奖</h2>
+            <!-- =====================================================
+                 Singapore TOTO
+                 保留原有ID，现有 admin-lottery.js 可继续工作
+            ====================================================== -->
+            <div class="admin-lottery-panel" id="lotteryTotoPanel">
 
-                <form id="lotteryManualForm">
-                    <div>
-                        <label for="lotteryGameCode">
-                            彩票类型
-                        </label>
+                <section class="admin-section">
+                    <h2>Singapore TOTO · 最新开奖状态</h2>
 
-                        <select id="lotteryGameCode">
-                            <option value="sg-toto">
-                                Singapore TOTO
-                            </option>
-                        </select>
+                    <div id="lotteryLatestStatus">
+                        正在读取最新开奖数据...
                     </div>
+                </section>
 
-                    <div>
-                        <label for="lotteryDrawNumber">
-                            Draw No.
-                        </label>
+                <section class="admin-section">
+                    <h2>Singapore TOTO · 手动添加开奖</h2>
 
-                        <input type="text" id="lotteryDrawNumber" placeholder="例如 4209" />
-                    </div>
+                    <form id="lotteryManualForm">
+                        <div>
+                            <label for="lotteryGameCode">
+                                彩票类型
+                            </label>
 
-                    <div>
-                        <label for="lotteryDrawDate">
-                            开奖日期
-                        </label>
-
-                        <input type="date" id="lotteryDrawDate" />
-                    </div>
-
-                    <div>
-                        <label>
-                            6个主号码
-                        </label>
+                            <select id="lotteryGameCode">
+                                <option value="sg-toto">
+                                    Singapore TOTO
+                                </option>
+                            </select>
+                        </div>
 
                         <div>
-                            <input type="number" min="1" max="49" id="mainNumber1" />
-                            <input type="number" min="1" max="49" id="mainNumber2" />
-                            <input type="number" min="1" max="49" id="mainNumber3" />
-                            <input type="number" min="1" max="49" id="mainNumber4" />
-                            <input type="number" min="1" max="49" id="mainNumber5" />
-                            <input type="number" min="1" max="49" id="mainNumber6" />
+                            <label for="lotteryDrawNumber">
+                                Draw No.
+                            </label>
+
+                            <input type="text" id="lotteryDrawNumber" placeholder="例如 4209" />
                         </div>
-                    </div>
 
-                    <div>
-                        <label for="specialNumber">
-                            额外号
-                        </label>
+                        <div>
+                            <label for="lotteryDrawDate">
+                                开奖日期
+                            </label>
 
-                        <input type="number" min="1" max="49" id="specialNumber" />
-                    </div>
+                            <input type="date" id="lotteryDrawDate" />
+                        </div>
 
-                    <button type="submit" id="lotteryManualSubmitButton">
-                        保存开奖数据
+                        <div>
+                            <label>
+                                6个主号码
+                            </label>
+
+                            <div>
+                                <input type="number" min="1" max="49" id="mainNumber1" />
+                                <input type="number" min="1" max="49" id="mainNumber2" />
+                                <input type="number" min="1" max="49" id="mainNumber3" />
+                                <input type="number" min="1" max="49" id="mainNumber4" />
+                                <input type="number" min="1" max="49" id="mainNumber5" />
+                                <input type="number" min="1" max="49" id="mainNumber6" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="specialNumber">
+                                额外号
+                            </label>
+
+                            <input type="number" min="1" max="49" id="specialNumber" />
+                        </div>
+
+                        <button type="submit" id="lotteryManualSubmitButton">
+                            保存开奖数据
+                        </button>
+                    </form>
+
+                    <div id="lotteryManualMessage"></div>
+                </section>
+
+                <section class="admin-section">
+                    <h2>Singapore TOTO · 官方数据同步</h2>
+
+                    <button type="button" id="lotterySyncButton">
+                        立即同步最新开奖
                     </button>
-                </form>
 
-                <div id="lotteryManualMessage"></div>
-            </section>
+                    <div id="lotterySyncMessage"></div>
+                </section>
 
-            <section class="admin-section">
-                <h2>官方数据同步</h2>
+                <section class="admin-section">
+                    <h2>Singapore TOTO · 历史开奖记录</h2>
 
-                <button type="button" id="lotterySyncButton">
-                    立即同步最新开奖
-                </button>
+                    <div id="lotteryHistoryList">
+                        正在读取历史开奖记录...
+                    </div>
+                </section>
 
-                <div id="lotterySyncMessage"></div>
-            </section>
+            </div>
 
-            <section class="admin-section">
-                <h2>历史开奖记录</h2>
+            <!-- =====================================================
+                 Singapore 4D
+                 第一阶段：只建立完整后台界面骨架
+                 JS / API 在下一步接入
+            ====================================================== -->
+            <div class="admin-lottery-panel" id="lottery4dPanel" hidden>
 
-                <div id="lotteryHistoryList">
-                    正在读取历史开奖记录...
-                </div>
-            </section>
+                <section class="admin-section">
+                    <h2>Singapore 4D · 最新开奖状态</h2>
+
+                    <div id="lottery4dLatestStatus">
+                        等待读取 Singapore 4D 最新开奖数据...
+                    </div>
+                </section>
+
+                <section class="admin-section">
+                    <h2>Singapore 4D · 官方数据同步</h2>
+
+                    <div class="admin-lottery-subsection">
+                        <h3>同步官网最新一期</h3>
+
+                        <button type="button" id="lottery4dSyncLatestButton">
+                            立即同步最新 4D 开奖
+                        </button>
+
+                        <div id="lottery4dSyncLatestMessage"></div>
+                    </div>
+
+                    <div class="admin-lottery-subsection">
+                        <h3>同步指定 Draw No.</h3>
+
+                        <div class="admin-lottery-inline-form">
+                            <div>
+                                <label for="lottery4dSyncDrawNumber">
+                                    Draw No.
+                                </label>
+
+                                <input type="text" id="lottery4dSyncDrawNumber" inputmode="numeric"
+                                    placeholder="例如 5530" />
+                            </div>
+
+                            <button type="button" id="lottery4dSyncDrawButton">
+                                同步指定 Draw
+                            </button>
+                        </div>
+
+                        <div id="lottery4dSyncDrawMessage"></div>
+                    </div>
+                </section>
+
+                <section class="admin-section">
+                    <h2>Singapore 4D · 手工新增 / 修正开奖</h2>
+
+                    <form id="lottery4dManualForm">
+
+                        <div class="admin-lottery-inline-form">
+                            <div>
+                                <label for="lottery4dDrawNumber">
+                                    Draw No.
+                                </label>
+
+                                <input type="text" id="lottery4dDrawNumber" inputmode="numeric" placeholder="例如 5530"
+                                    required />
+                            </div>
+
+                            <div>
+                                <label for="lottery4dDrawDate">
+                                    开奖日期
+                                </label>
+
+                                <input type="date" id="lottery4dDrawDate" required />
+                            </div>
+                        </div>
+
+                        <div class="admin-lottery-subsection">
+                            <h3>Top 3 Prizes</h3>
+
+                            <div class="admin-lottery-4d-top-grid">
+                                <div>
+                                    <label for="lottery4dFirstPrize">
+                                        1st Prize
+                                    </label>
+
+                                    <input type="text" id="lottery4dFirstPrize" inputmode="numeric" maxlength="4"
+                                        pattern="\d{1,4}" placeholder="0000" required />
+                                </div>
+
+                                <div>
+                                    <label for="lottery4dSecondPrize">
+                                        2nd Prize
+                                    </label>
+
+                                    <input type="text" id="lottery4dSecondPrize" inputmode="numeric" maxlength="4"
+                                        pattern="\d{1,4}" placeholder="0000" required />
+                                </div>
+
+                                <div>
+                                    <label for="lottery4dThirdPrize">
+                                        3rd Prize
+                                    </label>
+
+                                    <input type="text" id="lottery4dThirdPrize" inputmode="numeric" maxlength="4"
+                                        pattern="\d{1,4}" placeholder="0000" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-lottery-subsection">
+                            <h3>Starter Prizes · 10个号码</h3>
+
+                            <div class="admin-lottery-4d-number-grid">
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter1" placeholder="Starter 01" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter2" placeholder="Starter 02" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter3" placeholder="Starter 03" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter4" placeholder="Starter 04" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter5" placeholder="Starter 05" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter6" placeholder="Starter 06" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter7" placeholder="Starter 07" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter8" placeholder="Starter 08" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter9" placeholder="Starter 09" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dStarter10" placeholder="Starter 10" required />
+                            </div>
+                        </div>
+
+                        <div class="admin-lottery-subsection">
+                            <h3>Consolation Prizes · 10个号码</h3>
+
+                            <div class="admin-lottery-4d-number-grid">
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation1" placeholder="Consolation 01" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation2" placeholder="Consolation 02" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation3" placeholder="Consolation 03" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation4" placeholder="Consolation 04" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation5" placeholder="Consolation 05" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation6" placeholder="Consolation 06" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation7" placeholder="Consolation 07" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation8" placeholder="Consolation 08" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation9" placeholder="Consolation 09" required />
+                                <input type="text" inputmode="numeric" maxlength="4" pattern="\d{1,4}"
+                                    id="lottery4dConsolation10" placeholder="Consolation 10" required />
+                            </div>
+                        </div>
+
+                        <p class="admin-lottery-help">
+                            重要：4D号码必须按字符串保存，例如 0253、0616、0379，不能转成数字。
+                        </p>
+
+                        <button type="submit" id="lottery4dManualSubmitButton">
+                            保存 / 修正 4D 开奖数据
+                        </button>
+                    </form>
+
+                    <div id="lottery4dManualMessage"></div>
+                </section>
+
+                <section class="admin-section">
+                    <h2>Singapore 4D · 自动同步状态</h2>
+
+                    <div id="lottery4dSchedulerStatus">
+                        等待读取自动同步状态...
+                    </div>
+
+                    <p class="admin-lottery-help">
+                        计划：周三 / 周六 / 周日，19:00–22:00（Asia/Singapore），每15分钟检查一次；完整同步成功后当天停止。
+                    </p>
+                </section>
+
+                <section class="admin-section">
+                    <h2>Singapore 4D · 历史开奖记录</h2>
+
+                    <div id="lottery4dHistoryList">
+                        等待读取 Singapore 4D 历史开奖记录...
+                    </div>
+                </section>
+
+            </div>
         </main>
     </div>
 
