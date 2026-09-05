@@ -269,10 +269,148 @@ router.get(
         if (!gameCode) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "缺少 gameCode"
+                message: "缺少 gameCode"
             });
         }
+
+        const startDate =
+            String(
+                req.query.start_date || ""
+            ).trim();
+
+        const endDate =
+            String(
+                req.query.end_date || ""
+            ).trim();
+
+        const hasStartDate =
+            startDate.length > 0;
+
+        const hasEndDate =
+            endDate.length > 0;
+
+        /*
+         * =========================================
+         * 日期范围查询模式
+         *
+         * 示例：
+         * /api/lottery/sg-4d/history
+         * ?start_date=2025-01-01
+         * &end_date=2026-09-02
+         * =========================================
+         */
+        if (
+            hasStartDate ||
+            hasEndDate
+        ) {
+            if (
+                !hasStartDate ||
+                !hasEndDate
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "日期范围查询必须同时提供 start_date 和 end_date"
+                });
+            }
+
+            const datePattern =
+                /^\d{4}-\d{2}-\d{2}$/;
+
+            if (
+                !datePattern.test(startDate) ||
+                !datePattern.test(endDate)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "日期格式必须为 YYYY-MM-DD"
+                });
+            }
+
+            if (startDate > endDate) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "start_date 不能晚于 end_date"
+                });
+            }
+
+            /*
+             * 日期范围模式最多返回 3000 期。
+             *
+             * 当前 Singapore 4D 数据为 2531 期，
+             * 因此可以覆盖现有全部历史数据。
+             */
+            const rangeLimit = 3000;
+
+            const sql = `
+                SELECT
+                    *
+                FROM lottery_draws
+                WHERE
+                    game_code = ?
+                    AND draw_date >= ?
+                    AND draw_date <= ?
+                ORDER BY
+                    draw_date DESC,
+                    id DESC
+                LIMIT ?
+            `;
+
+            return db.all(
+                sql,
+                [
+                    gameCode,
+                    startDate,
+                    endDate,
+                    rangeLimit
+                ],
+                (error, rows) => {
+                    if (error) {
+                        console.error(
+                            "读取彩票日期范围历史数据失败：",
+                            error.message
+                        );
+
+                        return res.status(500).json({
+                            success: false,
+                            message:
+                                "读取彩票日期范围历史数据失败"
+                        });
+                    }
+
+                    const draws =
+                        rows.map(formatDraw);
+
+                    return res.json({
+                        success: true,
+                        game_code: gameCode,
+                        query_mode:
+                            "date_range",
+                        start_date:
+                            startDate,
+                        end_date:
+                            endDate,
+                        total:
+                            draws.length,
+                        max_limit:
+                            rangeLimit,
+                        draws
+                    });
+                }
+            );
+        }
+
+        /*
+         * =========================================
+         * 最近期数查询模式
+         *
+         * 保留原有功能：
+         * /api/lottery/sg-toto/history?limit=50
+         * /api/lottery/sg-4d/history?limit=50
+         * =========================================
+         */
 
         let limit =
             Number.parseInt(
@@ -327,8 +465,12 @@ router.get(
 
                 return res.json({
                     success: true,
-                    game_code: gameCode,
-                    total: draws.length,
+                    game_code:
+                        gameCode,
+                    query_mode:
+                        "recent",
+                    total:
+                        draws.length,
                     limit,
                     draws
                 });

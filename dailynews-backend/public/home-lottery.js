@@ -51,6 +51,18 @@ document.addEventListener("DOMContentLoaded", () => {
         return String(number).padStart(2, "0");
     }
 
+    function format4dNumber(number) {
+        if (
+            number === null ||
+            number === undefined ||
+            number === ""
+        ) {
+            return "----";
+        }
+
+        return String(number).padStart(4, "0");
+    }
+
     function formatDate(dateString) {
         if (!dateString) {
             return "--";
@@ -174,6 +186,108 @@ document.addEventListener("DOMContentLoaded", () => {
             tableHtml;
     }
 
+    function renderSingapore4dDraw(draw) {
+        const prizeStructure =
+            draw?.prize_structure || {};
+
+        const first =
+            format4dNumber(
+                prizeStructure.first ??
+                draw?.main_numbers?.[0]
+            );
+
+        const second =
+            format4dNumber(
+                prizeStructure.second ??
+                draw?.main_numbers?.[1]
+            );
+
+        const third =
+            format4dNumber(
+                prizeStructure.third ??
+                draw?.main_numbers?.[2]
+            );
+
+        const starter =
+            Array.isArray(prizeStructure.starter)
+                ? prizeStructure.starter
+                : [];
+
+        const consolation =
+            Array.isArray(prizeStructure.consolation)
+                ? prizeStructure.consolation
+                : [];
+
+        if (mainNumbersElement) {
+            mainNumbersElement.innerHTML = "";
+            mainNumbersElement.style.display = "none";
+        }
+
+        if (specialNumberElement) {
+            specialNumberElement.style.display =
+                "none";
+        }
+
+        if (!prizePlaceholderElement) {
+            return;
+        }
+
+        const starterHtml =
+            starter
+                .map(
+                    (number) =>
+                        `<span class="home-lottery-4d-number">${format4dNumber(number)}</span>`
+                )
+                .join("");
+
+        const consolationHtml =
+            consolation
+                .map(
+                    (number) =>
+                        `<span class="home-lottery-4d-number">${format4dNumber(number)}</span>`
+                )
+                .join("");
+
+        prizePlaceholderElement.innerHTML = `
+            <div class="home-lottery-4d-results">
+    
+                <div class="home-lottery-4d-top">
+                    <div>
+                        <span>1st Prize</span>
+                        <strong>${first}</strong>
+                    </div>
+    
+                    <div>
+                        <span>2nd Prize</span>
+                        <strong>${second}</strong>
+                    </div>
+    
+                    <div>
+                        <span>3rd Prize</span>
+                        <strong>${third}</strong>
+                    </div>
+                </div>
+    
+                <div class="home-lottery-4d-group">
+                    <strong>Starter Prizes</strong>
+    
+                    <div class="home-lottery-4d-grid">
+                        ${starterHtml}
+                    </div>
+                </div>
+    
+                <div class="home-lottery-4d-group">
+                    <strong>Consolation Prizes</strong>
+    
+                    <div class="home-lottery-4d-grid">
+                        ${consolationHtml}
+                    </div>
+                </div>
+    
+            </div>
+        `;
+    }
+
     async function loadLatestLottery() {
         try {
             if (statusElement) {
@@ -233,9 +347,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     ? draw.special_numbers
                     : [];
 
-            renderMainNumbers(
-                mainNumbers
-            );
+            if (selectedGame === "sg-4d") {
+                renderSingapore4dDraw(draw);
+            } else {
+                if (specialNumberElement) {
+                    specialNumberElement.style.display = "";
+                }
+
+                if (mainNumbersElement) {
+                    mainNumbersElement.style.display = "";
+
+                    mainNumbersElement.setAttribute(
+                        "aria-label",
+                        "TOTO 基本号码"
+                    );
+                }
+
+                renderMainNumbers(
+                    mainNumbers
+                );
+            }
 
             if (drawNumberElement) {
                 drawNumberElement.textContent =
@@ -250,18 +381,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
             }
 
-            if (specialNumberElement) {
-                specialNumberElement.textContent =
-                    specialNumbers.length
-                        ? formatNumber(
-                            specialNumbers[0]
-                        )
-                        : "--";
-            }
+            if (selectedGame !== "sg-4d") {
+                if (specialNumberElement) {
+                    specialNumberElement.textContent =
+                        specialNumbers.length
+                            ? formatNumber(
+                                specialNumbers[0]
+                            )
+                            : "--";
+                }
 
-            renderPrizeStructure(
-                draw.prize_structure
-            );
+                renderPrizeStructure(
+                    draw.prize_structure
+                );
+            }
 
             if (statusElement) {
                 statusElement.textContent =
@@ -305,10 +438,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     gameSelect?.value ||
                     "sg-toto";
 
+                const targetUrl =
+                    selectedGame === "sg-4d"
+                        ? "/sg4d-analysis.html"
+                        : `/lottery-analysis.html?game=${encodeURIComponent(
+                            selectedGame
+                        )}`;
+
                 window.open(
-                    `/lottery-analysis.html?game=${encodeURIComponent(
-                        selectedGame
-                    )}`,
+                    targetUrl,
                     "_blank",
                     "noopener,noreferrer"
                 );

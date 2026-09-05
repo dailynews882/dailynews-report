@@ -5209,3 +5209,93 @@ Daily News 新版首页专用样式
         padding: 5px 3px;
     }
 }
+
+/* ==============================
+   Singapore 4D 首页卡片
+============================== */
+
+.home-lottery-4d-results {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.home-lottery-4d-top {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.home-lottery-4d-top>div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    padding: 8px 6px;
+    border: 1px solid rgba(46, 167, 224, 0.55);
+    border-radius: 10px;
+    background: rgba(3, 31, 52, 0.92);
+}
+
+.home-lottery-4d-top span {
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #83b8d7;
+}
+
+.home-lottery-4d-top strong {
+    font-size: 20px;
+    line-height: 1;
+    color: #ffd84d;
+    letter-spacing: 1px;
+}
+
+.home-lottery-4d-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.home-lottery-4d-group>strong {
+    font-size: 13px;
+    color: #ffffff;
+}
+
+.home-lottery-4d-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.home-lottery-4d-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 4px 2px;
+    border: 1px solid rgba(46, 167, 224, 0.4);
+    border-radius: 7px;
+    background: rgba(6, 41, 66, 0.9);
+    color: #ffd84d;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 560px) {
+    .home-lottery-4d-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 4px;
+    }
+
+    .home-lottery-4d-number {
+        font-size: 12px;
+        min-height: 28px;
+    }
+
+    .home-lottery-4d-top strong {
+        font-size: 17px;
+    }
+}

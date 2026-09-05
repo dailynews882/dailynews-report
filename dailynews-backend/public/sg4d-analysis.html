@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Singapore 4D 走势图 - Daily News
+    </title>
+
+    <link rel="stylesheet" href="/sg4d-analysis.css" />
+</head>
+
+<body>
+    <div class="sg4d-analysis-page">
+
+        <header class="sg4d-analysis-header">
+
+            <div class="sg4d-analysis-header-left">
+
+                <a href="/" class="sg4d-analysis-back">
+                    ← 返回首页
+                </a>
+
+                <div>
+                    <span class="sg4d-analysis-kicker">
+                        LOTTERY DATA LAB
+                    </span>
+
+                    <h1>
+                        Singapore 4D 走势图
+                    </h1>
+
+                    <p>
+                        Historical Trend Analysis
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="sg4d-analysis-game-select">
+
+                <label for="sg4dAnalysisGameSelect">
+                    彩票种类
+                </label>
+
+                <select id="sg4dAnalysisGameSelect">
+                    <option value="sg-4d" selected>
+                        Singapore 新加坡 · 4D
+                    </option>
+
+                    <option value="sg-toto">
+                        Singapore 新加坡 · TOTO
+                    </option>
+                </select>
+
+            </div>
+
+        </header>
+
+        <main class="sg4d-analysis-main">
+
+            <section class="sg4d-analysis-card sg4d-top-card">
+
+                <div class="sg4d-top-inline">
+
+                    <div class="sg4d-top-latest">
+
+                        <div>
+                            <span class="sg4d-card-kicker">
+                                LATEST DRAW
+                            </span>
+
+                            <h2>
+                                最新一期
+                            </h2>
+                        </div>
+
+                        <div class="sg4d-latest-meta">
+
+                            <div>
+                                <span>
+                                    开奖日期
+                                </span>
+
+                                <strong id="sg4dAnalysisDrawDate">
+                                    ---- -- --
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>
+                                    Draw
+                                </span>
+
+                                <strong id="sg4dAnalysisDrawNumber">
+                                    ----
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <div class="sg4d-latest-prizes" id="sg4dAnalysisLatestPrizes">
+
+                            <div class="sg4d-latest-prize">
+                                <span>
+                                    一奖
+                                </span>
+
+                                <strong id="sg4dLatestFirstPrize">
+                                    ----
+                                </strong>
+                            </div>
+
+                            <div class="sg4d-latest-prize">
+                                <span>
+                                    二奖
+                                </span>
+
+                                <strong id="sg4dLatestSecondPrize">
+                                    ----
+                                </strong>
+                            </div>
+
+                            <div class="sg4d-latest-prize">
+                                <span>
+                                    三奖
+                                </span>
+
+                                <strong id="sg4dLatestThirdPrize">
+                                    ----
+                                </strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="sg4d-top-divider"></div>
+
+                    <div class="sg4d-top-controls">
+
+                        <div class="sg4d-control-title-row">
+
+                            <div>
+                                <span class="sg4d-card-kicker">
+                                    ANALYSIS SETTINGS
+                                </span>
+
+                                <h2>
+                                    走势分析设置
+                                </h2>
+                            </div>
+
+                            <span class="sg4d-data-status" id="sg4dAnalysisStatus">
+                                正在读取
+                            </span>
+
+                        </div>
+
+                        <div class="sg4d-query-mode-switch">
+                            <button type="button" class="sg4d-query-mode-button active" data-query-mode="recent">
+                                最近期数
+                            </button>
+
+                            <button type="button" class="sg4d-query-mode-button" data-query-mode="date_range">
+                                日期范围
+                            </button>
+                        </div>
+
+                        <div class="sg4d-analysis-controls" id="sg4dRecentQueryControls">
+                            <label>
+                                显示期数
+
+                                <select id="sg4dAnalysisLimit">
+                                    <option value="20">
+                                        最近 20 期
+                                    </option>
+
+                                    <option value="30">
+                                        最近 30 期
+                                    </option>
+
+                                    <option value="50" selected>
+                                        最近 50 期
+                                    </option>
+
+                                    <option value="100">
+                                        最近 100 期
+                                    </option>
+                                </select>
+                            </label>
+
+                            <button type="button" id="sg4dAnalysisRefreshButton">
+                                刷新走势
+                            </button>
+                        </div>
+
+                        <div class="sg4d-analysis-controls sg4d-date-range-controls" id="sg4dDateRangeControls" hidden>
+                            <label>
+                                开始日期
+
+                                <input type="date" id="sg4dAnalysisStartDate" />
+                            </label>
+
+                            <span class="sg4d-date-range-separator">
+                                至
+                            </span>
+
+                            <label>
+                                结束日期
+
+                                <input type="date" id="sg4dAnalysisEndDate" />
+                            </label>
+
+                            <button type="button" id="sg4dAnalysisDateQueryButton">
+                                查询走势
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <section class="sg4d-analysis-card sg4d-history-matrix-card">
+
+                <div class="sg4d-card-heading">
+
+                    <div class="sg4d-history-heading-left">
+
+                        <span class="sg4d-card-kicker">
+                            DRAW HISTORY & DIGIT DISTRIBUTION
+                        </span>
+
+                        <div class="sg4d-history-title-row">
+
+                            <h2>
+                                历史开奖 / 4D 数字分布走势
+                            </h2>
+
+                            <span class="sg4d-analysis-mode-divider"></span>
+
+                            <div class="sg4d-analysis-mode-tabs" id="sg4dAnalysisModeTabs">
+
+                                <button type="button" class="sg4d-analysis-mode-button active"
+                                    data-analysis-mode="basic">
+                                    基本走势
+                                </button>
+
+                                <button type="button" class="sg4d-analysis-mode-button"
+                                    data-analysis-mode="consecutive">
+                                    连号走势
+                                </button>
+
+                                <button type="button" class="sg4d-analysis-mode-button" data-analysis-mode="repeat">
+                                    重号走势
+                                </button>
+
+                                <button type="button" class="sg4d-analysis-mode-button" data-analysis-mode="element">
+                                    五行走势
+                                </button>
+
+                                <button type="button" class="sg4d-analysis-mode-button" data-analysis-mode="pattern">
+                                    形态走势
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="sg4d-prize-selector">
+
+                        <span>
+                            当前分析
+                        </span>
+
+                        <button type="button" class="sg4d-prize-selector-button active" data-prize-type="first">
+                            一等奖
+                        </button>
+
+                        <button type="button" class="sg4d-prize-selector-button" data-prize-type="second">
+                            二等奖
+                        </button>
+
+                        <button type="button" class="sg4d-prize-selector-button" data-prize-type="third">
+                            三等奖
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div class="sg4d-history-table-wrap">
+
+                    <table class="sg4d-history-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th rowspan="2" class="sg4d-fixed-column sg4d-date-column">
+                                    日期
+                                </th>
+
+                                <th rowspan="2" class="sg4d-fixed-column sg4d-prize-column">
+                                    一奖
+                                </th>
+
+                                <th rowspan="2" class="sg4d-fixed-column sg4d-prize-column">
+                                    二奖
+                                </th>
+
+                                <th rowspan="2" class="sg4d-fixed-column sg4d-prize-column sg4d-third-prize-column">
+                                    三奖
+                                    <span class="sg4d-expand-indicator">
+                                        ▼
+                                    </span>
+                                </th>
+
+                                <th colspan="10" class="sg4d-digit-zone">
+                                    千位
+                                </th>
+
+                                <th colspan="10" class="sg4d-digit-zone">
+                                    百位
+                                </th>
+
+                                <th colspan="10" class="sg4d-digit-zone">
+                                    十位
+                                </th>
+
+                                <th colspan="10" class="sg4d-digit-zone">
+                                    个位
+                                </th>
+
+                                <th colspan="2" class="sg4d-stat-zone">
+                                    统计
+                                </th>
+
+                            </tr>
+
+                            <tr>
+
+                                <th class="sg4d-zone-start">0</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6</th>
+                                <th>7</th>
+                                <th>8</th>
+                                <th>9</th>
+
+                                <th class="sg4d-zone-start">0</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6</th>
+                                <th>7</th>
+                                <th>8</th>
+                                <th>9</th>
+
+                                <th class="sg4d-zone-start">0</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6</th>
+                                <th>7</th>
+                                <th>8</th>
+                                <th>9</th>
+
+                                <th class="sg4d-zone-start">0</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6</th>
+                                <th>7</th>
+                                <th>8</th>
+                                <th>9</th>
+                                <th class="sg4d-stat-column">
+                                    和值
+                                </th>
+
+                                <th class="sg4d-stat-column">
+                                    奇偶 </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="sg4dHistoryTableBody">
+
+                            <tr>
+                                <td colspan="46">
+                                    正在读取历史数据...
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                        <tfoot id="sg4dPreselectTableFoot"></tfoot>
+
+                    </table>
+
+                    <div class="sg4d-preselect-panel" id="sg4dPreselectPanel">
+
+                        <div class="sg4d-preselect-row sg4d-preselect-wuxing-row">
+
+                            <div class="sg4d-preselect-label">
+                                五行预选
+                            </div>
+
+                            <div class="sg4d-preselect-grid" id="sg4dWuxingPreselectGrid"></div>
+
+                        </div>
+
+                        <div class="sg4d-preselect-rows" id="sg4dPreselectRows">
+
+                            <div class="sg4d-preselect-row" data-preselect-row="1">
+
+                                <div class="sg4d-preselect-label">
+
+                                    <span class="sg4d-preselect-name">
+                                        预选 1
+                                    </span>
+
+                                    <div class="sg4d-preselect-actions">
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-add"
+                                            aria-label="增加预选行">
+                                            +
+                                        </button>
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-remove"
+                                            aria-label="删除预选行">
+                                            −
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="sg4d-preselect-grid" data-preselect-grid="1"></div>
+
+                            </div>
+
+                            <div class="sg4d-preselect-row" data-preselect-row="2">
+
+                                <div class="sg4d-preselect-label">
+
+                                    <span class="sg4d-preselect-name">
+                                        预选 2
+                                    </span>
+
+                                    <div class="sg4d-preselect-actions">
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-add"
+                                            aria-label="增加预选行">
+                                            +
+                                        </button>
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-remove"
+                                            aria-label="删除预选行">
+                                            −
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="sg4d-preselect-grid" data-preselect-grid="2"></div>
+
+                            </div>
+
+                            <div class="sg4d-preselect-row" data-preselect-row="3">
+
+                                <div class="sg4d-preselect-label">
+
+                                    <span class="sg4d-preselect-name">
+                                        预选 3
+                                    </span>
+
+                                    <div class="sg4d-preselect-actions">
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-add"
+                                            aria-label="增加预选行">
+                                            +
+                                        </button>
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-remove"
+                                            aria-label="删除预选行">
+                                            −
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="sg4d-preselect-grid" data-preselect-grid="3"></div>
+
+                            </div>
+
+                            <div class="sg4d-preselect-row" data-preselect-row="4">
+
+                                <div class="sg4d-preselect-label">
+
+                                    <span class="sg4d-preselect-name">
+                                        预选 4
+                                    </span>
+
+                                    <div class="sg4d-preselect-actions">
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-add"
+                                            aria-label="增加预选行">
+                                            +
+                                        </button>
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-remove"
+                                            aria-label="删除预选行">
+                                            −
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="sg4d-preselect-grid" data-preselect-grid="4"></div>
+
+                            </div>
+
+                            <div class="sg4d-preselect-row" data-preselect-row="5">
+
+                                <div class="sg4d-preselect-label">
+
+                                    <span class="sg4d-preselect-name">
+                                        预选 5
+                                    </span>
+
+                                    <div class="sg4d-preselect-actions">
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-add"
+                                            aria-label="增加预选行">
+                                            +
+                                        </button>
+
+                                        <button type="button" class="sg4d-preselect-action sg4d-preselect-remove"
+                                            aria-label="删除预选行">
+                                            −
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="sg4d-preselect-grid" data-preselect-grid="5"></div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="/sg4d-analysis.js"></script>
+</body>
+
+</html>
