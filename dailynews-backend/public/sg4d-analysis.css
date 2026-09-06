@@ -1407,3 +1407,342 @@ body {
         gap: 14px;
     }
 }
+
+/* =========================================================
+   Singapore 4D - 连号走势
+   定义：本期与上一期同一位置数字相差 1
+   例如 4→3、4→5；0↔9 不作为循环连号
+   ========================================================= */
+
+/* 连号模式中，普通开奖号码保留位置，但降低强调度 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-consecutive-normal {
+    background: #073451;
+    color: #ffffff;
+    font-weight: 900;
+    box-shadow: inset 0 0 0 1px rgba(46, 167, 224, 0.35);
+}
+
+/* 真正命中的跨期连号继续使用醒目的黄色 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-consecutive-hit {
+    background: #ffd84d;
+    color: #071b2b;
+    font-weight: 900;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-consecutive-normal {
+    background: #0b4c73;
+    color: #ffffff;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-consecutive-hit {
+    background: #ffe36c;
+    color: #071b2b;
+}
+
+
+/* =========================================================
+   Singapore 4D - 开奖号码圆球层
+   真实开奖号码始终使用蓝色圆球显示；
+   连号/重号/五行/形态等分析结果继续使用单元格方框背景。
+   ========================================================= */
+
+/* 真实开奖号码所在格不再依靠整格黄色表示号码本身 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit {
+    position: relative;
+    background: #031f34;
+    color: #ffffff;
+    font-weight: 900;
+}
+
+/* TOTO 风格的蓝色号码球 */
+.sg4d-number-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #20a9e8 0%, #0873b5 100%);
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.42),
+        0 1px 3px rgba(0, 0, 0, 0.38);
+    vertical-align: middle;
+}
+
+/* 普通开奖号码：深色方格 + 蓝色球 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-consecutive-normal {
+    background: #031f34;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+/* 连号命中：黄色方框作为分析层，蓝色球作为开奖号码层 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-consecutive-hit {
+    background: #ffd84d;
+    color: #071b2b;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+/* 连号黄色底上的号码球稍微加深，增强层次 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-consecutive-hit .sg4d-number-ball {
+    background: linear-gradient(180deg, #148fd1 0%, #055d99 100%);
+    border-color: #ffffff;
+}
+
+/* 悬停时仍保留“方框分析层 + 圆球号码层” */
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit {
+    background: #073451;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-consecutive-normal {
+    background: #073451;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-consecutive-hit {
+    background: #ffe36c;
+}
+
+
+/* =========================================================
+   Singapore 4D - 重号走势
+   定义：本期与相邻一期，同一位置出现完全相同的数字。
+   例如千位 4→4；连续 4→4→4 会形成纵向重号轨迹。
+   蓝色圆球始终代表真实开奖号码，白色方框代表重号分析命中。
+   ========================================================= */
+
+/* 重号模式中的普通开奖号码：保持深色方格 + 蓝色球 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-repeat-normal {
+    background: #031f34;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+/* 重号命中：白色/浅灰方框作为分析层 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-repeat-hit {
+    background: #f4f7fa;
+    color: #071b2b;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.95),
+        inset 0 0 8px rgba(14, 67, 99, 0.12);
+}
+
+/* 白色重号方格上的蓝色号码球稍微加深，保持层次清楚 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-repeat-hit .sg4d-number-ball {
+    background: linear-gradient(180deg, #168fd0 0%, #055f9d 100%);
+    border-color: #ffffff;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        0 1px 3px rgba(0, 0, 0, 0.42);
+}
+
+/* 悬停时仍保持重号方框含义，不被整行 hover 覆盖 */
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-repeat-normal {
+    background: #073451;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-repeat-hit {
+    background: #ffffff;
+    color: #071b2b;
+}
+
+
+/* =========================================================
+   Singapore 4D - 五行走势
+   固定映射：水=0/1/6，火=2/7，木=3/8，金=4/9，土=5。
+   蓝色圆球始终代表真实开奖号码；五行属性由圆球下方的方格颜色表示。
+   ========================================================= */
+
+/* 五行模式命中的号码格保持“方格分析层 + 蓝色圆球号码层” */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-wuxing-hit {
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
+
+/* 水：0 / 1 / 6 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-wuxing-water {
+    background: #245f92;
+}
+
+/* 火：2 / 7 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-wuxing-fire {
+    background: #c94f49;
+}
+
+/* 木：3 / 8 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-wuxing-wood {
+    background: #2f8f5b;
+}
+
+/* 金：4 / 9 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-wuxing-metal {
+    background: #d7dde5;
+    color: #071b2b;
+}
+
+/* 土：5 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-wuxing-earth {
+    background: #b98a3b;
+}
+
+/* 金色浅底上稍微加深蓝球，保证数字清楚 */
+.sg4d-history-table tbody td.sg4d-digit-cell.hit.sg4d-wuxing-metal .sg4d-number-ball {
+    background: linear-gradient(180deg, #168fd0 0%, #055f9d 100%);
+    border-color: #ffffff;
+}
+
+/* hover 时保持五行颜色，不被整行 hover 覆盖 */
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-wuxing-water {
+    background: #2b70a9;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-wuxing-fire {
+    background: #db5b54;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-wuxing-wood {
+    background: #39a96d;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-wuxing-metal {
+    background: #eef2f6;
+}
+
+.sg4d-history-table tbody tr:hover td.sg4d-digit-cell.hit.sg4d-wuxing-earth {
+    background: #c99a49;
+}
+
+/* =========================================================
+   Singapore 4D - 形态走势
+   蓝色圆球 = 实际开奖号码
+   紫色方格 = 三期形态命中节点
+   ========================================================= */
+
+.sg4d-digit-cell.hit.sg4d-pattern-hit {
+    background: #ffd84d !important;
+    box-shadow:
+        inset 0 0 0 1px #fff1a8,
+        inset 0 0 10px rgba(255, 216, 77, 0.45);
+}
+
+.sg4d-digit-cell.hit.sg4d-pattern-hit .sg4d-number-ball {
+    position: relative;
+    z-index: 2;
+}
+
+.sg4d-digit-cell.hit.sg4d-pattern-normal {
+    background: #031f34;
+}
+
+/* =========================================================
+   Singapore 4D - 五行预选悬停联动
+   ========================================================= */
+
+.sg4d-preselect-table-wuxing-row .sg4d-preselect-table-cell.sg4d-wuxing-preselect-active {
+    background: rgba(255, 216, 77, 0.18);
+}
+
+.sg4d-wuxing-preselect-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(180deg,
+            #20a9e8 0%,
+            #0873b5 100%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   Singapore 4D - 五行预选点击锁定
+   金色外圈 = 已点击锁定的历史号码
+   ========================================================= */
+
+.sg4d-digit-cell.hit.sg4d-wuxing-source-locked .sg4d-number-ball {
+    box-shadow:
+        0 0 0 2px #ffd84d,
+        0 0 8px rgba(255, 216, 77, 0.75);
+}
+
+/* =========================================================
+   Singapore 4D - 五行预选 → 预选行联动
+   ========================================================= */
+
+/* 当前正在编辑的预选行 */
+.sg4d-preselect-table-row.sg4d-preselect-row-active .sg4d-preselect-table-label {
+    background: rgba(255, 216, 77, 0.16);
+    color: #ffd84d;
+}
+
+/* 五行预选中的候选数字可点击 */
+.sg4d-preselect-table-wuxing-row .sg4d-preselect-table-cell.sg4d-wuxing-preselect-active {
+    cursor: pointer;
+}
+
+/* 已加入预选行的号码 */
+.sg4d-preselect-table-cell.sg4d-preselect-selected {
+    background: rgba(255, 216, 77, 0.16);
+    cursor: pointer;
+}
+
+.sg4d-preselect-selected-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(180deg,
+            #20a9e8 0%,
+            #0873b5 100%);
+    border: 2px solid #ffd84d;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   Singapore 4D - 五行预选任意选号
+   黄色外圈 = 用户手动选择
+   五行相生推荐仍保留原有提示样式
+   ========================================================= */
+
+.sg4d-preselect-table-wuxing-row .sg4d-preselect-table-cell {
+    cursor: pointer;
+}
+
+.sg4d-preselect-table-wuxing-row .sg4d-preselect-table-cell.sg4d-wuxing-manual-selected {
+    background: rgba(255, 216, 77, 0.18);
+}
+
+.sg4d-wuxing-manual-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(180deg,
+            #20a9e8 0%,
+            #0873b5 100%);
+    border: 2px solid #ffd84d;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    box-sizing: border-box;
+}
