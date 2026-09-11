@@ -1760,4 +1760,309 @@ db.serialize(() => {
   `);
 });
 
+/*
+ * ============================================================
+ * People Intelligence V1
+ * 人谱情报核心数据表
+ *
+ * pi_people
+ * pi_organizations
+ * pi_relationships
+ * pi_evidence
+ * ============================================================
+ */
+
+db.serialize(() => {
+
+  /*
+   * ----------------------------------------------------------
+   * 1. 人物主表
+   * ----------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_people (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      slug TEXT UNIQUE,
+
+      name_zh TEXT,
+      name_en TEXT NOT NULL,
+
+      aliases TEXT,
+
+      birth_date TEXT,
+      death_date TEXT,
+
+      nationality TEXT,
+      country_region TEXT,
+
+      primary_role TEXT,
+      biography TEXT,
+
+      tags TEXT,
+
+      profile_image_url TEXT,
+
+      verification_status TEXT NOT NULL DEFAULT 'draft',
+      confidence_level TEXT NOT NULL DEFAULT 'medium',
+
+      record_status TEXT NOT NULL DEFAULT 'active',
+      is_public INTEGER NOT NULL DEFAULT 0,
+
+      created_by INTEGER,
+      updated_by INTEGER,
+
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_people ADD COLUMN record_status TEXT NOT NULL DEFAULT 'active'",
+    "record_status"
+  );
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_people_name_en
+    ON pi_people(name_en)
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_people_name_zh
+    ON pi_people(name_zh)
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_people_status
+    ON pi_people(
+      verification_status,
+      is_public
+    )
+  `);
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_people ADD COLUMN record_status TEXT NOT NULL DEFAULT 'active'",
+    "record_status"
+  );
+
+  /*
+   * ----------------------------------------------------------
+   * 2. 机构 / 企业 / 基金 / 信托 / Family Office
+   * ----------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_organizations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      slug TEXT UNIQUE,
+
+      name_zh TEXT,
+      name_en TEXT NOT NULL,
+
+      aliases TEXT,
+
+      organization_type TEXT NOT NULL DEFAULT 'company',
+
+      country_region TEXT,
+
+      industry TEXT,
+
+      description TEXT,
+
+      website_url TEXT,
+      logo_url TEXT,
+
+      listed_status TEXT,
+      ticker_symbol TEXT,
+      exchange_name TEXT,
+
+      verification_status TEXT NOT NULL DEFAULT 'draft',
+      confidence_level TEXT NOT NULL DEFAULT 'medium',
+
+      is_public INTEGER NOT NULL DEFAULT 0,
+
+      created_by INTEGER,
+      updated_by INTEGER,
+
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_organizations_name_en
+    ON pi_organizations(name_en)
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_organizations_type
+    ON pi_organizations(
+      organization_type,
+      verification_status
+    )
+  `);
+
+
+  /*
+   * ----------------------------------------------------------
+   * 3. 通用关系表
+   *
+   * 支持：
+   * person -> person
+   * person -> organization
+   * organization -> person
+   * organization -> organization
+   * ----------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_relationships (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      source_entity_type TEXT NOT NULL,
+      source_entity_id INTEGER NOT NULL,
+
+      target_entity_type TEXT NOT NULL,
+      target_entity_id INTEGER NOT NULL,
+
+      relationship_type TEXT NOT NULL,
+      relationship_label TEXT,
+
+      direction_type TEXT NOT NULL DEFAULT 'directed',
+
+      ownership_percentage REAL,
+      voting_percentage REAL,
+
+      is_control_relationship INTEGER NOT NULL DEFAULT 0,
+
+      start_date TEXT,
+      end_date TEXT,
+
+      relationship_status TEXT NOT NULL DEFAULT 'current',
+
+      description TEXT,
+
+      verification_status TEXT NOT NULL DEFAULT 'draft',
+      confidence_level TEXT NOT NULL DEFAULT 'medium',
+
+      is_public INTEGER NOT NULL DEFAULT 0,
+
+      created_by INTEGER,
+      updated_by INTEGER,
+
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_relationships_source
+    ON pi_relationships(
+      source_entity_type,
+      source_entity_id
+    )
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_relationships_target
+    ON pi_relationships(
+      target_entity_type,
+      target_entity_id
+    )
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_relationships_type
+    ON pi_relationships(
+      relationship_type,
+      relationship_status
+    )
+  `);
+
+
+  /*
+   * ----------------------------------------------------------
+   * 4. 证据 / 来源表
+   *
+   * evidence 可以挂到：
+   * person
+   * organization
+   * relationship
+   * ----------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_evidence (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+
+      evidence_type TEXT NOT NULL DEFAULT 'web',
+
+      source_name TEXT,
+      source_title TEXT,
+
+      source_url TEXT,
+
+      publisher TEXT,
+      published_at TEXT,
+
+      retrieved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+      evidence_summary TEXT,
+
+      source_tier TEXT NOT NULL DEFAULT 'secondary',
+
+      confidence_level TEXT NOT NULL DEFAULT 'medium',
+
+      verification_status TEXT NOT NULL DEFAULT 'pending',
+
+      is_primary_source INTEGER NOT NULL DEFAULT 0,
+
+      archived_url TEXT,
+
+      created_by INTEGER,
+      updated_by INTEGER,
+
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_evidence_entity
+    ON pi_evidence(
+      entity_type,
+      entity_id
+    )
+  `);
+
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_evidence_status
+    ON pi_evidence(
+      verification_status,
+      source_tier
+    )
+  `);
+
+});
+
 module.exports = db;

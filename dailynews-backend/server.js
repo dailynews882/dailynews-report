@@ -27,6 +27,7 @@ const fxRateRoute = require("./routes/fxRateRoute");
 const economicCalendarRoute = require("./routes/economicCalendarRoute");
 const storeRoute = require("./routes/storeRoute");
 const marketTickerRoute = require("./routes/marketTickerRoute");
+const adminPeopleIntelligenceRoute = require("./routes/adminPeopleIntelligenceRoute");
 
 const {
   startGNewsAutoFetchScheduler,
@@ -145,6 +146,11 @@ app.use("/api/market-tickers", marketTickerRoute);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/lottery", lotteryRoute);
+
+app.use(
+  "/api/admin/people-intelligence",
+  adminPeopleIntelligenceRoute
+);
 
 app.use((req, res) => {
   res.status(404).json({

@@ -1,0 +1,1891 @@
+/* =========================================================
+   People Intelligence Admin Console
+   V1.1 Prototype
+========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Microsoft YaHei",
+        Arial,
+        sans-serif;
+
+    background: #f3f6fb;
+    color: #172033;
+}
+
+
+/* =========================================================
+   APP LAYOUT
+========================================================= */
+
+.pia-app {
+    min-height: 100vh;
+    display: flex;
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.pia-sidebar {
+    width: 250px;
+    min-height: 100vh;
+    flex-shrink: 0;
+
+    background: #102b59;
+    color: #ffffff;
+
+    display: flex;
+    flex-direction: column;
+
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    z-index: 20;
+}
+
+.pia-sidebar-brand {
+    min-height: 92px;
+
+    padding: 22px 22px 18px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pia-sidebar-brand strong {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px;
+    line-height: 1.1;
+    letter-spacing: 0.2px;
+}
+
+.pia-sidebar-brand span {
+    margin-top: 7px;
+
+    font-size: 11px;
+    line-height: 1.4;
+
+    color: #a9bddc;
+
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+
+/* =========================================================
+   SIDEBAR NAVIGATION
+========================================================= */
+
+.pia-sidebar-nav {
+    padding: 18px 12px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+.pia-nav-item {
+    width: 100%;
+    min-height: 46px;
+
+    padding: 8px 13px;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: transparent;
+    color: #c8d5e9;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease;
+}
+
+.pia-nav-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.pia-nav-item.active {
+    background: #1769df;
+    color: #ffffff;
+}
+
+.pia-nav-icon {
+    width: 28px;
+    height: 28px;
+
+    flex-shrink: 0;
+
+    border-radius: 6px;
+
+    background: rgba(255, 255, 255, 0.09);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.pia-nav-item.active .pia-nav-icon {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+
+/* =========================================================
+   MAIN AREA
+========================================================= */
+
+.pia-main {
+    width: calc(100% - 250px);
+    min-height: 100vh;
+
+    margin-left: 250px;
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.pia-topbar {
+    min-height: 92px;
+
+    padding: 18px 30px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #dfe6f0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    position: sticky;
+    top: 0;
+
+    z-index: 15;
+}
+
+.pia-topbar h1 {
+    margin: 0;
+
+    font-size: 22px;
+    line-height: 1.25;
+
+    color: #10264a;
+}
+
+.pia-topbar p {
+    margin: 6px 0 0;
+
+    color: #718096;
+
+    font-size: 13px;
+}
+
+.pia-topbar-actions {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.pia-primary-btn,
+.pia-secondary-btn,
+.pia-card-heading button {
+    border-radius: 6px;
+
+    font-family: inherit;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.pia-primary-btn {
+    min-height: 40px;
+
+    padding: 0 17px;
+
+    border: 1px solid #1769df;
+
+    background: #1769df;
+    color: #ffffff;
+
+    font-size: 13px;
+}
+
+.pia-primary-btn:hover {
+    background: #0f5fcf;
+}
+
+.pia-secondary-btn {
+    min-height: 40px;
+
+    padding: 0 17px;
+
+    border: 1px solid #d5deeb;
+
+    background: #ffffff;
+    color: #31435e;
+
+    font-size: 13px;
+}
+
+.pia-secondary-btn:hover {
+    background: #f5f8fc;
+}
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.pia-content {
+    width: 100%;
+
+    padding: 28px 30px 50px;
+}
+
+.pia-admin-page {
+    width: 100%;
+}
+
+.pia-admin-page[hidden] {
+    display: none !important;
+}
+
+
+/* =========================================================
+   PAGE HEADING
+========================================================= */
+
+.pia-page-heading {
+    margin-bottom: 22px;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.pia-page-heading h2 {
+    margin: 5px 0 6px;
+
+    color: #10264a;
+
+    font-size: 25px;
+    line-height: 1.25;
+}
+
+.pia-page-heading p {
+    margin: 0;
+
+    color: #718096;
+
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.pia-eyebrow {
+    color: #1769df;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: 1.1px;
+}
+
+
+/* =========================================================
+   METRIC CARDS
+========================================================= */
+
+.pia-metrics {
+    display: grid;
+
+    grid-template-columns:
+        repeat(6, minmax(120px, 1fr));
+
+    gap: 14px;
+
+    margin-bottom: 20px;
+}
+
+.pia-metric-card {
+    min-height: 126px;
+
+    padding: 18px;
+
+    background: #ffffff;
+
+    border: 1px solid #dfe6f0;
+    border-radius: 9px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    box-shadow:
+        0 3px 12px rgba(27, 50, 84, 0.035);
+}
+
+.pia-metric-card span {
+    color: #65758b;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pia-metric-card strong {
+    margin: 7px 0 4px;
+
+    color: #1769df;
+
+    font-size: 29px;
+    line-height: 1;
+}
+
+.pia-metric-card small {
+    color: #98a4b6;
+
+    font-size: 11px;
+}
+
+.pia-metric-warning strong {
+    color: #d97706;
+}
+
+.pia-metric-risk strong {
+    color: #dc3545;
+}
+
+
+/* =========================================================
+   DASHBOARD GRID
+========================================================= */
+
+.pia-dashboard-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.4fr) minmax(320px, 0.8fr);
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+}
+
+
+/* =========================================================
+   GENERAL CARD
+========================================================= */
+
+.pia-card {
+    background: #ffffff;
+
+    border: 1px solid #dfe6f0;
+    border-radius: 9px;
+
+    padding: 20px;
+
+    box-shadow:
+        0 3px 12px rgba(27, 50, 84, 0.035);
+}
+
+.pia-card-heading {
+    margin-bottom: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.pia-card-heading h3 {
+    margin: 5px 0 0;
+
+    color: #172033;
+
+    font-size: 17px;
+}
+
+.pia-card-heading button {
+    border: 0;
+
+    background: transparent;
+
+    color: #1769df;
+
+    font-size: 12px;
+}
+
+.pia-card-heading button:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   REVIEW LIST
+========================================================= */
+
+.pia-review-list,
+.pia-correction-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.pia-review-item {
+    min-height: 72px;
+
+    padding: 14px 0;
+
+    border-top: 1px solid #edf1f6;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+}
+
+.pia-review-item:first-child {
+    border-top: 0;
+}
+
+.pia-review-item strong {
+    color: #172033;
+
+    font-size: 13px;
+}
+
+.pia-review-item p {
+    margin: 5px 0 0;
+
+    color: #7b889a;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   CORRECTION LIST
+========================================================= */
+
+.pia-correction-item {
+    padding: 14px 0;
+
+    border-top: 1px solid #edf1f6;
+}
+
+.pia-correction-item:first-child {
+    border-top: 0;
+}
+
+.pia-correction-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+}
+
+.pia-correction-item h4 {
+    margin: 10px 0 5px;
+
+    color: #172033;
+
+    font-size: 13px;
+}
+
+.pia-correction-item p {
+    margin: 0;
+
+    color: #7b889a;
+
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.pia-status {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 24px;
+
+    padding: 3px 9px;
+
+    border-radius: 999px;
+
+    white-space: nowrap;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.pia-status.draft {
+    background: #eef2f7;
+    color: #58677a;
+}
+
+.pia-status.pending {
+    background: #fff5dc;
+    color: #a96900;
+}
+
+.pia-status.ai {
+    background: #e8f1ff;
+    color: #1769df;
+}
+
+.pia-status.review {
+    background: #f0eaff;
+    color: #7048c8;
+}
+
+.pia-status.verified {
+    background: #e7f7ee;
+    color: #16834b;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.pia-history-card {
+    margin-bottom: 20px;
+}
+
+.pia-table-wrap {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+.pia-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 12px;
+}
+
+.pia-table th {
+    padding: 12px 10px;
+
+    border-bottom: 1px solid #dfe6f0;
+
+    color: #64748b;
+
+    text-align: left;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pia-table td {
+    padding: 14px 10px;
+
+    border-bottom: 1px solid #edf1f6;
+
+    color: #27364d;
+
+    vertical-align: middle;
+}
+
+.pia-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.pia-toolbar {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 18px;
+}
+
+.pia-toolbar input,
+.pia-toolbar select {
+    height: 40px;
+
+    border: 1px solid #d8e0eb;
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #34435a;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    outline: none;
+}
+
+.pia-toolbar input {
+    width: min(420px, 100%);
+
+    padding: 0 13px;
+}
+
+.pia-toolbar select {
+    min-width: 145px;
+
+    padding: 0 10px;
+}
+
+.pia-toolbar input:focus,
+.pia-toolbar select:focus {
+    border-color: #1769df;
+
+    box-shadow:
+        0 0 0 3px rgba(23, 105, 223, 0.08);
+}
+
+
+/* =========================================================
+   PLACEHOLDER
+========================================================= */
+
+.pia-placeholder {
+    min-height: 220px;
+
+    border: 1px dashed #cfd9e7;
+    border-radius: 8px;
+
+    background: #f8fafd;
+
+    color: #8190a5;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    text-align: center;
+
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1280px) {
+
+    .pia-metrics {
+        grid-template-columns:
+            repeat(3, minmax(150px, 1fr));
+    }
+
+}
+
+
+@media (max-width: 960px) {
+
+    .pia-sidebar {
+        width: 210px;
+    }
+
+    .pia-main {
+        width: calc(100% - 210px);
+        margin-left: 210px;
+    }
+
+    .pia-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pia-metrics {
+        grid-template-columns:
+            repeat(2, minmax(140px, 1fr));
+    }
+
+}
+
+
+@media (max-width: 720px) {
+
+    .pia-app {
+        display: block;
+    }
+
+    .pia-sidebar {
+        width: 100%;
+        min-height: auto;
+
+        position: static;
+    }
+
+    .pia-sidebar-brand {
+        min-height: 75px;
+    }
+
+    .pia-sidebar-nav {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .pia-main {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .pia-topbar {
+        position: static;
+
+        padding: 16px;
+
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pia-content {
+        padding: 20px 14px 40px;
+    }
+
+    .pia-page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pia-metrics {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .pia-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pia-toolbar input,
+    .pia-toolbar select {
+        width: 100%;
+    }
+
+}
+
+
+@media (max-width: 460px) {
+
+    .pia-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .pia-topbar-actions {
+        width: 100%;
+    }
+
+    .pia-topbar-actions button {
+        flex: 1;
+    }
+
+}
+
+/* =========================================================
+   PROTOTYPE MODAL
+========================================================= */
+
+.pia-prototype-modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    background: rgba(15, 30, 55, 0.42);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+}
+
+.pia-prototype-dialog {
+    width: min(460px, 100%);
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 20px 50px rgba(15, 30, 55, 0.22);
+
+    overflow: hidden;
+}
+
+.pia-prototype-header {
+    padding: 18px 20px;
+
+    border-bottom: 1px solid #e6ebf2;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+}
+
+.pia-prototype-header h3 {
+    margin: 0;
+
+    color: #172033;
+
+    font-size: 18px;
+}
+
+.pia-prototype-header button {
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: #708096;
+
+    font-size: 24px;
+
+    cursor: pointer;
+}
+
+.pia-prototype-body {
+    padding: 20px;
+}
+
+.pia-prototype-body p {
+    margin: 0;
+
+    color: #617086;
+
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.pia-prototype-footer {
+    padding: 14px 20px 20px;
+
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* =========================================================
+   PEOPLE MANAGEMENT V1
+========================================================= */
+
+.pia-people-workspace {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.45fr) minmax(360px, 0.85fr);
+
+    gap: 20px;
+
+    align-items: start;
+}
+
+
+/* =========================================================
+   PEOPLE LIST
+========================================================= */
+
+.pia-people-list-card {
+    min-width: 0;
+}
+
+.pia-record-count {
+    color: #8693a6;
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.pia-people-table {
+    min-width: 860px;
+}
+
+.pia-person-row {
+    cursor: pointer;
+
+    transition:
+        background 0.16s ease;
+}
+
+.pia-person-row:hover {
+    background: #f7faff;
+}
+
+.pia-person-row.active {
+    background: #eef5ff;
+}
+
+.pia-person-cell {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.pia-person-avatar {
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+
+    border-radius: 8px;
+
+    background: #173f79;
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.pia-person-cell strong {
+    display: block;
+
+    color: #172033;
+
+    font-size: 12px;
+}
+
+.pia-person-cell span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #8a97a9;
+
+    font-size: 10px;
+}
+
+.pia-table-action {
+    padding: 6px 10px;
+
+    border: 1px solid #cfd9e7;
+    border-radius: 5px;
+
+    background: #ffffff;
+    color: #1769df;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.pia-table-action:hover {
+    background: #f1f6ff;
+}
+
+
+/* =========================================================
+   PERSON EDITOR
+========================================================= */
+
+.pia-person-editor {
+    position: sticky;
+
+    top: 112px;
+}
+
+.pia-person-editor-header {
+    padding-bottom: 18px;
+
+    border-bottom: 1px solid #e9edf3;
+
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+}
+
+.pia-person-editor-avatar {
+    width: 64px;
+    height: 64px;
+
+    flex-shrink: 0;
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(145deg,
+            #1b4f96,
+            #102d59);
+
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.pia-person-editor-header strong {
+    display: block;
+
+    color: #172033;
+
+    font-size: 15px;
+}
+
+.pia-person-editor-header span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #8290a4;
+
+    font-size: 11px;
+}
+
+.pia-link-btn {
+    margin-top: 7px;
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+
+    color: #1769df;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   PERSON FORM
+========================================================= */
+
+.pia-person-form {
+    margin-top: 18px;
+}
+
+.pia-form-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 14px;
+}
+
+.pia-person-form label {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+.pia-person-form label>span {
+    color: #5f6f84;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pia-person-form input,
+.pia-person-form select,
+.pia-person-form textarea {
+    width: 100%;
+
+    border: 1px solid #d7e0eb;
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #27364c;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    outline: none;
+
+    transition:
+        border-color 0.16s ease,
+        box-shadow 0.16s ease;
+}
+
+.pia-person-form input,
+.pia-person-form select {
+    height: 39px;
+
+    padding: 0 10px;
+}
+
+.pia-person-form textarea {
+    padding: 10px 11px;
+
+    resize: vertical;
+
+    line-height: 1.6;
+}
+
+.pia-person-form input:focus,
+.pia-person-form select:focus,
+.pia-person-form textarea:focus {
+    border-color: #1769df;
+
+    box-shadow:
+        0 0 0 3px rgba(23, 105, 223, 0.08);
+}
+
+.pia-form-full {
+    margin-top: 14px;
+}
+
+
+/* =========================================================
+   EDITOR SECTIONS
+========================================================= */
+
+.pia-editor-section {
+    margin-top: 16px;
+
+    padding: 14px;
+
+    border: 1px solid #e1e7ef;
+    border-radius: 7px;
+
+    background: #f9fbfd;
+}
+
+.pia-editor-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+}
+
+.pia-editor-section-title strong {
+    display: block;
+
+    color: #26364d;
+
+    font-size: 12px;
+}
+
+.pia-editor-section-title span {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #8996a7;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   FORM ACTIONS
+========================================================= */
+
+.pia-person-form-actions {
+    margin-top: 20px;
+    padding-top: 16px;
+
+    border-top: 1px solid #e7ecf2;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+}
+
+.pia-person-form-actions>div {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1280px) {
+
+    .pia-people-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .pia-person-editor {
+        position: static;
+    }
+
+}
+
+
+@media (max-width: 720px) {
+
+    .pia-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pia-person-form-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pia-person-form-actions>div {
+        width: 100%;
+    }
+
+    .pia-person-form-actions button {
+        flex: 1;
+    }
+
+    .pia-editor-section-title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+}
+
+/* =========================================================
+   People Intelligence 人物编辑器底部操作按钮
+   防止按钮文字换行和横向尺寸过大
+========================================================= */
+
+.pia-person-editor .pia-secondary-btn,
+.pia-person-editor .pia-primary-btn {
+    width: auto;
+    min-width: 0;
+    padding: 9px 12px;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.pia-person-editor .pia-secondary-btn:disabled,
+.pia-person-editor .pia-primary-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+/* =========================================================
+   人物列表：审核状态 + 发布状态
+========================================================= */
+
+.pia-person-status-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.pia-publication-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.pia-publication-status.published {
+    background: #e8f1ff;
+    color: #1467d9;
+}
+
+.pia-publication-status.unpublished {
+    background: #eef1f5;
+    color: #6b7280;
+}
+
+/* =========================================================
+   人物记录危险操作
+========================================================= */
+
+.pia-person-editor .pia-danger-btn {
+    width: auto;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 1px solid #ef4444;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.pia-person-editor .pia-danger-btn:hover {
+    background: #fff1f2;
+}
+
+.pia-person-editor .pia-danger-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   People Intelligence Admin V6
+   2026-09-11
+   1. 删除顶部“人谱情报后台管理”整块
+   2. “查看前台 / + 新增人物”移入编辑器右上角
+   3. 编辑器继续固定
+   4. 保持 V5 紧凑三行布局
+========================================================= */
+
+/* 主内容上方不再预留旧 topbar 空间 */
+.pia-content {
+    padding-top: 14px !important;
+}
+
+/* =========================================================
+   人物编辑器固定在页面顶部
+========================================================= */
+
+.pia-person-editor {
+    position: sticky !important;
+    top: 8px !important;
+    z-index: 14 !important;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 0 0 14px !important;
+    padding: 12px 16px !important;
+
+    background: #ffffff !important;
+
+    box-shadow:
+        0 6px 18px rgba(27, 50, 84, 0.08) !important;
+}
+
+/* 人物列表保持在编辑器下方 */
+.pia-people-workspace {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.pia-people-list-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+}
+
+/* =========================================================
+   编辑器顶部标题 + 右上角操作区
+========================================================= */
+
+.pia-person-editor>.pia-card-heading {
+    margin-bottom: 5px !important;
+    min-height: 34px !important;
+
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+}
+
+.pia-person-editor>.pia-card-heading h3 {
+    margin-top: 1px !important;
+    font-size: 17px !important;
+}
+
+.pia-person-editor>.pia-card-heading .pia-eyebrow {
+    font-size: 10px !important;
+}
+
+.pia-person-editor-heading-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    gap: 8px !important;
+
+    flex-wrap: nowrap !important;
+}
+
+.pia-person-editor-heading-actions .pia-primary-btn,
+.pia-person-editor-heading-actions .pia-secondary-btn {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+
+    padding: 0 13px !important;
+
+    white-space: nowrap !important;
+
+    font-size: 12px !important;
+}
+
+.pia-person-editor-heading-actions .pia-status {
+    margin-left: 4px !important;
+}
+
+/* =========================================================
+   头像区域
+========================================================= */
+
+.pia-person-editor-header {
+    padding-bottom: 6px !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    gap: 9px !important;
+}
+
+.pia-person-editor-avatar {
+    width: 40px !important;
+    height: 40px !important;
+
+    border-radius: 7px !important;
+
+    font-size: 16px !important;
+}
+
+.pia-person-editor-header strong {
+    font-size: 14px !important;
+}
+
+.pia-person-editor-header span {
+    margin-top: 1px !important;
+    font-size: 11px !important;
+}
+
+.pia-link-btn {
+    margin-top: 2px !important;
+    font-size: 11px !important;
+}
+
+/* =========================================================
+   16列总栅格
+========================================================= */
+
+.pia-person-form {
+    margin-top: 8px !important;
+
+    display: grid !important;
+    grid-template-columns:
+        repeat(16, minmax(0, 1fr)) !important;
+
+    gap: 7px 10px !important;
+}
+
+.pia-form-grid {
+    display: contents !important;
+}
+
+/* 第一行8个字段 */
+.pia-form-grid>label:nth-child(-n+8) {
+    grid-column: span 2 !important;
+    min-width: 0 !important;
+}
+
+/* 第二行：可信度、资料更新、人物标签 */
+.pia-form-grid>label:nth-child(9) {
+    grid-column: span 2 !important;
+}
+
+.pia-form-grid>label:nth-child(10) {
+    grid-column: span 2 !important;
+}
+
+.pia-form-grid>label:nth-child(11) {
+    grid-column: span 4 !important;
+}
+
+.pia-person-form label {
+    min-width: 0 !important;
+    gap: 3px !important;
+}
+
+.pia-person-form label>span {
+    color: #53647b !important;
+
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+
+    white-space: nowrap !important;
+}
+
+.pia-person-form input,
+.pia-person-form select {
+    width: 100% !important;
+    min-width: 0 !important;
+
+    height: 32px !important;
+
+    padding: 0 8px !important;
+
+    font-size: 12px !important;
+}
+
+/* 第二行：证据 + 关系 */
+.pia-person-form>.pia-editor-evidence,
+.pia-person-form>.pia-editor-relations {
+    grid-column: span 4 !important;
+    order: 20;
+
+    min-width: 0 !important;
+
+    margin: 0 !important;
+    padding: 7px 9px !important;
+
+    display: flex !important;
+    align-items: center !important;
+}
+
+.pia-editor-section-title {
+    width: 100% !important;
+    gap: 8px !important;
+}
+
+.pia-editor-section-title strong {
+    font-size: 12px !important;
+}
+
+.pia-editor-section-title span {
+    margin-top: 1px !important;
+
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+}
+
+.pia-editor-section .pia-secondary-btn {
+    min-height: 30px !important;
+    padding: 0 9px !important;
+    font-size: 11px !important;
+}
+
+/* 第三行：人物简介 */
+.pia-form-biography {
+    grid-column: 1 / -1 !important;
+    order: 30;
+    margin: 0 !important;
+}
+
+.pia-form-biography textarea {
+    width: 100% !important;
+
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+
+    padding: 7px 9px !important;
+
+    resize: none !important;
+
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+}
+
+/* 第四行：按钮 */
+.pia-person-form-actions {
+    grid-column: 1 / -1 !important;
+    order: 40;
+
+    width: 100% !important;
+
+    margin: 0 !important;
+    padding-top: 7px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    gap: 7px !important;
+
+    flex-wrap: wrap !important;
+}
+
+.pia-person-form-actions>div {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    gap: 7px !important;
+
+    flex-wrap: wrap !important;
+}
+
+.pia-person-form-actions .pia-primary-btn,
+.pia-person-form-actions .pia-secondary-btn,
+.pia-person-form-actions .pia-danger-btn {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 31px !important;
+
+    padding: 0 10px !important;
+
+    flex: 0 0 auto !important;
+
+    white-space: nowrap !important;
+
+    font-size: 12px !important;
+}
+
+/* =========================================================
+   人物列表独立滚动
+========================================================= */
+
+.pia-people-list-card {
+    height: calc(100vh - 430px) !important;
+    min-height: 300px !important;
+
+    padding: 16px 18px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    overflow: hidden !important;
+}
+
+.pia-people-list-card>.pia-card-heading {
+    flex: 0 0 auto !important;
+    margin-bottom: 10px !important;
+}
+
+.pia-people-list-card>.pia-toolbar {
+    flex: 0 0 auto !important;
+    margin-bottom: 10px !important;
+}
+
+.pia-people-list-card>.pia-table-wrap {
+    flex: 1 1 auto !important;
+
+    min-height: 0 !important;
+
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+}
+
+.pia-people-table {
+    width: 100% !important;
+    min-width: 900px !important;
+
+    font-size: 13px !important;
+}
+
+.pia-people-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+
+    background: #ffffff !important;
+
+    font-size: 12px !important;
+}
+
+.pia-people-table td {
+    font-size: 13px !important;
+}
+
+.pia-person-cell strong {
+    font-size: 13px !important;
+}
+
+.pia-person-cell span {
+    font-size: 11px !important;
+}
+
+.pia-record-count,
+.pia-table-action {
+    font-size: 12px !important;
+}
+
+/* =========================================================
+   响应式
+========================================================= */
+
+@media (max-width: 1450px) {
+
+    .pia-person-form {
+        grid-template-columns:
+            repeat(12, minmax(0, 1fr)) !important;
+    }
+
+    .pia-form-grid>label:nth-child(-n+8),
+    .pia-form-grid>label:nth-child(9),
+    .pia-form-grid>label:nth-child(10) {
+        grid-column: span 3 !important;
+    }
+
+    .pia-form-grid>label:nth-child(11) {
+        grid-column: span 6 !important;
+    }
+
+    .pia-person-form>.pia-editor-evidence,
+    .pia-person-form>.pia-editor-relations {
+        grid-column: span 6 !important;
+    }
+
+}
+
+@media (max-width: 1050px) {
+
+    .pia-person-editor {
+        position: relative !important;
+        top: auto !important;
+        z-index: auto !important;
+    }
+
+    .pia-person-form {
+        grid-template-columns:
+            repeat(6, minmax(0, 1fr)) !important;
+    }
+
+    .pia-form-grid>label {
+        grid-column: span 3 !important;
+    }
+
+    .pia-form-grid>label:nth-child(11),
+    .pia-person-form>.pia-editor-evidence,
+    .pia-person-form>.pia-editor-relations,
+    .pia-form-biography,
+    .pia-person-form-actions {
+        grid-column: 1 / -1 !important;
+    }
+
+    .pia-people-list-card {
+        height: auto !important;
+        min-height: 320px !important;
+        overflow: visible !important;
+    }
+
+}
+
+@media (max-width: 720px) {
+
+    .pia-form-grid>label {
+        grid-column: 1 / -1 !important;
+    }
+
+    .pia-person-editor-heading-actions {
+        flex-wrap: wrap !important;
+    }
+
+}
+
+/* =========================================================
+   修复编辑器右上角“新增人物”按钮 hover 文字被蓝色背景覆盖
+========================================================= */
+
+.pia-person-editor-heading-actions .pia-primary-btn {
+    background: #1769df !important;
+    border: 1px solid #1769df !important;
+    color: #ffffff !important;
+}
+
+.pia-person-editor-heading-actions .pia-primary-btn:hover {
+    background: #0f5fcf !important;
+    border-color: #0f5fcf !important;
+    color: #ffffff !important;
+}
+
+.pia-person-editor-heading-actions .pia-secondary-btn {
+    background: #ffffff !important;
+    border: 1px solid #d5deeb !important;
+    color: #1769df !important;
+}
+
+.pia-person-editor-heading-actions .pia-secondary-btn:hover {
+    background: #f5f8fc !important;
+    border-color: #c5d2e4 !important;
+    color: #1769df !important;
+}
