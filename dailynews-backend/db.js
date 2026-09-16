@@ -1869,8 +1869,12 @@ db.serialize(() => {
       organization_type TEXT NOT NULL DEFAULT 'company',
 
       country_region TEXT,
+      headquarters TEXT,
+      founded_date TEXT,
 
       industry TEXT,
+      industry_primary TEXT,
+      industry_secondary TEXT,
 
       description TEXT,
 
@@ -1880,11 +1884,16 @@ db.serialize(() => {
       listed_status TEXT,
       ticker_symbol TEXT,
       exchange_name TEXT,
+      isin TEXT,
+      lei TEXT,
 
       verification_status TEXT NOT NULL DEFAULT 'draft',
       confidence_level TEXT NOT NULL DEFAULT 'medium',
 
+      record_status TEXT NOT NULL DEFAULT 'active',
       is_public INTEGER NOT NULL DEFAULT 0,
+
+      data_updated_at DATETIME,
 
       created_by INTEGER,
       updated_by INTEGER,
@@ -1894,6 +1903,45 @@ db.serialize(() => {
     )
   `);
 
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN founded_date TEXT",
+    "pi_organizations.founded_date"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN headquarters TEXT",
+    "pi_organizations.headquarters"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN industry_primary TEXT",
+    "pi_organizations.industry_primary"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN industry_secondary TEXT",
+    "pi_organizations.industry_secondary"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN isin TEXT",
+    "pi_organizations.isin"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN lei TEXT",
+    "pi_organizations.lei"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN record_status TEXT NOT NULL DEFAULT 'active'",
+    "pi_organizations.record_status"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_organizations ADD COLUMN data_updated_at DATETIME",
+    "pi_organizations.data_updated_at"
+  );
 
   db.run(`
     CREATE INDEX IF NOT EXISTS
@@ -1996,7 +2044,160 @@ db.serialize(() => {
 
   /*
    * ----------------------------------------------------------
-   * 4. 证据 / 来源表
+   * 4. 关系类型字典
+   *
+   * 统一定义“实体 A -> 关系 -> 实体 B”的语义。
+   * 后续 API、后台编辑器和前端关系图谱统一读取此表。
+   * ----------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_relationship_types (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      code TEXT NOT NULL UNIQUE,
+      name_zh TEXT NOT NULL,
+      name_en TEXT NOT NULL,
+
+      category TEXT NOT NULL DEFAULT 'general',
+
+      source_entity_type TEXT NOT NULL,
+      target_entity_type TEXT NOT NULL,
+
+      directional INTEGER NOT NULL DEFAULT 1,
+      inverse_code TEXT,
+
+      description TEXT,
+
+      is_active INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_relationship_types_entity_pair
+    ON pi_relationship_types(
+      source_entity_type,
+      target_entity_type,
+      is_active,
+      sort_order
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_relationship_types_category
+    ON pi_relationship_types(
+      category,
+      is_active,
+      sort_order
+    )
+  `);
+
+  const defaultPiRelationshipTypes = [
+    ["parent_of", "父母", "Parent of", "family", "person", "person", 1, "child_of", "父母与子女关系", 10],
+    ["child_of", "子女", "Child of", "family", "person", "person", 1, "parent_of", "子女与父母关系", 20],
+    ["spouse_of", "配偶", "Spouse of", "family", "person", "person", 0, "spouse_of", "婚姻或配偶关系", 30],
+    ["sibling_of", "兄弟姐妹", "Sibling of", "family", "person", "person", 0, "sibling_of", "兄弟姐妹关系", 40],
+    ["relative_of", "亲属", "Relative of", "family", "person", "person", 0, "relative_of", "其他亲属关系", 50],
+    ["business_partner_of", "商业伙伴", "Business partner of", "business", "person", "person", 0, "business_partner_of", "商业合作伙伴关系", 60],
+    ["associate_of", "关联人物", "Associate of", "general", "person", "person", 0, "associate_of", "具有公开证据支持的关联关系", 70],
+
+    ["founder_of", "创始人", "Founder of", "employment", "person", "organization", 1, "founded_by", "人物创办机构", 100],
+    ["cofounder_of", "联合创始人", "Co-founder of", "employment", "person", "organization", 1, "cofounded_by", "人物联合创办机构", 110],
+    ["ceo_of", "首席执行官", "CEO of", "employment", "person", "organization", 1, "has_ceo", "人物担任机构 CEO", 120],
+    ["chairman_of", "董事长", "Chairman of", "employment", "person", "organization", 1, "has_chairman", "人物担任机构董事长", 130],
+    ["director_of", "董事", "Director of", "employment", "person", "organization", 1, "has_director", "人物担任机构董事", 140],
+    ["executive_of", "高管", "Executive of", "employment", "person", "organization", 1, "has_executive", "人物担任机构高级管理人员", 150],
+    ["employee_of", "任职", "Employee of", "employment", "person", "organization", 1, "employs", "人物在机构任职", 160],
+    ["advisor_of", "顾问", "Advisor of", "employment", "person", "organization", 1, "has_advisor", "人物担任机构顾问", 170],
+
+    ["owner_of", "所有人", "Owner of", "ownership", "person", "organization", 1, "owned_by", "人物拥有机构权益", 200],
+    ["shareholder_of", "股东", "Shareholder of", "ownership", "person", "organization", 1, "has_shareholder", "人物持有机构股权", 210],
+    ["beneficial_owner_of", "最终受益人", "Beneficial owner of", "ownership", "person", "organization", 1, "beneficially_owned_by", "人物是机构最终受益人", 220],
+    ["controls", "控制", "Controls", "control", "person", "organization", 1, "controlled_by", "人物对机构具有控制关系", 230],
+    ["invested_in", "投资", "Invested in", "investment", "person", "organization", 1, "has_investor", "人物投资机构", 240],
+
+    ["parent_company_of", "母公司", "Parent company of", "corporate", "organization", "organization", 1, "subsidiary_of", "机构是另一机构的母公司", 300],
+    ["subsidiary_of", "子公司", "Subsidiary of", "corporate", "organization", "organization", 1, "parent_company_of", "机构是另一机构的子公司", 310],
+    ["organization_controls", "机构控制", "Controls", "control", "organization", "organization", 1, "organization_controlled_by", "机构控制另一机构", 320],
+    ["organization_invested_in", "机构投资", "Invested in", "investment", "organization", "organization", 1, "organization_has_investor", "机构投资另一机构", 330],
+    ["partner_of", "合作机构", "Partner of", "business", "organization", "organization", 0, "partner_of", "机构之间合作关系", 340],
+    ["acquired", "收购", "Acquired", "corporate", "organization", "organization", 1, "acquired_by", "机构收购另一机构", 350],
+    ["merged_with", "合并", "Merged with", "corporate", "organization", "organization", 0, "merged_with", "机构之间合并关系", 360]
+  ];
+
+  const insertPiRelationshipTypeSql = `
+    INSERT OR IGNORE INTO pi_relationship_types (
+      code,
+      name_zh,
+      name_en,
+      category,
+      source_entity_type,
+      target_entity_type,
+      directional,
+      inverse_code,
+      description,
+      sort_order
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  defaultPiRelationshipTypes.forEach((relationshipType) => {
+    db.run(
+      insertPiRelationshipTypeSql,
+      relationshipType
+    );
+  });
+
+  /*
+   * ----------------------------------------------------------
+   * 5. 通用关系表 V1 扩展字段
+   *
+   * 保留原字段，使用 ALTER TABLE 安全升级旧数据库。
+   * ----------------------------------------------------------
+   */
+  addColumnIfMissing(
+    "ALTER TABLE pi_relationships ADD COLUMN role_title TEXT",
+    "pi_relationships.role_title"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_relationships ADD COLUMN investment_amount REAL",
+    "pi_relationships.investment_amount"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_relationships ADD COLUMN currency TEXT",
+    "pi_relationships.currency"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_relationships ADD COLUMN is_current INTEGER NOT NULL DEFAULT 1",
+    "pi_relationships.is_current"
+  );
+
+  addColumnIfMissing(
+    "ALTER TABLE pi_relationships ADD COLUMN notes TEXT",
+    "pi_relationships.notes"
+  );
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS
+    idx_pi_relationships_public_status
+    ON pi_relationships(
+      verification_status,
+      is_public,
+      is_current
+    )
+  `);
+
+  /*
+   * ----------------------------------------------------------
+   * 6. 证据 / 来源表
    *
    * evidence 可以挂到：
    * person
