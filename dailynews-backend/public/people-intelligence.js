@@ -6,10 +6,22 @@
    底层关系代码仍保留英文，便于未来 API / 数据库 / 多语言扩展
    ========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+const PEOPLE_INTELLIGENCE_PUBLIC_API = "/api/people-intelligence/search";
+
+document.addEventListener("DOMContentLoaded", async () => {
     initPeopleTabs();
     initNetworkFilters();
-    renderPeopleNetwork("all");
+
+    const query = new URLSearchParams(window.location.search)
+        .get("q")
+        ?.trim();
+
+    if (!query) {
+        renderPeopleNetwork("all");
+        return;
+    }
+
+    await loadPublicPeopleIntelligence(query);
 });
 
 
@@ -22,6 +34,8 @@ const peopleNetworkState = {
     selectedNodeId: null,
     expandedNodeIds: new Set()
 };
+
+let currentPublicEntityType = "person";
 
 
 /* =========================================================
@@ -970,6 +984,27 @@ function showRelationshipDetails(
       </p>
     </div>
 
+    ${targetNode.name
+            ? `
+      <button
+        type="button"
+        class="pi-expand-connections-btn"
+        id="openEntityIntelligenceButton"
+        style="
+          width:100%;
+          margin-top:14px;
+          background:#1769df;
+          border-color:#1769df;
+          color:#ffffff;
+        "
+      >
+        查看该实体完整情报 →
+      </button>
+    `
+            : ""
+        }
+
+
     ${hasChildren
             ? `
           <button
@@ -986,6 +1021,47 @@ function showRelationshipDetails(
             : ""
         }
   `;
+
+
+    const openEntityButton =
+        document.getElementById(
+            "openEntityIntelligenceButton"
+        );
+
+    if (openEntityButton) {
+        openEntityButton.addEventListener(
+            "click",
+            () => {
+                const entityName =
+                    String(
+                        targetNode.name || ""
+                    ).trim();
+
+                if (!entityName) {
+                    return;
+                }
+
+                const targetUrl =
+                    new URL(
+                        "/people-intelligence.html",
+                        window.location.origin
+                    );
+
+                targetUrl.searchParams.set(
+                    "q",
+                    entityName
+                );
+
+                window.open(
+                    targetUrl.pathname +
+                    targetUrl.search,
+                    "_blank",
+                    "noopener,noreferrer"
+                );
+            }
+        );
+    }
+
 
     const expandButton =
         document.getElementById(
@@ -1163,4 +1239,617 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+/* =========================================================
+   Public read-only API integration
+   ========================================================= */
+
+async function loadPublicPeopleIntelligence(query) {
+    setPageLoadingState(query);
+
+    try {
+        const response = await fetch(
+            `${PEOPLE_INTELLIGENCE_PUBLIC_API}?q=${encodeURIComponent(query)}`,
+            {
+                method: "GET",
+                headers: {
+                    Accept: "application/json"
+                }
+            }
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            throw new Error(
+                data?.message || `公开情报接口请求失败（HTTP ${response.status}）`
+            );
+        }
+
+        if (!data?.success || !data?.found || !data?.entity) {
+            renderPublicNotFound(query, data?.message);
+            return;
+        }
+
+        applyPublicIntelligenceData(data);
+    } catch (error) {
+        console.error("[People Intelligence] Public API error:", error);
+        renderPublicLoadError(query, error);
+    }
+}
+
+function applyPublicIntelligenceData(data) {
+    const entity = data.entity || {};
+    const relationships = Array.isArray(data.relationships)
+        ? data.relationships
+        : [];
+
+    applyEntityPageMode(entity);
+    updateProfileHero(entity);
+    updateMetrics(entity, relationships);
+    updateOverview(entity);
+    updateEvidencePanel(entity, relationships);
+    updateDataStatus(entity);
+    updateNetworkFromPublicData(entity, relationships);
+
+    document.title = `${getEntityDisplayName(entity)} | 人谱情报 | Daily News`;
+}
+
+function applyEntityPageMode(entity) {
+    currentPublicEntityType = normalizeEntityType(entity.entity_type || "person");
+    const isOrganization = currentPublicEntityType === "organization";
+
+    document.body.dataset.entityType = currentPublicEntityType;
+
+    updateTopNavigationMode(isOrganization);
+    updateMetricLabels(isOrganization);
+    updateOverviewLabels(isOrganization);
+    updateTabLabels(isOrganization);
+}
+
+function updateTopNavigationMode(isOrganization) {
+    const navigationItems = Array.from(
+        document.querySelectorAll("header a, header button, nav a, nav button")
+    );
+
+    navigationItems.forEach((item) => {
+        const label = String(item.textContent || "").trim();
+
+        if (label === "人物" || label === "企业") {
+            item.classList.remove("active");
+        }
+
+        if (
+            (!isOrganization && label === "人物") ||
+            (isOrganization && label === "企业")
+        ) {
+            item.classList.add("active");
+        }
+    });
+}
+
+function updateMetricLabels(isOrganization) {
+    const labels = document.querySelectorAll(".pi-metric-card span");
+
+    const metricLabels = isOrganization
+        ? ["关联人物", "关联机构", "股权关系", "关联行业", "重要事件", "风险事件"]
+        : ["家族成员", "关联企业", "股权关系", "关联行业", "重要事件", "风险事件"];
+
+    labels.forEach((item, index) => {
+        if (index < metricLabels.length) {
+            item.textContent = metricLabels[index];
+        }
+    });
+}
+
+function updateOverviewLabels(isOrganization) {
+    const terms = document.querySelectorAll(".pi-info-list dt");
+
+    const labels = isOrganization
+        ? ["机构名称", "国家/地区", "行业", "成立日期", "上市状态", "股票代码"]
+        : ["姓名", "国籍", "主要身份", "核心关系网络"];
+
+    terms.forEach((item, index) => {
+        if (index < labels.length) {
+            item.textContent = labels[index];
+        }
+    });
+}
+
+function updateTabLabels(isOrganization) {
+    const tabs = document.querySelectorAll(".pi-tab");
+
+    const labels = isOrganization
+        ? ["概览", "关系网络", "关联人物", "商业", "股权控制", "资产", "事件", "风险"]
+        : ["概览", "关系网络", "家族", "商业", "股权控制", "资产", "事件", "风险"];
+
+    tabs.forEach((item, index) => {
+        if (index < labels.length) {
+            item.textContent = labels[index];
+        }
+    });
+}
+
+function translateListedStatus(value) {
+    const status = String(value || "").trim().toLowerCase();
+
+    if (!status) return "暂无公开数据";
+    if (["listed", "public", "上市"].includes(status)) return "已上市";
+    if (["private", "unlisted", "未上市"].includes(status)) return "未上市";
+
+    return value;
+}
+
+function updateProfileHero(entity) {
+    const displayName = getEntityDisplayName(entity);
+    const englishName = entity.name_en || "";
+    const title = englishName && !displayName.includes(englishName)
+        ? `${displayName}（${englishName}）`
+        : displayName;
+
+    setText(".pi-profile-title-row h1", title);
+    setText(".pi-profile-role", entity.primary_role || entity.industry || "公开情报实体");
+
+    const badge = document.querySelector(".pi-verified-badge");
+    if (badge) {
+        badge.textContent = "已核验";
+    }
+
+    const meta = document.querySelector(".pi-profile-meta");
+    if (meta) {
+        const items = [];
+        const region = entity.country_region || entity.nationality;
+
+        if (region) items.push(region);
+        if (entity.birth_date) items.push(`出生：${formatDate(entity.birth_date)}`);
+        if (entity.founded_date) items.push(`成立：${formatDate(entity.founded_date)}`);
+
+        const updated = entity.data_updated_at || entity.updated_at;
+        if (updated) items.push(`更新：${formatDate(updated)}`);
+
+        meta.innerHTML = items
+            .map((item) => `<span>${escapeHtml(item)}</span>`)
+            .join("");
+    }
+
+    const tags = normalizeTags(entity.tags);
+    const tagsBox = document.querySelector(".pi-profile-tags");
+    if (tagsBox) {
+        tagsBox.innerHTML = tags.length
+            ? tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")
+            : "";
+    }
+
+    const avatar = document.querySelector(".pi-avatar-placeholder");
+    if (avatar) {
+        avatar.textContent = makeInitials(displayName, englishName);
+    }
+
+    const summary = document.querySelector(".pi-profile-summary p");
+    if (summary) {
+        summary.textContent = entity.biography || entity.description ||
+            "该页面展示已经审核并公开发布的人谱关系情报数据。";
+    }
+}
+
+function updateMetrics(entity, relationships) {
+    const cards = document.querySelectorAll(".pi-metric-card strong");
+    if (!cards.length) return;
+
+    const entityType = normalizeEntityType(entity.entity_type || "person");
+
+    const familyCount = relationships.filter((item) =>
+        isFamilyRelationship(item)
+    ).length;
+
+    const organizationCount = new Set(
+        relationships
+            .filter((item) =>
+                normalizeEntityType(item.source_entity_type) === "organization" ||
+                normalizeEntityType(item.target_entity_type) === "organization"
+            )
+            .map((item) =>
+                normalizeEntityType(item.source_entity_type) === "organization"
+                    ? item.source_entity_id
+                    : item.target_entity_id
+            )
+            .filter(Boolean)
+    ).size;
+
+    const personCount = new Set(
+        relationships
+            .filter((item) =>
+                normalizeEntityType(item.source_entity_type) === "person" ||
+                normalizeEntityType(item.target_entity_type) === "person"
+            )
+            .map((item) =>
+                normalizeEntityType(item.source_entity_type) === "person"
+                    ? item.source_entity_id
+                    : item.target_entity_id
+            )
+            .filter(Boolean)
+    ).size;
+
+    const ownershipCount = relationships.filter((item) =>
+        Number(item.ownership_percentage || 0) > 0 ||
+        /owner|shareholder|control|founder|持股|股东|控制|创始/i.test(
+            `${item.relationship_type || ""} ${item.relationship_name_zh || ""}`
+        )
+    ).length;
+
+    const industryCount = new Set(
+        relationships
+            .filter((item) =>
+                normalizeEntityType(item.source_entity_type) === "industry" ||
+                normalizeEntityType(item.target_entity_type) === "industry"
+            )
+            .map((item) =>
+                normalizeEntityType(item.source_entity_type) === "industry"
+                    ? item.source_entity_id
+                    : item.target_entity_id
+            )
+            .filter(Boolean)
+    ).size;
+
+    const values = entityType === "organization"
+        ? [
+            personCount,
+            Math.max(0, organizationCount - 1),
+            ownershipCount,
+            industryCount,
+            0,
+            0
+        ]
+        : [
+            familyCount,
+            organizationCount,
+            ownershipCount,
+            industryCount,
+            0,
+            0
+        ];
+
+    cards.forEach((card, index) => {
+        card.textContent = String(values[index] ?? 0);
+    });
+}
+
+function updateOverview(entity) {
+    const displayName = getEntityDisplayName(entity);
+    const entityType = normalizeEntityType(entity.entity_type || "person");
+
+    setText('[data-panel="overview"] .pi-section-heading h2', `关于${displayName}`);
+
+    const overview = document.querySelector(".pi-overview-text");
+    if (overview) {
+        overview.textContent = entity.biography || entity.description ||
+            (entityType === "organization"
+                ? `${displayName}的公开机构、人物与关系情报资料。`
+                : `${displayName}的公开人物、机构与关系情报资料。`);
+    }
+
+    const values = document.querySelectorAll(".pi-info-list dd");
+
+    const keyValues = entityType === "organization"
+        ? [
+            joinNames(entity.name_zh, entity.name_en),
+            entity.country_region || entity.nationality || "暂无公开数据",
+            entity.industry || entity.primary_role || "暂无公开数据",
+            entity.founded_date ? formatDate(entity.founded_date) : "暂无公开数据",
+            translateListedStatus(entity.listed_status),
+            entity.ticker_symbol || "暂无公开数据"
+        ]
+        : [
+            joinNames(entity.name_zh, entity.name_en),
+            entity.nationality || entity.country_region || "暂无公开数据",
+            entity.primary_role || entity.industry || "暂无公开数据",
+            entity.core_organization || entity.name_zh || entity.name_en || "暂无公开数据"
+        ];
+
+    values.forEach((item, index) => {
+        if (index < keyValues.length) {
+            item.textContent = keyValues[index];
+        }
+    });
+
+    const center = document.querySelector(".pi-network-center");
+    if (center) center.textContent = displayName;
+}
+
+function updateEvidencePanel(entity, relationships) {
+    const evidencePanel = document.querySelector(
+        ".pi-side-panel .pi-section-card"
+    );
+
+    if (!evidencePanel) return;
+
+    const evidence = collectEvidence(relationships);
+    const confidence = translateConfidence(
+        entity.confidence_level || "medium"
+    );
+
+    const evidenceHtml = evidence.length
+        ? evidence.slice(0, 8).map((item) => `
+            <div class="pi-evidence-item">
+                <div class="pi-evidence-type">
+                    ${escapeHtml(item.source_tier || item.evidence_type || "来源")}
+                </div>
+                <strong>${escapeHtml(item.source_title || item.source_name || "证据资料")}</strong>
+                <p>${escapeHtml(item.evidence_summary || item.publisher || "已收录公开证据资料")}</p>
+            </div>
+        `).join("")
+        : `
+            <div class="pi-evidence-item">
+                <div class="pi-evidence-type">证据</div>
+                <strong>暂无公开证据明细</strong>
+                <p>当前实体已经公开发布，但尚未返回可展示的证据明细。</p>
+            </div>
+        `;
+
+    evidencePanel.innerHTML = `
+        <div class="pi-section-heading">
+            <div>
+                <span class="pi-eyebrow">数据质量</span>
+                <h2>证据资料</h2>
+            </div>
+        </div>
+        <div class="pi-confidence-box">
+            <span>资料可信度</span>
+            <strong>${escapeHtml(confidence)}</strong>
+        </div>
+        ${evidenceHtml}
+    `;
+}
+
+function updateDataStatus(entity) {
+    const statusValues = document.querySelectorAll(
+        ".pi-side-panel .pi-section-card:nth-child(2) .pi-side-info dd"
+    );
+
+    const values = [
+        "已公开发布",
+        entity.verification_status === "verified" ? "已核验" : "已发布",
+        formatDate(entity.data_updated_at || entity.updated_at || "") || "暂无"
+    ];
+
+    statusValues.forEach((item, index) => {
+        item.textContent = values[index] || "暂无";
+    });
+}
+
+function updateNetworkFromPublicData(entity, relationships) {
+    const centerName = getEntityDisplayName(entity);
+
+    peopleIntelligenceDemo.center = {
+        id: String(entity.id || entity.slug || "public-entity"),
+        type: normalizeEntityType(entity.entity_type || "person"),
+        category: normalizeEntityType(entity.entity_type || "person") === "organization"
+            ? "business"
+            : "person",
+        name: centerName,
+        englishName: entity.name_en || "",
+        subtitle: entity.primary_role || entity.industry || "核心实体"
+    };
+
+    peopleIntelligenceDemo.nodes = relationships
+        .map((relationship, index) =>
+            relationshipToNetworkNode(relationship, entity, index)
+        )
+        .filter(Boolean);
+
+    peopleNetworkState.activeFilter = "all";
+    peopleNetworkState.selectedNodeId = null;
+    peopleNetworkState.expandedNodeIds.clear();
+
+    renderPeopleNetwork("all");
+}
+
+function relationshipToNetworkNode(relationship, entity, index) {
+    const centerId = String(entity.id ?? "");
+    const sourceId = String(relationship.source_entity_id ?? "");
+    const targetId = String(relationship.target_entity_id ?? "");
+    const centerType = normalizeEntityType(entity.entity_type || "person");
+
+    const entityIsSource =
+        sourceId === centerId &&
+        normalizeEntityType(relationship.source_entity_type) === centerType;
+
+    const relatedType = entityIsSource
+        ? relationship.target_entity_type
+        : relationship.source_entity_type;
+
+    const relatedId = entityIsSource
+        ? relationship.target_entity_id
+        : relationship.source_entity_id;
+
+    const relatedName = entityIsSource
+        ? relationship.target_entity_name
+        : relationship.source_entity_name;
+
+    if (!relatedName) return null;
+
+    const normalizedType = normalizeEntityType(relatedType);
+    const category = relationshipCategory(relationship, normalizedType);
+    const ownership = Number(relationship.ownership_percentage || 0);
+    const role = relationship.role_title || "";
+    const relationName = relationship.relationship_name_zh ||
+        relationship.relationship_type || "关联关系";
+
+    const subtitleParts = [relationName];
+    if (role) subtitleParts.push(role);
+    if (ownership > 0) subtitleParts.push(`持股 ${ownership}%`);
+
+    return {
+        id: `${normalizedType}-${relatedId || index}`,
+        type: normalizedType === "organization" ? "company" : normalizedType,
+        category,
+        name: relatedName,
+        englishName: "",
+        subtitle: subtitleParts.join(" · "),
+        relation: relationship.relationship_type || "RELATED_TO",
+        relationLabel: relationName,
+        status: relationship.relationship_status === "current" ? "Current" : "Historical",
+        confidence: normalizeConfidenceForNetwork(relationship.confidence_level),
+        children: [],
+        rawRelationship: relationship
+    };
+}
+
+function setPageLoadingState(query) {
+    setText(".pi-profile-title-row h1", `正在搜索：${query}`);
+    setText(".pi-profile-role", "正在读取已核验并公开发布的情报数据……");
+}
+
+function renderPublicNotFound(query, message) {
+    setText(".pi-profile-title-row h1", `未找到：${query}`);
+    setText(
+        ".pi-profile-role",
+        message || "暂未找到已核验并已发布的公开情报数据"
+    );
+
+    const badge = document.querySelector(".pi-verified-badge");
+    if (badge) badge.textContent = "暂无公开数据";
+
+    const overview = document.querySelector(".pi-overview-text");
+    if (overview) {
+        overview.textContent =
+            "当前公开数据库中没有匹配结果。未审核、未发布、已回收或已归档的数据不会通过公开 API 返回。";
+    }
+
+    peopleIntelligenceDemo.nodes = [];
+    peopleIntelligenceDemo.center = {
+        id: "not-found",
+        type: "person",
+        category: "person",
+        name: query,
+        englishName: "",
+        subtitle: "暂无公开数据"
+    };
+    renderPeopleNetwork("all");
+}
+
+function renderPublicLoadError(query, error) {
+    setText(".pi-profile-title-row h1", `读取失败：${query}`);
+    setText(
+        ".pi-profile-role",
+        error?.message || "公开情报接口暂时无法访问，请稍后重试"
+    );
+}
+
+function collectEvidence(relationships) {
+    const evidenceMap = new Map();
+
+    relationships.forEach((relationship) => {
+        const evidence = Array.isArray(relationship.evidence)
+            ? relationship.evidence
+            : [];
+
+        evidence.forEach((item, index) => {
+            const key = item.id ||
+                `${item.source_title || "evidence"}-${item.source_url || index}`;
+            evidenceMap.set(String(key), item);
+        });
+    });
+
+    return Array.from(evidenceMap.values());
+}
+
+function isFamilyRelationship(relationship) {
+    return /parent|child|spouse|sibling|family|父|母|子|女|配偶|兄|弟|姐|妹|家族/i.test(
+        `${relationship.relationship_type || ""} ${relationship.relationship_name_zh || ""}`
+    );
+}
+
+function relationshipCategory(relationship, relatedType) {
+    if (isFamilyRelationship(relationship)) return "family";
+
+    if (
+        Number(relationship.ownership_percentage || 0) > 0 ||
+        /owner|shareholder|control|持股|股东|控制/i.test(
+            `${relationship.relationship_type || ""} ${relationship.relationship_name_zh || ""}`
+        )
+    ) {
+        return "ownership";
+    }
+
+    if (relatedType === "organization") return "business";
+    return "business";
+}
+
+function normalizeEntityType(value) {
+    const type = String(value || "").toLowerCase();
+    if (type === "organization" || type === "company") return "organization";
+    if (type === "industry") return "industry";
+    return "person";
+}
+
+function normalizeConfidenceForNetwork(value) {
+    const confidence = String(value || "medium").toLowerCase();
+    if (confidence === "high") return "High";
+    if (confidence === "low") return "Low";
+    return "Medium";
+}
+
+function translateConfidence(value) {
+    const confidence = String(value || "medium").toLowerCase();
+    if (confidence === "high") return "高";
+    if (confidence === "low") return "低";
+    return "中";
+}
+
+function normalizeTags(value) {
+    if (Array.isArray(value)) {
+        return value.map(String).map((item) => item.trim()).filter(Boolean);
+    }
+
+    if (!value) return [];
+
+    return String(value)
+        .split(/[,，|、]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function getEntityDisplayName(entity) {
+    return entity.name_zh || entity.name_en || entity.slug || "未命名实体";
+}
+
+function joinNames(nameZh, nameEn) {
+    if (nameZh && nameEn) return `${nameZh}（${nameEn}）`;
+    return nameZh || nameEn || "暂无公开数据";
+}
+
+function makeInitials(nameZh, nameEn) {
+    if (nameEn) {
+        const words = String(nameEn).trim().split(/\\s+/).filter(Boolean);
+        if (words.length >= 2) {
+            return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+        }
+        return words[0]?.slice(0, 2).toUpperCase() || "PI";
+    }
+
+    return String(nameZh || "PI").slice(0, 2);
+}
+
+function formatDate(value) {
+    if (!value) return "";
+
+    const raw = String(value);
+    const date = new Date(raw.includes("T") ? raw : raw.replace(" ", "T"));
+
+    if (Number.isNaN(date.getTime())) {
+        return raw.slice(0, 10);
+    }
+
+    return new Intl.DateTimeFormat("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).format(date);
+}
+
+function setText(selector, value) {
+    const element = document.querySelector(selector);
+    if (element) element.textContent = value || "";
 }

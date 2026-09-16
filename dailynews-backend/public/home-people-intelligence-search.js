@@ -83,7 +83,10 @@ function submitPeopleIntelligenceSearch(
         query
     );
 
-    window.location.href =
+    window.open(
         targetUrl.pathname +
-        targetUrl.search;
+        targetUrl.search,
+        "_blank",
+        "noopener,noreferrer"
+    );
 }
