@@ -1889,3 +1889,621 @@ body {
     border-color: #c5d2e4 !important;
     color: #1769df !important;
 }
+
+/* =========================================================
+   RELATIONSHIP MANAGEMENT V1
+========================================================= */
+
+.pia-relationship-editor-card {
+    margin-bottom: 20px;
+}
+
+.pia-relationship-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #4d5d73;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pia-relationship-form input,
+.pia-relationship-form select,
+.pia-relationship-form textarea {
+    width: 100%;
+    border: 1px solid #d8e0eb;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #27364d;
+    font: inherit;
+    outline: none;
+}
+
+.pia-relationship-form input,
+.pia-relationship-form select {
+    height: 38px;
+    padding: 0 10px;
+}
+
+.pia-relationship-form textarea {
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.pia-relationship-form input:focus,
+.pia-relationship-form select:focus,
+.pia-relationship-form textarea:focus {
+    border-color: #1769df;
+    box-shadow: 0 0 0 3px rgba(23, 105, 223, 0.08);
+}
+
+.pia-relationship-core-grid {
+    display: grid;
+    grid-template-columns: minmax(130px, .8fr) minmax(110px, .55fr) 32px minmax(190px, 1.15fr) 32px minmax(145px, .8fr) minmax(110px, .55fr);
+    gap: 10px;
+    align-items: end;
+    padding: 14px;
+    margin-bottom: 14px;
+    border: 1px solid #e3e9f2;
+    border-radius: 8px;
+    background: #f8fafd;
+}
+
+.pia-relationship-arrow {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1769df;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.pia-relationship-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.pia-relationship-checkbox {
+    min-height: 38px;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px !important;
+    padding: 0 10px;
+    border: 1px solid #e1e7f0;
+    border-radius: 6px;
+    background: #f8fafd;
+}
+
+.pia-relationship-checkbox input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+.pia-relationship-full {
+    margin-top: 14px;
+}
+
+.pia-relationship-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.pia-relationship-table td {
+    white-space: nowrap;
+}
+
+.pia-relationship-table td:first-child,
+.pia-relationship-table td:nth-child(3) {
+    white-space: normal;
+    min-width: 150px;
+}
+
+.pia-relationship-entity-type {
+    display: block;
+    margin-top: 3px;
+    color: #8a97a8;
+    font-size: 10px;
+}
+
+.pia-relationship-empty {
+    padding: 30px !important;
+    color: #8190a5 !important;
+    text-align: center !important;
+}
+
+.pia-relationship-action {
+    border: 0;
+    background: transparent;
+    color: #1769df;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pia-relationship-action:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1350px) {
+    .pia-relationship-core-grid {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+
+    .pia-relationship-arrow {
+        display: none;
+    }
+
+    .pia-relationship-meta-grid {
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 800px) {
+
+    .pia-relationship-core-grid,
+    .pia-relationship-meta-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* =========================================================
+   ORGANIZATION MANAGEMENT V1
+========================================================= */
+
+.pia-organization-editor-card {
+    margin-bottom: 20px;
+}
+
+.pia-organization-heading-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pia-organization-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.pia-organization-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #4d5d73;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pia-organization-form input,
+.pia-organization-form select,
+.pia-organization-form textarea {
+    width: 100%;
+    border: 1px solid #d8e0eb;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #27364d;
+    font: inherit;
+    outline: none;
+}
+
+.pia-organization-form input,
+.pia-organization-form select {
+    height: 38px;
+    padding: 0 10px;
+}
+
+.pia-organization-form textarea {
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.pia-organization-form input:focus,
+.pia-organization-form select:focus,
+.pia-organization-form textarea:focus {
+    border-color: #1769df;
+    box-shadow: 0 0 0 3px rgba(23, 105, 223, 0.08);
+}
+
+.pia-organization-full {
+    margin-top: 14px;
+}
+
+.pia-organization-actions {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.pia-danger-btn {
+    min-height: 40px;
+    padding: 0 17px;
+    border: 1px solid #dc3545;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #dc3545;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.pia-danger-btn:hover {
+    background: #fff2f3;
+}
+
+.pia-organization-table td {
+    white-space: nowrap;
+}
+
+.pia-organization-table td:first-child,
+.pia-organization-table td:nth-child(4) {
+    white-space: normal;
+    min-width: 150px;
+}
+
+.pia-organization-name {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.pia-organization-name span,
+.pia-organization-subtext {
+    color: #8a97a8;
+    font-size: 10px;
+}
+
+.pia-organization-empty {
+    padding: 30px !important;
+    color: #8190a5 !important;
+    text-align: center !important;
+}
+
+.pia-organization-action {
+    border: 0;
+    background: transparent;
+    color: #1769df;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pia-organization-action:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1450px) {
+    .pia-organization-grid {
+        grid-template-columns: repeat(4, minmax(145px, 1fr));
+    }
+}
+
+@media (max-width: 1150px) {
+    .pia-organization-grid {
+        grid-template-columns: repeat(3, minmax(145px, 1fr));
+    }
+}
+
+@media (max-width: 800px) {
+    .pia-organization-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pia-organization-actions {
+        justify-content: stretch;
+    }
+
+    .pia-organization-actions button {
+        flex: 1;
+    }
+}
+
+
+/* =========================================================
+   EVIDENCE & SOURCES V1
+========================================================= */
+
+.pia-evidence-editor-card {
+    margin-bottom: 20px;
+}
+
+.pia-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(150px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.pia-evidence-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #4d5d73;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pia-evidence-form input,
+.pia-evidence-form select,
+.pia-evidence-form textarea {
+    width: 100%;
+    border: 1px solid #d8e0eb;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #27364d;
+    font: inherit;
+    outline: none;
+}
+
+.pia-evidence-form input,
+.pia-evidence-form select {
+    height: 38px;
+    padding: 0 10px;
+}
+
+.pia-evidence-form textarea {
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.pia-evidence-form input:focus,
+.pia-evidence-form select:focus,
+.pia-evidence-form textarea:focus {
+    border-color: #1769df;
+    box-shadow: 0 0 0 3px rgba(23, 105, 223, 0.08);
+}
+
+.pia-evidence-full {
+    margin-top: 14px;
+}
+
+.pia-evidence-checkbox {
+    min-height: 38px;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px !important;
+    padding: 0 10px;
+    border: 1px solid #e1e7f0;
+    border-radius: 6px;
+    background: #f8fafd;
+}
+
+.pia-evidence-checkbox input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+.pia-evidence-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+.pia-evidence-table td {
+    white-space: nowrap;
+}
+
+.pia-evidence-table td:nth-child(1),
+.pia-evidence-table td:nth-child(3) {
+    white-space: normal;
+    min-width: 150px;
+}
+
+.pia-evidence-subtext {
+    display: block;
+    margin-top: 3px;
+    color: #8a97a8;
+    font-size: 10px;
+}
+
+.pia-evidence-empty {
+    padding: 30px !important;
+    color: #8190a5 !important;
+    text-align: center !important;
+}
+
+.pia-evidence-action {
+    border: 0;
+    background: transparent;
+    color: #1769df;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pia-evidence-action:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1350px) {
+    .pia-evidence-grid {
+        grid-template-columns: repeat(3, minmax(145px, 1fr));
+    }
+}
+
+@media (max-width: 800px) {
+    .pia-evidence-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Evidence review / relationship evidence linkage */
+.pia-evidence-review-note {
+    font-size: 11px;
+    color: #6f7f93;
+}
+
+.pia-relationship-evidence-btn {
+    border: 0;
+    background: transparent;
+    color: #1769df;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+.pia-relationship-evidence-btn:hover {
+    text-decoration: underline;
+}
+
+.pia-relationship-evidence-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+
+/* =========================================================
+   AI / DATA REVIEW QUEUE V1
+========================================================= */
+
+.pia-review-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.pia-review-summary-card {
+    padding: 16px 18px;
+    border: 1px solid #dfe6f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.pia-review-summary-card span {
+    display: block;
+    margin-bottom: 6px;
+    color: #75849a;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pia-review-summary-card strong {
+    color: #1769df;
+    font-size: 26px;
+    line-height: 1;
+}
+
+.pia-review-table td {
+    vertical-align: middle;
+}
+
+.pia-review-object {
+    min-width: 260px;
+}
+
+.pia-review-object strong {
+    display: block;
+    color: #25364d;
+}
+
+.pia-review-object span {
+    display: block;
+    margin-top: 4px;
+    color: #8a97a8;
+    font-size: 10px;
+}
+
+.pia-review-evidence {
+    white-space: nowrap;
+}
+
+.pia-review-actions {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.pia-review-action {
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid #d9e2ef;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #40536d;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pia-review-action.primary {
+    border-color: #1769df;
+    background: #1769df;
+    color: #ffffff;
+}
+
+.pia-review-action.danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.pia-review-action:hover {
+    filter: brightness(0.97);
+}
+
+.pia-review-empty {
+    padding: 32px !important;
+    text-align: center !important;
+    color: #8190a5 !important;
+}
+
+@media (max-width: 1000px) {
+    .pia-review-summary {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .pia-review-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Review Queue V2: verified data + independent publication */
+.pia-review-publication {
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.pia-review-publication.published {
+    color: #15803d;
+}
+
+.pia-review-publication.unpublished {
+    color: #7a8798;
+}
+
+.pia-review-action.publish {
+    border-color: #1769df;
+    background: #1769df;
+    color: #ffffff;
+}
+
+.pia-review-action.unpublish {
+    border-color: #7a8798;
+    background: #ffffff;
+    color: #53647b;
+}

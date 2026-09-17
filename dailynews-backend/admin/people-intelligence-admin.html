@@ -1013,30 +1013,263 @@
                 <section class="pia-admin-page" data-admin-panel="organizations" hidden>
 
                     <div class="pia-page-heading">
-
                         <div>
-                            <span class="pia-eyebrow">
-                                ORGANIZATION MANAGEMENT
-                            </span>
-
+                            <span class="pia-eyebrow">ORGANIZATION MANAGEMENT</span>
                             <h2>机构管理</h2>
-
-                            <p>
-                                管理企业、基金、信托、Family Office 等实体。
-                            </p>
+                            <p>管理企业、上市公司、基金、信托、Family Office、政府机构及其他组织实体。</p>
                         </div>
 
+                        <button type="button" class="pia-primary-btn" id="piaNewOrganizationButton">
+                            + 新增机构
+                        </button>
                     </div>
 
+                    <section class="pia-card pia-organization-editor-card">
 
-                    <div class="pia-card">
+                        <div class="pia-card-heading">
+                            <div>
+                                <span class="pia-eyebrow">ORGANIZATION PROFILE</span>
+                                <h3 id="piaOrganizationEditorTitle">新增机构</h3>
+                            </div>
 
-                        <div class="pia-placeholder">
-                            企业 / 信托 / 基金 / Family Office
-                            管理功能将在这里显示。
+                            <div class="pia-organization-heading-actions">
+                                <span class="pia-status draft" id="piaOrganizationEditorStatus">草稿</span>
+                            </div>
                         </div>
 
-                    </div>
+                        <form id="piaOrganizationForm" class="pia-organization-form">
+                            <input type="hidden" id="piaOrganizationId" />
+
+                            <div class="pia-organization-grid">
+
+                                <label>
+                                    <span>中文名称</span>
+                                    <input id="piaOrganizationNameZh" type="text" placeholder="例如：英伟达公司" />
+                                </label>
+
+                                <label>
+                                    <span>英文名称 *</span>
+                                    <input id="piaOrganizationNameEn" type="text" placeholder="例如：NVIDIA Corporation" />
+                                </label>
+
+                                <label>
+                                    <span>别名 / 简称</span>
+                                    <input id="piaOrganizationAliases" type="text" placeholder="多个别名可用逗号分隔" />
+                                </label>
+
+                                <label>
+                                    <span>机构类型 *</span>
+                                    <select id="piaOrganizationType">
+                                        <option value="company">公司 Company</option>
+                                        <option value="listed_company">上市公司 Listed Company</option>
+                                        <option value="fund">基金 Fund</option>
+                                        <option value="trust">信托 Trust</option>
+                                        <option value="family_office">家族办公室 Family Office</option>
+                                        <option value="government">政府机构 Government</option>
+                                        <option value="nonprofit">非营利组织 Nonprofit</option>
+                                        <option value="other">其他 Other</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>国家 / 地区</span>
+                                    <input id="piaOrganizationCountry" type="text" placeholder="例如：新加坡" />
+                                </label>
+
+                                <label>
+                                    <span>总部所在地</span>
+                                    <input id="piaOrganizationHeadquarters" type="text" placeholder="例如：Singapore" />
+                                </label>
+
+                                <label>
+                                    <span>成立日期</span>
+                                    <input id="piaOrganizationFoundedDate" type="date" />
+                                </label>
+
+                                <label>
+                                    <span>一级行业</span>
+                                    <input id="piaOrganizationIndustryPrimary" type="text" placeholder="例如：科技" />
+                                </label>
+
+                                <label>
+                                    <span>二级行业</span>
+                                    <input id="piaOrganizationIndustrySecondary" type="text" placeholder="例如：半导体" />
+                                </label>
+
+                                <label>
+                                    <span>兼容行业字段</span>
+                                    <input id="piaOrganizationIndustry" type="text" placeholder="外部 API 原始行业名称" />
+                                </label>
+
+                                <label>
+                                    <span>官网</span>
+                                    <input id="piaOrganizationWebsite" type="url" placeholder="https://..." />
+                                </label>
+
+                                <label>
+                                    <span>Logo URL</span>
+                                    <input id="piaOrganizationLogo" type="url" placeholder="https://..." />
+                                </label>
+
+                                <label>
+                                    <span>上市状态</span>
+                                    <select id="piaOrganizationListedStatus">
+                                        <option value="">未设置</option>
+                                        <option value="private">未上市 / Private</option>
+                                        <option value="listed">已上市 / Listed</option>
+                                        <option value="delisted">已退市 / Delisted</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>股票代码</span>
+                                    <input id="piaOrganizationTicker" type="text" placeholder="例如：NVDA" />
+                                </label>
+
+                                <label>
+                                    <span>交易所</span>
+                                    <input id="piaOrganizationExchange" type="text" placeholder="例如：NASDAQ" />
+                                </label>
+
+                                <label>
+                                    <span>ISIN</span>
+                                    <input id="piaOrganizationIsin" type="text" placeholder="国际证券识别码" />
+                                </label>
+
+                                <label>
+                                    <span>LEI</span>
+                                    <input id="piaOrganizationLei" type="text" placeholder="法人实体识别码" />
+                                </label>
+
+                                <label>
+                                    <span>审核状态</span>
+                                    <select id="piaOrganizationVerification">
+                                        <option value="draft">草稿</option>
+                                        <option value="pending">待审核</option>
+                                        <option value="verified">已核验</option>
+                                        <option value="disputed">存在争议</option>
+                                        <option value="hidden">已隐藏</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>可信度</span>
+                                    <select id="piaOrganizationConfidence">
+                                        <option value="high">高</option>
+                                        <option value="medium" selected>中</option>
+                                        <option value="low">低</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>资料更新时间</span>
+                                    <input id="piaOrganizationDataUpdatedAt" type="date" />
+                                </label>
+
+                            </div>
+
+                            <label class="pia-organization-full">
+                                <span>机构简介</span>
+                                <textarea id="piaOrganizationDescription" rows="4"
+                                    placeholder="机构业务、背景、控制关系、资本市场属性等。"></textarea>
+                            </label>
+
+                            <div class="pia-organization-actions">
+                                <button type="button" class="pia-secondary-btn" id="piaOrganizationResetButton">
+                                    取消 / 清空
+                                </button>
+
+                                <button type="button" class="pia-secondary-btn" data-organization-action="draft">
+                                    保存草稿
+                                </button>
+
+                                <button type="button" class="pia-primary-btn" data-organization-action="submit">
+                                    提交审核
+                                </button>
+
+                                <button type="button" class="pia-primary-btn" data-organization-action="approve">
+                                    审核通过
+                                </button>
+
+                                <button type="button" class="pia-primary-btn" id="piaOrganizationPublishButton"
+                                    data-organization-action="publish">
+                                    发布
+                                </button>
+
+                                <button type="button" class="pia-danger-btn" id="piaOrganizationTrashButton"
+                                    data-organization-action="trash">
+                                    移入垃圾箱
+                                </button>
+                            </div>
+
+                        </form>
+                    </section>
+
+                    <section class="pia-card pia-organization-list-card">
+
+                        <div class="pia-card-heading">
+                            <div>
+                                <span class="pia-eyebrow">ORGANIZATION DIRECTORY</span>
+                                <h3>机构列表</h3>
+                            </div>
+
+                            <span class="pia-record-count" id="piaOrganizationCount">
+                                共 0 条
+                            </span>
+                        </div>
+
+                        <div class="pia-toolbar">
+                            <input id="piaOrganizationSearch" type="search" placeholder="搜索机构名称、股票代码、行业、国家..." />
+
+                            <select id="piaOrganizationTypeFilter">
+                                <option value="all">全部类型</option>
+                                <option value="company">公司</option>
+                                <option value="listed_company">上市公司</option>
+                                <option value="fund">基金</option>
+                                <option value="trust">信托</option>
+                                <option value="family_office">家族办公室</option>
+                                <option value="government">政府机构</option>
+                                <option value="nonprofit">非营利组织</option>
+                                <option value="other">其他</option>
+                            </select>
+
+                            <select id="piaOrganizationStatusFilter">
+                                <option value="all">全部审核状态</option>
+                                <option value="draft">草稿</option>
+                                <option value="pending">待审核</option>
+                                <option value="verified">已核验</option>
+                                <option value="disputed">存在争议</option>
+                                <option value="hidden">已隐藏</option>
+                            </select>
+                        </div>
+
+                        <div class="pia-table-wrap">
+                            <table class="pia-table pia-organization-table">
+                                <thead>
+                                    <tr>
+                                        <th>机构</th>
+                                        <th>类型</th>
+                                        <th>国家/地区</th>
+                                        <th>行业</th>
+                                        <th>股票/交易所</th>
+                                        <th>审核状态</th>
+                                        <th>发布状态</th>
+                                        <th>更新时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="piaOrganizationTableBody">
+                                    <tr>
+                                        <td colspan="9" class="pia-organization-empty">
+                                            正在读取机构数据...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </section>
 
                 </section>
 
@@ -1047,68 +1280,439 @@
                 <section class="pia-admin-page" data-admin-panel="relationships" hidden>
 
                     <div class="pia-page-heading">
-
                         <div>
-                            <span class="pia-eyebrow">
-                                RELATIONSHIP MANAGEMENT
-                            </span>
-
+                            <span class="pia-eyebrow">RELATIONSHIP MANAGEMENT</span>
                             <h2>关系管理</h2>
-
-                            <p>
-                                管理人物与人物、人物与企业、企业与企业之间的关系。
-                            </p>
+                            <p>建立并维护人物与人物、人物与机构、机构与机构之间的结构化关系。</p>
                         </div>
 
-                        <button class="pia-primary-btn">
+                        <button type="button" class="pia-primary-btn" id="piaNewRelationshipButton">
                             + 新增关系
                         </button>
-
                     </div>
 
-
-                    <div class="pia-card">
-
-                        <div class="pia-placeholder">
-                            关系类型、关系方向、时间、股权比例、
-                            状态、证据和可信度将在这里管理。
+                    <section class="pia-card pia-relationship-editor-card">
+                        <div class="pia-card-heading">
+                            <div>
+                                <span class="pia-eyebrow">RELATIONSHIP EDITOR</span>
+                                <h3 id="piaRelationshipEditorTitle">新增关系</h3>
+                            </div>
+                            <span class="pia-status draft" id="piaRelationshipEditorStatus">草稿</span>
                         </div>
 
-                    </div>
+                        <form id="piaRelationshipForm" class="pia-relationship-form">
+                            <input type="hidden" id="piaRelationshipId" />
+
+                            <div class="pia-relationship-core-grid">
+                                <label>
+                                    <span>来源实体类型 *</span>
+                                    <select id="piaRelationshipSourceType">
+                                        <option value="person">人物 Person</option>
+                                        <option value="organization">机构 Organization</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>来源实体 ID *</span>
+                                    <input id="piaRelationshipSourceId" type="number" min="1" placeholder="例如：1" />
+                                </label>
+
+                                <div class="pia-relationship-arrow">→</div>
+
+                                <label>
+                                    <span>关系类型 *</span>
+                                    <select id="piaRelationshipType">
+                                        <option value="">正在读取关系类型...</option>
+                                    </select>
+                                </label>
+
+                                <div class="pia-relationship-arrow">→</div>
+
+                                <label>
+                                    <span>目标实体类型 *</span>
+                                    <select id="piaRelationshipTargetType">
+                                        <option value="person">人物 Person</option>
+                                        <option value="organization" selected>机构 Organization</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>目标实体 ID *</span>
+                                    <input id="piaRelationshipTargetId" type="number" min="1" placeholder="例如：1" />
+                                </label>
+                            </div>
+
+                            <div class="pia-relationship-meta-grid">
+                                <label>
+                                    <span>职位 / 角色</span>
+                                    <input id="piaRelationshipRoleTitle" type="text" placeholder="例如：Founder / CEO" />
+                                </label>
+
+                                <label>
+                                    <span>持股比例 %</span>
+                                    <input id="piaRelationshipOwnership" type="number" min="0" max="100" step="0.0001"
+                                        placeholder="0 - 100" />
+                                </label>
+
+                                <label>
+                                    <span>投票权比例 %</span>
+                                    <input id="piaRelationshipVoting" type="number" min="0" max="100" step="0.0001"
+                                        placeholder="0 - 100" />
+                                </label>
+
+                                <label>
+                                    <span>投资金额</span>
+                                    <input id="piaRelationshipInvestmentAmount" type="number" min="0" step="0.01"
+                                        placeholder="金额" />
+                                </label>
+
+                                <label>
+                                    <span>币种</span>
+                                    <input id="piaRelationshipCurrency" type="text" maxlength="12"
+                                        placeholder="SGD / USD" />
+                                </label>
+
+                                <label>
+                                    <span>开始日期</span>
+                                    <input id="piaRelationshipStartDate" type="date" />
+                                </label>
+
+                                <label>
+                                    <span>结束日期</span>
+                                    <input id="piaRelationshipEndDate" type="date" />
+                                </label>
+
+                                <label>
+                                    <span>关系状态</span>
+                                    <select id="piaRelationshipStatus">
+                                        <option value="current">当前</option>
+                                        <option value="historical">历史</option>
+                                        <option value="disputed">存在争议</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>审核状态</span>
+                                    <select id="piaRelationshipVerification">
+                                        <option value="draft">草稿</option>
+                                        <option value="pending">待审核</option>
+                                        <option value="verified">已核验</option>
+                                        <option value="disputed">存在争议</option>
+                                        <option value="hidden">已隐藏</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>可信度</span>
+                                    <select id="piaRelationshipConfidence">
+                                        <option value="high">高</option>
+                                        <option value="medium" selected>中</option>
+                                        <option value="low">低</option>
+                                    </select>
+                                </label>
+
+                                <label class="pia-relationship-checkbox">
+                                    <input id="piaRelationshipIsCurrent" type="checkbox" checked />
+                                    <span>当前关系</span>
+                                </label>
+
+                                <label class="pia-relationship-checkbox">
+                                    <input id="piaRelationshipIsPublic" type="checkbox" />
+                                    <span>允许公开</span>
+                                </label>
+                            </div>
+
+                            <label class="pia-relationship-full">
+                                <span>关系说明</span>
+                                <textarea id="piaRelationshipDescription" rows="3"
+                                    placeholder="说明这条关系的背景、范围或定义。"></textarea>
+                            </label>
+
+                            <label class="pia-relationship-full">
+                                <span>内部备注</span>
+                                <textarea id="piaRelationshipNotes" rows="2" placeholder="仅供后台治理与审核使用。"></textarea>
+                            </label>
+
+                            <div class="pia-relationship-actions">
+                                <button type="button" class="pia-secondary-btn" id="piaRelationshipResetButton">取消 /
+                                    清空</button>
+                                <button type="submit" class="pia-primary-btn"
+                                    id="piaRelationshipSaveButton">保存关系</button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <section class="pia-card pia-relationship-list-card">
+                        <div class="pia-card-heading">
+                            <div>
+                                <span class="pia-eyebrow">RELATIONSHIP DIRECTORY</span>
+                                <h3>关系列表</h3>
+                            </div>
+                            <span class="pia-record-count" id="piaRelationshipCount">共 0 条</span>
+                        </div>
+
+                        <div class="pia-toolbar">
+                            <input id="piaRelationshipSearch" type="search" placeholder="搜索实体名称、关系类型、职位..." />
+                            <select id="piaRelationshipStatusFilter">
+                                <option value="all">全部审核状态</option>
+                                <option value="draft">草稿</option>
+                                <option value="pending">待审核</option>
+                                <option value="verified">已核验</option>
+                                <option value="disputed">存在争议</option>
+                                <option value="hidden">已隐藏</option>
+                            </select>
+                        </div>
+
+                        <div class="pia-table-wrap">
+                            <table class="pia-table pia-relationship-table">
+                                <thead>
+                                    <tr>
+                                        <th>来源实体</th>
+                                        <th>关系</th>
+                                        <th>目标实体</th>
+                                        <th>职位 / 股权</th>
+                                        <th>审核</th>
+                                        <th>证据</th>
+                                        <th>公开</th>
+                                        <th>更新时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="piaRelationshipTableBody">
+                                    <tr>
+                                        <td colspan="9" class="pia-relationship-empty">正在读取关系数据...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
 
                 </section>
 
 
                 <!-- =================================================
-             Evidence
+             Evidence & Sources
         ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="evidence" hidden>
 
                     <div class="pia-page-heading">
-
                         <div>
-                            <span class="pia-eyebrow">
-                                EVIDENCE & SOURCES
-                            </span>
-
+                            <span class="pia-eyebrow">EVIDENCE & SOURCES</span>
                             <h2>证据与来源</h2>
-
-                            <p>
-                                管理官方文件、监管披露、媒体报道和其他证据。
-                            </p>
+                            <p>为人物、机构和关系绑定可核验的数据来源，形成可追溯的情报证据链。</p>
                         </div>
 
+                        <button type="button" class="pia-primary-btn" id="piaNewEvidenceButton">
+                            + 新增证据
+                        </button>
                     </div>
 
+                    <section class="pia-card pia-evidence-editor-card">
 
-                    <div class="pia-card">
+                        <div class="pia-card-heading">
+                            <div>
+                                <span class="pia-eyebrow">EVIDENCE EDITOR</span>
+                                <h3 id="piaEvidenceEditorTitle">新增证据</h3>
+                            </div>
 
-                        <div class="pia-placeholder">
-                            证据来源、来源等级、URL、发布日期、
-                            抓取时间和可信度将在这里管理。
+                            <span class="pia-status pending" id="piaEvidenceEditorStatus">待审核</span>
                         </div>
 
-                    </div>
+                        <form id="piaEvidenceForm" class="pia-evidence-form">
+                            <input type="hidden" id="piaEvidenceId" />
+
+                            <div class="pia-evidence-grid">
+
+                                <label>
+                                    <span>目标类型 *</span>
+                                    <select id="piaEvidenceEntityType">
+                                        <option value="relationship">关系 Relationship</option>
+                                        <option value="person">人物 Person</option>
+                                        <option value="organization">机构 Organization</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>目标 ID *</span>
+                                    <input id="piaEvidenceEntityId" type="number" min="1" placeholder="例如：1" />
+                                </label>
+
+                                <label>
+                                    <span>证据类型 *</span>
+                                    <select id="piaEvidenceType">
+                                        <option value="web">网页 Web</option>
+                                        <option value="company_filing">公司文件 Company Filing</option>
+                                        <option value="exchange_filing">交易所披露 Exchange Filing</option>
+                                        <option value="government_record">政府记录 Government Record</option>
+                                        <option value="news">新闻 News</option>
+                                        <option value="api">API 数据</option>
+                                        <option value="document">文档 Document</option>
+                                        <option value="other">其他 Other</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>来源等级 *</span>
+                                    <select id="piaEvidenceSourceTier">
+                                        <option value="primary">一级 / Primary</option>
+                                        <option value="secondary" selected>二级 / Secondary</option>
+                                        <option value="tertiary">三级 / Tertiary</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>审核状态</span>
+                                    <select id="piaEvidenceVerification">
+                                        <option value="pending">待审核</option>
+                                        <option value="verified">已核验</option>
+                                        <option value="disputed">存在争议</option>
+                                        <option value="rejected">已拒绝</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>可信度</span>
+                                    <select id="piaEvidenceConfidence">
+                                        <option value="high">高</option>
+                                        <option value="medium" selected>中</option>
+                                        <option value="low">低</option>
+                                    </select>
+                                </label>
+
+                                <label>
+                                    <span>来源名称</span>
+                                    <input id="piaEvidenceSourceName" type="text" placeholder="例如：公司年报 / SEC / 官方网站" />
+                                </label>
+
+                                <label>
+                                    <span>发布机构</span>
+                                    <input id="piaEvidencePublisher" type="text"
+                                        placeholder="例如：NASDAQ / ACRA / 公司官网" />
+                                </label>
+
+                                <label>
+                                    <span>发布日期</span>
+                                    <input id="piaEvidencePublishedAt" type="date" />
+                                </label>
+
+                                <label class="pia-evidence-checkbox">
+                                    <input id="piaEvidenceIsPrimarySource" type="checkbox" />
+                                    <span>第一手来源</span>
+                                </label>
+
+                            </div>
+
+                            <label class="pia-evidence-full">
+                                <span>来源标题</span>
+                                <input id="piaEvidenceSourceTitle" type="text"
+                                    placeholder="例如：Annual Report 2025 / Corporate Profile / Official Announcement" />
+                            </label>
+
+                            <label class="pia-evidence-full">
+                                <span>原始 URL</span>
+                                <input id="piaEvidenceSourceUrl" type="url" placeholder="https://..." />
+                            </label>
+
+                            <label class="pia-evidence-full">
+                                <span>存档 URL</span>
+                                <input id="piaEvidenceArchivedUrl" type="url" placeholder="https://..." />
+                            </label>
+
+                            <label class="pia-evidence-full">
+                                <span>证据摘要</span>
+                                <textarea id="piaEvidenceSummary" rows="4"
+                                    placeholder="说明该来源具体证明了什么，以及它与目标人物、机构或关系之间的关联。"></textarea>
+                            </label>
+
+                            <div class="pia-evidence-actions">
+                                <button type="button" class="pia-secondary-btn" id="piaEvidenceResetButton">
+                                    取消 / 清空
+                                </button>
+
+                                <button type="submit" class="pia-primary-btn" id="piaEvidenceSaveButton">
+                                    保存证据
+                                </button>
+
+                                <button type="button" class="pia-primary-btn" id="piaEvidenceVerifyButton" disabled>
+                                    审核通过
+                                </button>
+
+                                <button type="button" class="pia-secondary-btn" id="piaEvidenceDisputeButton" disabled>
+                                    标记争议
+                                </button>
+
+                                <button type="button" class="pia-danger-btn" id="piaEvidenceRejectButton" disabled>
+                                    拒绝
+                                </button>
+
+                                <button type="button" class="pia-danger-btn" id="piaEvidenceDeleteButton" disabled>
+                                    删除证据
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <section class="pia-card pia-evidence-list-card">
+
+                        <div class="pia-card-heading">
+                            <div>
+                                <span class="pia-eyebrow">EVIDENCE DIRECTORY</span>
+                                <h3>证据列表</h3>
+                            </div>
+
+                            <span class="pia-record-count" id="piaEvidenceCount">共 0 条</span>
+                        </div>
+
+                        <div class="pia-toolbar">
+                            <input id="piaEvidenceSearch" type="search" placeholder="搜索来源名称、标题、URL、摘要..." />
+
+                            <select id="piaEvidenceTypeFilter">
+                                <option value="all">全部证据类型</option>
+                                <option value="web">网页</option>
+                                <option value="company_filing">公司文件</option>
+                                <option value="exchange_filing">交易所披露</option>
+                                <option value="government_record">政府记录</option>
+                                <option value="news">新闻</option>
+                                <option value="api">API</option>
+                                <option value="document">文档</option>
+                                <option value="other">其他</option>
+                            </select>
+
+                            <select id="piaEvidenceStatusFilter">
+                                <option value="all">全部审核状态</option>
+                                <option value="pending">待审核</option>
+                                <option value="verified">已核验</option>
+                                <option value="disputed">存在争议</option>
+                                <option value="rejected">已拒绝</option>
+                            </select>
+                        </div>
+
+                        <div class="pia-table-wrap">
+                            <table class="pia-table pia-evidence-table">
+                                <thead>
+                                    <tr>
+                                        <th>目标</th>
+                                        <th>证据类型</th>
+                                        <th>来源</th>
+                                        <th>来源等级</th>
+                                        <th>审核状态</th>
+                                        <th>可信度</th>
+                                        <th>更新时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="piaEvidenceTableBody">
+                                    <tr>
+                                        <td colspan="8" class="pia-evidence-empty">
+                                            正在读取证据数据...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </section>
 
                 </section>
 
@@ -1119,29 +1723,107 @@
                 <section class="pia-admin-page" data-admin-panel="ai-review" hidden>
 
                     <div class="pia-page-heading">
-
                         <div>
-                            <span class="pia-eyebrow">
-                                AI REVIEW QUEUE
-                            </span>
-
+                            <span class="pia-eyebrow">AI / DATA REVIEW QUEUE</span>
                             <h2>AI 审核队列</h2>
-
                             <p>
-                                审核 AI 自动识别的人物、企业和关系候选数据。
+                                统一审核待处理的人物、机构、关系和证据数据。V1 先接现有 SQLite 数据，后续 AI 自动抽取结果也进入同一队列。
                             </p>
                         </div>
 
+                        <button type="button" class="pia-secondary-btn" id="piaReviewRefreshButton">
+                            刷新队列
+                        </button>
                     </div>
 
-
-                    <div class="pia-card">
-
-                        <div class="pia-placeholder">
-                            AI 抽取结果必须经过审核后才能进入正式数据。
+                    <div class="pia-review-summary">
+                        <div class="pia-review-summary-card">
+                            <span>当前队列</span>
+                            <strong id="piaReviewTotal">0</strong>
                         </div>
 
+                        <div class="pia-review-summary-card">
+                            <span>草稿</span>
+                            <strong id="piaReviewDraftCount">0</strong>
+                        </div>
+
+                        <div class="pia-review-summary-card">
+                            <span>待审核</span>
+                            <strong id="piaReviewPendingCount">0</strong>
+                        </div>
+
+                        <div class="pia-review-summary-card">
+                            <span>存在争议</span>
+                            <strong id="piaReviewDisputedCount">0</strong>
+                        </div>
                     </div>
+
+                    <section class="pia-card">
+
+                        <div class="pia-card-heading">
+                            <div>
+                                <span class="pia-eyebrow">UNIFIED REVIEW WORKBENCH</span>
+                                <h3>待处理数据</h3>
+                            </div>
+
+                            <span class="pia-record-count" id="piaReviewCount">共 0 条</span>
+                        </div>
+
+                        <div class="pia-toolbar">
+                            <input id="piaReviewSearch" type="search" placeholder="搜索人物、机构、关系、来源..." />
+
+                            <select id="piaReviewTypeFilter">
+                                <option value="all">全部对象类型</option>
+                                <option value="person">人物</option>
+                                <option value="organization">机构</option>
+                                <option value="relationship">关系</option>
+                                <option value="evidence">证据</option>
+                            </select>
+
+                            <select id="piaReviewStatusFilter">
+                                <option value="reviewable">待处理数据</option>
+                                <option value="draft">草稿</option>
+                                <option value="pending">待审核</option>
+                                <option value="disputed">存在争议</option>
+                                <option value="verified">已核验</option>
+                                <option value="hidden">已隐藏</option>
+                                <option value="rejected">已拒绝</option>
+                                <option value="all">全部状态</option>
+                            </select>
+
+                            <select id="piaReviewPublicationFilter">
+                                <option value="all">全部发布状态</option>
+                                <option value="unpublished">未发布</option>
+                                <option value="published">已发布</option>
+                            </select>
+                        </div>
+
+                        <div class="pia-table-wrap">
+                            <table class="pia-table pia-review-table">
+                                <thead>
+                                    <tr>
+                                        <th>对象类型</th>
+                                        <th>对象</th>
+                                        <th>可信度</th>
+                                        <th>证据</th>
+                                        <th>当前状态</th>
+                                        <th>发布状态</th>
+                                        <th>更新时间</th>
+                                        <th>审核 / 发布操作</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="piaReviewTableBody">
+                                    <tr>
+                                        <td colspan="8" class="pia-review-empty">
+                                            正在读取审核队列...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </section>
 
                 </section>
 
