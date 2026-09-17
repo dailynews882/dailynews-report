@@ -2264,6 +2264,125 @@ db.serialize(() => {
     )
   `);
 
+  /*
+  * ---------------------------------------------------------
+  * People Intelligence - Correction Center
+  * 纠错中心
+  *
+  * 用于接收针对人物、机构、关系、证据的纠错申请。
+  * ---------------------------------------------------------
+  */
+  db.run(`
+     CREATE TABLE IF NOT EXISTS pi_corrections (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+         entity_type TEXT NOT NULL,
+         entity_id INTEGER NOT NULL,
+
+         correction_type TEXT NOT NULL DEFAULT 'data_correction',
+
+         field_name TEXT,
+         original_value TEXT,
+         proposed_value TEXT,
+
+         correction_reason TEXT,
+         evidence_description TEXT,
+         evidence_url TEXT,
+
+         submitter_name TEXT,
+         submitter_email TEXT,
+         submitter_type TEXT DEFAULT 'user',
+
+         status TEXT NOT NULL DEFAULT 'pending',
+
+         review_comment TEXT,
+         reviewed_by INTEGER,
+         reviewed_at DATETIME,
+
+         applied_at DATETIME,
+
+         created_by INTEGER,
+         updated_by INTEGER,
+
+         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+     )
+ `);
+
+  db.run(`
+     CREATE INDEX IF NOT EXISTS
+     idx_pi_corrections_entity
+     ON pi_corrections(
+         entity_type,
+         entity_id
+     )
+ `);
+
+  db.run(`
+     CREATE INDEX IF NOT EXISTS
+     idx_pi_corrections_status
+     ON pi_corrections(
+         status,
+         created_at
+     )
+ `);
+
+
+  /*
+   * ---------------------------------------------------------
+   * People Intelligence - Version History
+   * 版本历史 / 审计记录
+   *
+   * 人物、机构、关系、证据共用一张历史表。
+   * before_data / after_data 保存 JSON 字符串。
+   * ---------------------------------------------------------
+   */
+  db.run(`
+     CREATE TABLE IF NOT EXISTS pi_version_history (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+         entity_type TEXT NOT NULL,
+         entity_id INTEGER NOT NULL,
+
+         version_number INTEGER NOT NULL DEFAULT 1,
+
+         action_type TEXT NOT NULL,
+
+         changed_fields TEXT,
+
+         before_data TEXT,
+         after_data TEXT,
+
+         change_reason TEXT,
+         source_type TEXT DEFAULT 'admin',
+
+         operator_id INTEGER,
+         operator_name TEXT,
+
+         correction_id INTEGER,
+
+         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+     )
+ `);
+
+  db.run(`
+     CREATE INDEX IF NOT EXISTS
+     idx_pi_version_history_entity
+     ON pi_version_history(
+         entity_type,
+         entity_id,
+         version_number
+     )
+ `);
+
+  db.run(`
+     CREATE INDEX IF NOT EXISTS
+     idx_pi_version_history_created
+     ON pi_version_history(
+         created_at
+     )
+ `);
+
 });
 
 module.exports = db;

@@ -4494,5 +4494,979 @@ router.get(
     }
 );
 
+/*
+ * ============================================================
+ * PEOPLE INTELLIGENCE
+ * CORRECTION CENTER + VERSION HISTORY
+ * ============================================================
+ */
+
+
+/*
+ * ------------------------------------------------------------
+ * Shared helpers
+ * ------------------------------------------------------------
+ */
+
+function normalizePiEntityType(value) {
+    const type = String(value || "")
+        .trim()
+        .toLowerCase();
+
+    const allowedTypes = new Set([
+        "person",
+        "organization",
+        "relationship",
+        "evidence"
+    ]);
+
+    return allowedTypes.has(type)
+        ? type
+        : null;
+}
+
+
+function safeJsonStringify(value) {
+    if (
+        value === undefined ||
+        value === null
+    ) {
+        return null;
+    }
+
+    if (typeof value === "string") {
+        return value;
+    }
+
+    try {
+        return JSON.stringify(value);
+    } catch (error) {
+        return String(value);
+    }
+}
+
+
+async function getNextPiVersionNumber(
+    entityType,
+    entityId
+) {
+    const row = await dbGet(
+        `
+        SELECT
+            COALESCE(MAX(version_number), 0) + 1
+                AS next_version
+        FROM pi_version_history
+        WHERE entity_type = ?
+          AND entity_id = ?
+        `,
+        [
+            entityType,
+            entityId
+        ]
+    );
+
+    return Number(
+        row?.next_version || 1
+    );
+}
+
+
+async function writePiVersionHistory({
+    entityType,
+    entityId,
+    actionType,
+    changedFields = null,
+    beforeData = null,
+    afterData = null,
+    changeReason = null,
+    sourceType = "admin",
+    operatorId = null,
+    operatorName = null,
+    correctionId = null
+}) {
+    const normalizedType =
+        normalizePiEntityType(entityType);
+
+    const numericEntityId =
+        Number(entityId);
+
+    if (
+        !normalizedType ||
+        !Number.isInteger(numericEntityId) ||
+        numericEntityId <= 0
+    ) {
+        throw new Error(
+            "Invalid version history entity"
+        );
+    }
+
+    const versionNumber =
+        await getNextPiVersionNumber(
+            normalizedType,
+            numericEntityId
+        );
+
+    const result = await dbRun(
+        `
+        INSERT INTO pi_version_history (
+            entity_type,
+            entity_id,
+            version_number,
+            action_type,
+            changed_fields,
+            before_data,
+            after_data,
+            change_reason,
+            source_type,
+            operator_id,
+            operator_name,
+            correction_id,
+            created_at
+        )
+        VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            CURRENT_TIMESTAMP
+        )
+        `,
+        [
+            normalizedType,
+            numericEntityId,
+            versionNumber,
+            String(
+                actionType || "update"
+            ),
+            safeJsonStringify(
+                changedFields
+            ),
+            safeJsonStringify(
+                beforeData
+            ),
+            safeJsonStringify(
+                afterData
+            ),
+            changeReason || null,
+            sourceType || "admin",
+            operatorId || null,
+            operatorName || null,
+            correctionId || null
+        ]
+    );
+
+    return {
+        id: result.lastID,
+        version_number: versionNumber
+    };
+}
+
+
+/*
+ * ------------------------------------------------------------
+ * CORRECTION CENTER
+ * GET /corrections
+ * ------------------------------------------------------------
+ */
+
+router.get(
+    "/corrections",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const status = String(
+                req.query.status || "all"
+            )
+                .trim()
+                .toLowerCase();
+
+            const entityType = String(
+                req.query.entity_type || "all"
+            )
+                .trim()
+                .toLowerCase();
+
+            const search = String(
+                req.query.search || ""
+            )
+                .trim()
+                .toLowerCase();
+
+            const rows = await dbAll(
+                `
+                SELECT *
+                FROM pi_corrections
+                ORDER BY
+                    CASE status
+                        WHEN 'pending' THEN 1
+                        WHEN 'reviewing' THEN 2
+                        WHEN 'approved' THEN 3
+                        WHEN 'rejected' THEN 4
+                        WHEN 'applied' THEN 5
+                        ELSE 6
+                    END,
+                    created_at DESC,
+                    id DESC
+                `
+            );
+
+            const filtered =
+                rows.filter((row) => {
+                    if (
+                        status !== "all" &&
+                        row.status !== status
+                    ) {
+                        return false;
+                    }
+
+                    if (
+                        entityType !== "all" &&
+                        row.entity_type !==
+                        entityType
+                    ) {
+                        return false;
+                    }
+
+                    if (search) {
+                        const haystack = [
+                            row.id,
+                            row.entity_type,
+                            row.entity_id,
+                            row.field_name,
+                            row.original_value,
+                            row.proposed_value,
+                            row.correction_reason,
+                            row.evidence_description,
+                            row.source_name,
+                            row.submitter_name,
+                            row.submitter_email
+                        ]
+                            .filter(Boolean)
+                            .join(" ")
+                            .toLowerCase();
+
+                        if (
+                            !haystack.includes(
+                                search
+                            )
+                        ) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+            const summary = {
+                total: filtered.length,
+                pending:
+                    filtered.filter(
+                        (row) =>
+                            row.status ===
+                            "pending"
+                    ).length,
+                reviewing:
+                    filtered.filter(
+                        (row) =>
+                            row.status ===
+                            "reviewing"
+                    ).length,
+                approved:
+                    filtered.filter(
+                        (row) =>
+                            row.status ===
+                            "approved"
+                    ).length,
+                rejected:
+                    filtered.filter(
+                        (row) =>
+                            row.status ===
+                            "rejected"
+                    ).length,
+                applied:
+                    filtered.filter(
+                        (row) =>
+                            row.status ===
+                            "applied"
+                    ).length
+            };
+
+            return res.json({
+                success: true,
+                count: filtered.length,
+                summary,
+                corrections: filtered
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence corrections list error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "读取纠错中心数据失败"
+            });
+        }
+    }
+);
+
+
+/*
+ * ------------------------------------------------------------
+ * CORRECTION CENTER
+ * GET /corrections/:id
+ * ------------------------------------------------------------
+ */
+
+router.get(
+    "/corrections/:id",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const correctionId =
+                Number(req.params.id);
+
+            if (
+                !Number.isInteger(
+                    correctionId
+                ) ||
+                correctionId <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "无效的纠错记录 ID"
+                });
+            }
+
+            const correction =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM pi_corrections
+                    WHERE id = ?
+                    LIMIT 1
+                    `,
+                    [correctionId]
+                );
+
+            if (!correction) {
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "纠错记录不存在"
+                });
+            }
+
+            return res.json({
+                success: true,
+                correction
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence correction detail error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "读取纠错记录失败"
+            });
+        }
+    }
+);
+
+
+/*
+ * ------------------------------------------------------------
+ * CORRECTION CENTER
+ * POST /corrections
+ * ------------------------------------------------------------
+ */
+
+router.post(
+    "/corrections",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const entityType =
+                normalizePiEntityType(
+                    req.body.entity_type
+                );
+
+            const entityId =
+                Number(req.body.entity_id);
+
+            if (!entityType) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "对象类型无效"
+                });
+            }
+
+            if (
+                !Number.isInteger(entityId) ||
+                entityId <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "对象 ID 无效"
+                });
+            }
+
+            const result = await dbRun(
+                `
+                INSERT INTO pi_corrections (
+                    entity_type,
+                    entity_id,
+                    correction_type,
+                    field_name,
+                    original_value,
+                    proposed_value,
+                    correction_reason,
+                    evidence_description,
+                    evidence_url,
+                    submitter_name,
+                    submitter_email,
+                    submitter_type,
+                    status,
+                    created_by,
+                    updated_by,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, 'pending', ?, ?,
+                    CURRENT_TIMESTAMP,
+                    CURRENT_TIMESTAMP
+                )
+                `,
+                [
+                    entityType,
+                    entityId,
+                    req.body.correction_type ||
+                    "data_correction",
+                    req.body.field_name || null,
+                    safeJsonStringify(
+                        req.body.original_value
+                    ),
+                    safeJsonStringify(
+                        req.body.proposed_value
+                    ),
+                    req.body.correction_reason ||
+                    null,
+                    req.body.evidence_description ||
+                    null,
+                    req.body.evidence_url ||
+                    null,
+                    req.body.submitter_name ||
+                    null,
+                    req.body.submitter_email ||
+                    null,
+                    req.body.submitter_type ||
+                    "admin",
+                    req.admin?.id || null,
+                    req.admin?.id || null
+                ]
+            );
+
+            const correction =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM pi_corrections
+                    WHERE id = ?
+                    `,
+                    [result.lastID]
+                );
+
+            return res.status(201).json({
+                success: true,
+                message:
+                    "纠错记录已创建",
+                correction
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence create correction error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "创建纠错记录失败"
+            });
+        }
+    }
+);
+
+
+/*
+ * ------------------------------------------------------------
+ * CORRECTION CENTER
+ * PATCH /corrections/:id/status
+ * ------------------------------------------------------------
+ */
+
+router.patch(
+    "/corrections/:id/status",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const correctionId =
+                Number(req.params.id);
+
+            const nextStatus = String(
+                req.body.status || ""
+            )
+                .trim()
+                .toLowerCase();
+
+            const allowedStatuses =
+                new Set([
+                    "pending",
+                    "reviewing",
+                    "approved",
+                    "rejected",
+                    "applied"
+                ]);
+
+            if (
+                !Number.isInteger(
+                    correctionId
+                ) ||
+                correctionId <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "无效的纠错记录 ID"
+                });
+            }
+
+            if (
+                !allowedStatuses.has(
+                    nextStatus
+                )
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "无效的纠错状态"
+                });
+            }
+
+            const before =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM pi_corrections
+                    WHERE id = ?
+                    LIMIT 1
+                    `,
+                    [correctionId]
+                );
+
+            if (!before) {
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "纠错记录不存在"
+                });
+            }
+
+            const reviewedAt =
+                [
+                    "approved",
+                    "rejected",
+                    "applied"
+                ].includes(nextStatus)
+                    ? new Date()
+                        .toISOString()
+                    : null;
+
+            const appliedAt =
+                nextStatus === "applied"
+                    ? new Date()
+                        .toISOString()
+                    : null;
+
+            await dbRun(
+                `
+                UPDATE pi_corrections
+                SET
+                    status = ?,
+                    review_comment = ?,
+                    reviewed_by = ?,
+                    reviewed_at = ?,
+                    applied_at = ?,
+                    updated_by = ?,
+                    updated_at =
+                        CURRENT_TIMESTAMP
+                WHERE id = ?
+                `,
+                [
+                    nextStatus,
+                    req.body.review_comment ||
+                    null,
+                    req.admin?.id || null,
+                    reviewedAt,
+                    appliedAt,
+                    req.admin?.id || null,
+                    correctionId
+                ]
+            );
+
+            const after =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM pi_corrections
+                    WHERE id = ?
+                    `,
+                    [correctionId]
+                );
+
+            if (
+                nextStatus === "approved" ||
+                nextStatus === "rejected" ||
+                nextStatus === "applied"
+            ) {
+                await writePiVersionHistory({
+                    entityType:
+                        before.entity_type,
+                    entityId:
+                        before.entity_id,
+                    actionType:
+                        `correction_${nextStatus}`,
+                    changedFields: [
+                        before.field_name ||
+                        "correction"
+                    ],
+                    beforeData: {
+                        correction_status:
+                            before.status,
+                        original_value:
+                            before.original_value
+                    },
+                    afterData: {
+                        correction_status:
+                            after.status,
+                        proposed_value:
+                            after.proposed_value
+                    },
+                    changeReason:
+                        req.body.review_comment ||
+                        before.correction_reason ||
+                        null,
+                    sourceType:
+                        "correction",
+                    operatorId:
+                        req.admin?.id || null,
+                    operatorName:
+                        req.admin?.username ||
+                        req.admin?.email ||
+                        null,
+                    correctionId
+                });
+            }
+
+            return res.json({
+                success: true,
+                message:
+                    "纠错状态已更新",
+                correction: after
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence correction status error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "更新纠错状态失败"
+            });
+        }
+    }
+);
+
+
+/*
+ * ------------------------------------------------------------
+ * VERSION HISTORY
+ * GET /versions
+ * ------------------------------------------------------------
+ */
+
+router.get(
+    "/versions",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const entityType = String(
+                req.query.entity_type || "all"
+            )
+                .trim()
+                .toLowerCase();
+
+            const entityId =
+                req.query.entity_id
+                    ? Number(
+                        req.query.entity_id
+                    )
+                    : null;
+
+            const actionType = String(
+                req.query.action_type || "all"
+            )
+                .trim()
+                .toLowerCase();
+
+            const search = String(
+                req.query.search || ""
+            )
+                .trim()
+                .toLowerCase();
+
+            const rows = await dbAll(
+                `
+                SELECT *
+                FROM pi_version_history
+                ORDER BY
+                    created_at DESC,
+                    id DESC
+                `
+            );
+
+            const filtered =
+                rows.filter((row) => {
+                    if (
+                        entityType !== "all" &&
+                        row.entity_type !==
+                        entityType
+                    ) {
+                        return false;
+                    }
+
+                    if (
+                        entityId &&
+                        Number(row.entity_id) !==
+                        entityId
+                    ) {
+                        return false;
+                    }
+
+                    if (
+                        actionType !== "all" &&
+                        String(
+                            row.action_type ||
+                            ""
+                        ).toLowerCase() !==
+                        actionType
+                    ) {
+                        return false;
+                    }
+
+                    if (search) {
+                        const haystack = [
+                            row.entity_type,
+                            row.entity_id,
+                            row.version_number,
+                            row.action_type,
+                            row.changed_fields,
+                            row.change_reason,
+                            row.operator_name,
+                            row.source_type
+                        ]
+                            .filter(Boolean)
+                            .join(" ")
+                            .toLowerCase();
+
+                        if (
+                            !haystack.includes(
+                                search
+                            )
+                        ) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+            return res.json({
+                success: true,
+                count: filtered.length,
+                versions: filtered
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence versions list error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "读取版本历史失败"
+            });
+        }
+    }
+);
+
+
+/*
+ * ------------------------------------------------------------
+ * VERSION HISTORY
+ * GET /versions/entity/:type/:id
+ * ------------------------------------------------------------
+ */
+
+router.get(
+    "/versions/entity/:type/:id",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const entityType =
+                normalizePiEntityType(
+                    req.params.type
+                );
+
+            const entityId =
+                Number(req.params.id);
+
+            if (!entityType) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "对象类型无效"
+                });
+            }
+
+            if (
+                !Number.isInteger(entityId) ||
+                entityId <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "对象 ID 无效"
+                });
+            }
+
+            const versions =
+                await dbAll(
+                    `
+                    SELECT *
+                    FROM pi_version_history
+                    WHERE entity_type = ?
+                      AND entity_id = ?
+                    ORDER BY
+                        version_number DESC,
+                        id DESC
+                    `,
+                    [
+                        entityType,
+                        entityId
+                    ]
+                );
+
+            return res.json({
+                success: true,
+                count: versions.length,
+                entity_type:
+                    entityType,
+                entity_id:
+                    entityId,
+                versions
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence entity versions error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "读取对象版本历史失败"
+            });
+        }
+    }
+);
+
+
+/*
+ * ------------------------------------------------------------
+ * VERSION HISTORY
+ * GET /versions/:id
+ *
+ * 注意：
+ * 必须放在 /versions/entity/:type/:id 后面。
+ * ------------------------------------------------------------
+ */
+
+router.get(
+    "/versions/:id",
+    verifyAdminToken,
+    async (req, res) => {
+        try {
+            const versionId =
+                Number(req.params.id);
+
+            if (
+                !Number.isInteger(versionId) ||
+                versionId <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "无效的版本记录 ID"
+                });
+            }
+
+            const version =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM pi_version_history
+                    WHERE id = ?
+                    LIMIT 1
+                    `,
+                    [versionId]
+                );
+
+            if (!version) {
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "版本记录不存在"
+                });
+            }
+
+            return res.json({
+                success: true,
+                version
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence version detail error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "读取版本记录失败"
+            });
+        }
+    }
+);
 
 module.exports = router;
