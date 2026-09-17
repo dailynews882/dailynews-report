@@ -12,10 +12,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     initRelationshipManagement();
     initEvidenceManagement();
     initReviewQueue();
+    initCorrectionCenter();
+    initVersionHistory();
 
     await loadPeopleFromApi();
 });
-
 
 /* =========================================================
    Sidebar navigation
@@ -76,6 +77,14 @@ function initAdminNavigation() {
 
             if (target === "ai-review") {
                 loadReviewQueue();
+            }
+
+            if (target === "corrections") {
+                loadCorrections();
+            }
+
+            if (target === "versions") {
+                loadVersions();
             }
 
             window.scrollTo({
@@ -355,7 +364,7 @@ function initPersonActionButtons() {
 
                 if (action === "edit") {
                     if (personId) {
-                        openPersonEditor(
+                        enterPersonEditMode(
                             personId
                         );
                     }
@@ -365,6 +374,11 @@ function initPersonActionButtons() {
 
                 if (action === "cancel") {
                     restoreCurrentPerson();
+
+                    setPersonEditorEditMode(
+                        false
+                    );
+
                     return;
                 }
 
@@ -1099,6 +1113,10 @@ async function submitPersonForReview() {
 
         await loadPeopleFromApi();
 
+        setPersonEditorEditMode(
+            false
+        );
+
         openPrototypeNotice(
             "已提交审核",
             "人物资料已进入待审核状态，并已保存到 SQLite 数据库。"
@@ -1205,6 +1223,10 @@ async function approvePerson() {
         }
 
         await loadPeopleFromApi();
+
+        setPersonEditorEditMode(
+            false
+        );
 
         openPrototypeNotice(
             "审核通过",
@@ -1532,6 +1554,108 @@ function updatePersonPublicationButton(
         "verified";
 }
 
+function updatePersonWorkflowButtons(person) {
+    const submitButton =
+        document.querySelector(
+            '[data-person-action="submit"]'
+        );
+
+    const approveButton =
+        document.querySelector(
+            '[data-person-action="approve"]'
+        );
+
+    const publishButton =
+        document.querySelector(
+            '[data-person-action="publish"]'
+        );
+
+    /*
+     * 没有选中人物时：
+     * 所有工作流按钮禁止操作。
+     */
+    if (!person) {
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        if (approveButton) {
+            approveButton.disabled = true;
+        }
+
+        if (publishButton) {
+            publishButton.disabled = true;
+        }
+
+        return;
+    }
+
+    const status =
+        person.verificationStatus ||
+        "draft";
+
+    const isPublic =
+        Boolean(person.isPublic);
+
+    /*
+     * 正在编辑人物资料时，
+     * 必须先“保存草稿”或“取消修改”，
+     * 不能直接跳到审核 / 发布流程。
+     */
+    if (personEditorEditMode) {
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        if (approveButton) {
+            approveButton.disabled = true;
+        }
+
+        if (publishButton) {
+            publishButton.disabled = true;
+        }
+
+        return;
+    }
+
+    /*
+     * 草稿：
+     * 下一步只能提交审核。
+     */
+    if (submitButton) {
+        submitButton.disabled =
+            status !== "draft";
+    }
+
+    /*
+     * 待审核：
+     * 下一步只能审核通过。
+     */
+    if (approveButton) {
+        approveButton.disabled =
+            status !== "pending";
+    }
+
+    /*
+     * 发布状态：
+     *
+     * 已发布人物：
+     * 允许“取消发布”。
+     *
+     * 未发布人物：
+     * 只有 verified 才允许“发布”。
+     */
+    if (publishButton) {
+        if (isPublic) {
+            publishButton.disabled =
+                false;
+        } else {
+            publishButton.disabled =
+                status !== "verified";
+        }
+    }
+}
+
 function savePersonToPrototypeData(data) {
     let personId =
         currentEditingPersonId;
@@ -1831,7 +1955,7 @@ function bindPrototypePersonRow(row) {
             const personId =
                 editButton.dataset.personId;
 
-            openPersonEditor(
+            enterPersonEditMode(
                 personId
             );
         }
@@ -2266,6 +2390,128 @@ function updateVisiblePersonCount() {
     }
 }
 
+let personEditorEditMode = false;
+
+function setPersonEditorEditMode(enabled) {
+    personEditorEditMode =
+        Boolean(enabled);
+
+    const editableFieldIds = [
+        "piaPersonNameZh",
+        "piaPersonNameEn",
+        "piaPersonAliases",
+        "piaPersonBirthDate",
+        "piaPersonCountry",
+        "piaPersonRole",
+        "piaPersonOrganization",
+        "piaPersonVerificationStatus",
+        "piaPersonConfidence",
+        "piaPersonBiography",
+        "piaPersonTags"
+    ];
+
+    editableFieldIds.forEach(
+        (fieldId) => {
+            const field =
+                document.getElementById(
+                    fieldId
+                );
+
+            if (!field) {
+                return;
+            }
+
+            field.disabled =
+                !personEditorEditMode;
+        }
+    );
+
+    /*
+     * 更新时间属于系统字段，
+     * 无论查看还是编辑模式都禁止人工修改。
+     */
+    const updatedAt =
+        document.getElementById(
+            "piaPersonUpdatedAt"
+        );
+
+    if (updatedAt) {
+        updatedAt.disabled = true;
+    }
+
+    /*
+     * 编辑相关操作按钮：
+     * 查看模式下禁止直接修改数据状态。
+     */
+    const editOnlyActions = [
+        "cancel",
+        "draft"
+    ];
+
+    editOnlyActions.forEach(
+        (action) => {
+            const buttons =
+                document.querySelectorAll(
+                    `[data-person-action="${action}"]`
+                );
+
+            buttons.forEach(
+                (button) => {
+                    button.disabled =
+                        !personEditorEditMode;
+                }
+            );
+        }
+    );
+
+    const currentPerson =
+        currentEditingPersonId
+            ? peopleManagementDemoData[
+            String(
+                currentEditingPersonId
+            )
+            ] || null
+            : null;
+
+    updatePersonWorkflowButtons(
+        currentPerson
+    );
+}
+
+
+function enterPersonEditMode(personId) {
+    const person =
+        peopleManagementDemoData[
+        personId
+        ];
+
+    if (!person) {
+        return;
+    }
+
+    activatePeopleManagementPage();
+
+    setActivePersonRow(
+        personId
+    );
+
+    loadPersonIntoEditor(
+        person
+    );
+
+    currentEditingPersonId =
+        personId;
+
+    personFormSnapshot =
+        capturePersonFormSnapshot();
+
+    personFormDirty = false;
+
+    setPersonEditorEditMode(
+        true
+    );
+}
+
 function openPersonEditor(personId) {
     const person =
         peopleManagementDemoData[
@@ -2294,6 +2540,14 @@ function openPersonEditor(personId) {
         capturePersonFormSnapshot();
 
     personFormDirty = false;
+
+    /*
+     * 从人物列表打开人物时，
+     * 默认只是查看，不允许直接修改。
+     */
+    setPersonEditorEditMode(
+        false
+    );
 }
 
 
@@ -6196,6 +6450,949 @@ async function applyReviewAction(
             "无法更新审核状态。"
         );
     }
+}
+
+/* =========================================================
+   Correction Center
+   Real API: /api/admin/people-intelligence/corrections
+========================================================= */
+
+let correctionCenterInitialized = false;
+let correctionSearchTimer = null;
+
+function initCorrectionCenter() {
+    if (correctionCenterInitialized) {
+        return;
+    }
+
+    correctionCenterInitialized = true;
+
+    const refreshBtn =
+        document.getElementById(
+            "piaCorrectionRefreshBtn"
+        );
+
+    const searchInput =
+        document.getElementById(
+            "piaCorrectionSearch"
+        );
+
+    const statusFilter =
+        document.getElementById(
+            "piaCorrectionStatusFilter"
+        );
+
+    const entityTypeFilter =
+        document.getElementById(
+            "piaCorrectionEntityTypeFilter"
+        );
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener(
+            "click",
+            () => loadCorrections()
+        );
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener(
+            "input",
+            () => {
+                clearTimeout(
+                    correctionSearchTimer
+                );
+
+                correctionSearchTimer =
+                    setTimeout(
+                        () => loadCorrections(),
+                        300
+                    );
+            }
+        );
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener(
+            "change",
+            () => loadCorrections()
+        );
+    }
+
+    if (entityTypeFilter) {
+        entityTypeFilter.addEventListener(
+            "change",
+            () => loadCorrections()
+        );
+    }
+}
+
+
+async function loadCorrections() {
+    const tableBody =
+        document.getElementById(
+            "piaCorrectionTableBody"
+        );
+
+    if (!tableBody) {
+        return;
+    }
+
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="10" class="pia-review-empty">
+                正在读取纠错申请...
+            </td>
+        </tr>
+    `;
+
+    const search =
+        document.getElementById(
+            "piaCorrectionSearch"
+        )?.value.trim() || "";
+
+    const status =
+        document.getElementById(
+            "piaCorrectionStatusFilter"
+        )?.value || "all";
+
+    const entityType =
+        document.getElementById(
+            "piaCorrectionEntityTypeFilter"
+        )?.value || "all";
+
+    const params =
+        new URLSearchParams();
+
+    params.set("status", status);
+    params.set(
+        "entity_type",
+        entityType
+    );
+
+    if (search) {
+        params.set("search", search);
+    }
+
+    try {
+        const data =
+            await relationshipApiFetch(
+                `/corrections?${params.toString()}`
+            );
+
+        renderCorrections(data);
+    } catch (error) {
+        console.error(
+            "Load corrections error:",
+            error
+        );
+
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="pia-review-empty">
+                    读取纠错中心数据失败：${escapeHtml(
+            error.message ||
+            "未知错误"
+        )}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+function renderCorrections(data) {
+    const rows =
+        Array.isArray(data?.corrections)
+            ? data.corrections
+            : [];
+
+    const summary =
+        data?.summary || {};
+
+    const totalEl =
+        document.getElementById(
+            "piaCorrectionTotal"
+        );
+
+    const pendingEl =
+        document.getElementById(
+            "piaCorrectionPending"
+        );
+
+    const reviewingEl =
+        document.getElementById(
+            "piaCorrectionReviewing"
+        );
+
+    const approvedEl =
+        document.getElementById(
+            "piaCorrectionApproved"
+        );
+
+    const countEl =
+        document.getElementById(
+            "piaCorrectionCount"
+        );
+
+    const tableBody =
+        document.getElementById(
+            "piaCorrectionTableBody"
+        );
+
+    if (totalEl) {
+        totalEl.textContent =
+            String(summary.total ?? rows.length);
+    }
+
+    if (pendingEl) {
+        pendingEl.textContent =
+            String(summary.pending ?? 0);
+    }
+
+    if (reviewingEl) {
+        reviewingEl.textContent =
+            String(summary.reviewing ?? 0);
+    }
+
+    if (approvedEl) {
+        approvedEl.textContent =
+            String(summary.approved ?? 0);
+    }
+
+    if (countEl) {
+        countEl.textContent =
+            `共 ${rows.length} 条`;
+    }
+
+    if (!tableBody) {
+        return;
+    }
+
+    if (!rows.length) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="pia-review-empty">
+                    当前暂无符合条件的纠错申请
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML =
+        rows.map((row) => {
+            const entity =
+                `${translatePiEntityType(
+                    row.entity_type
+                )} #${row.entity_id ?? "-"}`;
+
+            const field =
+                row.field_name || "-";
+
+            const originalValue =
+                row.original_value || "-";
+
+            const proposedValue =
+                row.proposed_value || "-";
+
+            const reason =
+                row.correction_reason ||
+                row.evidence_description ||
+                "-";
+
+            const submitter =
+                row.submitter_name ||
+                row.submitter_email ||
+                "-";
+
+            const status =
+                translateCorrectionStatus(
+                    row.status
+                );
+
+            const createdAt =
+                formatPiDateTime(
+                    row.created_at
+                );
+
+            return `
+                <tr>
+                    <td>${escapeHtml(entity)}</td>
+                    <td>${escapeHtml(field)}</td>
+                    <td title="${escapeHtml(originalValue)}">
+                        ${escapeHtml(
+                truncatePiText(
+                    originalValue,
+                    40
+                )
+            )}
+                    </td>
+                    <td title="${escapeHtml(proposedValue)}">
+                        ${escapeHtml(
+                truncatePiText(
+                    proposedValue,
+                    40
+                )
+            )}
+                    </td>
+                    <td title="${escapeHtml(reason)}">
+                        ${escapeHtml(
+                truncatePiText(
+                    reason,
+                    50
+                )
+            )}
+                    </td>
+                    <td>${escapeHtml(submitter)}</td>
+                    <td>${escapeHtml(status)}</td>
+                    <td>${escapeHtml(createdAt)}</td>
+                    <td>
+                        ${escapeHtml(
+                row.source_name || "-"
+            )}
+                    </td>
+                    <td>
+                        <button
+                            type="button"
+                            class="pia-secondary-btn"
+                            data-correction-id="${Number(
+                row.id
+            )}"
+                        >
+                            查看
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+    tableBody
+        .querySelectorAll(
+            "[data-correction-id]"
+        )
+        .forEach((button) => {
+            button.addEventListener(
+                "click",
+                () => {
+                    const id =
+                        Number(
+                            button.dataset
+                                .correctionId
+                        );
+
+                    const row =
+                        rows.find(
+                            (item) =>
+                                Number(item.id) ===
+                                id
+                        );
+
+                    if (row) {
+                        showCorrectionDetails(
+                            row
+                        );
+                    }
+                }
+            );
+        });
+}
+
+
+function showCorrectionDetails(row) {
+    const content = [
+        `纠错编号：#${row.id}`,
+        `对象：${translatePiEntityType(
+            row.entity_type
+        )} #${row.entity_id ?? "-"}`,
+        `字段：${row.field_name || "-"}`,
+        `原始值：${row.original_value || "-"}`,
+        `建议值：${row.proposed_value || "-"}`,
+        `原因：${row.correction_reason || "-"}`,
+        `新证据：${row.evidence_description || "-"}`,
+        `来源：${row.source_name || "-"}`,
+        `提交人：${row.submitter_name ||
+        row.submitter_email ||
+        "-"
+        }`,
+        `状态：${translateCorrectionStatus(
+            row.status
+        )}`
+    ].join("\n");
+
+    openPrototypeNotice(
+        "纠错申请详情",
+        content
+    );
+}
+
+
+function translateCorrectionStatus(status) {
+    const map = {
+        pending: "待处理",
+        reviewing: "审核中",
+        approved: "已批准",
+        rejected: "已驳回",
+        applied: "已应用"
+    };
+
+    return map[status] || status || "-";
+}
+
+
+/* =========================================================
+   Version History
+   Real API: /api/admin/people-intelligence/versions
+========================================================= */
+
+let versionHistoryInitialized = false;
+let versionSearchTimer = null;
+
+function initVersionHistory() {
+    if (versionHistoryInitialized) {
+        return;
+    }
+
+    versionHistoryInitialized = true;
+
+    const refreshBtn =
+        document.getElementById(
+            "piaVersionRefreshBtn"
+        );
+
+    const searchInput =
+        document.getElementById(
+            "piaVersionSearch"
+        );
+
+    const entityTypeFilter =
+        document.getElementById(
+            "piaVersionEntityTypeFilter"
+        );
+
+    const actionFilter =
+        document.getElementById(
+            "piaVersionActionFilter"
+        );
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener(
+            "click",
+            () => loadVersions()
+        );
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener(
+            "input",
+            () => {
+                clearTimeout(
+                    versionSearchTimer
+                );
+
+                versionSearchTimer =
+                    setTimeout(
+                        () => loadVersions(),
+                        300
+                    );
+            }
+        );
+    }
+
+    if (entityTypeFilter) {
+        entityTypeFilter.addEventListener(
+            "change",
+            () => loadVersions()
+        );
+    }
+
+    if (actionFilter) {
+        actionFilter.addEventListener(
+            "change",
+            () => loadVersions()
+        );
+    }
+}
+
+
+async function loadVersions() {
+    const tableBody =
+        document.getElementById(
+            "piaVersionTableBody"
+        );
+
+    if (!tableBody) {
+        return;
+    }
+
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="9" class="pia-review-empty">
+                正在读取版本历史...
+            </td>
+        </tr>
+    `;
+
+    const search =
+        document.getElementById(
+            "piaVersionSearch"
+        )?.value.trim() || "";
+
+    const entityType =
+        document.getElementById(
+            "piaVersionEntityTypeFilter"
+        )?.value || "all";
+
+    const actionType =
+        document.getElementById(
+            "piaVersionActionFilter"
+        )?.value || "all";
+
+    const params =
+        new URLSearchParams();
+
+    params.set(
+        "entity_type",
+        entityType
+    );
+
+    params.set(
+        "action_type",
+        actionType
+    );
+
+    if (search) {
+        params.set("search", search);
+    }
+
+    try {
+        const data =
+            await relationshipApiFetch(
+                `/versions?${params.toString()}`
+            );
+
+        renderVersions(data);
+    } catch (error) {
+        console.error(
+            "Load versions error:",
+            error
+        );
+
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="pia-review-empty">
+                    读取版本历史失败：${escapeHtml(
+            error.message ||
+            "未知错误"
+        )}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+function renderVersions(data) {
+    const rows =
+        Array.isArray(data?.versions)
+            ? data.versions
+            : [];
+
+    const tableBody =
+        document.getElementById(
+            "piaVersionTableBody"
+        );
+
+    const totalEl =
+        document.getElementById(
+            "piaVersionTotal"
+        );
+
+    const peopleEl =
+        document.getElementById(
+            "piaVersionPeople"
+        );
+
+    const organizationsEl =
+        document.getElementById(
+            "piaVersionOrganizations"
+        );
+
+    const relationshipsEl =
+        document.getElementById(
+            "piaVersionRelationships"
+        );
+
+    const countEl =
+        document.getElementById(
+            "piaVersionCount"
+        );
+
+    if (totalEl) {
+        totalEl.textContent =
+            String(rows.length);
+    }
+
+    if (peopleEl) {
+        peopleEl.textContent =
+            String(
+                rows.filter(
+                    (row) =>
+                        row.entity_type ===
+                        "person"
+                ).length
+            );
+    }
+
+    if (organizationsEl) {
+        organizationsEl.textContent =
+            String(
+                rows.filter(
+                    (row) =>
+                        row.entity_type ===
+                        "organization"
+                ).length
+            );
+    }
+
+    if (relationshipsEl) {
+        relationshipsEl.textContent =
+            String(
+                rows.filter(
+                    (row) =>
+                        row.entity_type ===
+                        "relationship"
+                ).length
+            );
+    }
+
+    if (countEl) {
+        countEl.textContent =
+            `共 ${rows.length} 条`;
+    }
+
+    if (!tableBody) {
+        return;
+    }
+
+    if (!rows.length) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="pia-review-empty">
+                    当前暂无符合条件的版本记录
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML =
+        rows.map((row) => {
+            const changedFields =
+                formatChangedFields(
+                    row.changed_fields
+                );
+
+            return `
+                <tr>
+                    <td>
+                        ${escapeHtml(
+                translatePiEntityType(
+                    row.entity_type
+                )
+            )}
+                    </td>
+
+                    <td>
+                        #${escapeHtml(
+                row.entity_id ?? "-"
+            )}
+                    </td>
+
+                    <td>
+                        V${escapeHtml(
+                row.version_number ?? "-"
+            )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                translateVersionAction(
+                    row.action_type
+                )
+            )}
+                    </td>
+
+                    <td title="${escapeHtml(changedFields)}">
+                        ${escapeHtml(
+                truncatePiText(
+                    changedFields,
+                    45
+                )
+            )}
+                    </td>
+
+                    <td title="${escapeHtml(row.change_reason || "-")}">
+                        ${escapeHtml(
+                truncatePiText(
+                    row.change_reason ||
+                    "-",
+                    45
+                )
+            )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                row.operator_name ||
+                row.source_type ||
+                "-"
+            )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                formatPiDateTime(
+                    row.created_at
+                )
+            )}
+                    </td>
+
+                    <td>
+                        <button
+                            type="button"
+                            class="pia-secondary-btn"
+                            data-version-id="${Number(
+                row.id
+            )}"
+                        >
+                            查看
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+    tableBody
+        .querySelectorAll(
+            "[data-version-id]"
+        )
+        .forEach((button) => {
+            button.addEventListener(
+                "click",
+                () => {
+                    const id =
+                        Number(
+                            button.dataset
+                                .versionId
+                        );
+
+                    const row =
+                        rows.find(
+                            (item) =>
+                                Number(item.id) ===
+                                id
+                        );
+
+                    if (row) {
+                        showVersionDetails(row);
+                    }
+                }
+            );
+        });
+}
+
+
+function showVersionDetails(row) {
+    const beforeData =
+        prettyPiJson(row.before_data);
+
+    const afterData =
+        prettyPiJson(row.after_data);
+
+    const content = [
+        `版本记录：#${row.id}`,
+        `对象：${translatePiEntityType(
+            row.entity_type
+        )} #${row.entity_id ?? "-"}`,
+        `版本：V${row.version_number ?? "-"}`,
+        `操作：${translateVersionAction(
+            row.action_type
+        )}`,
+        `修改字段：${formatChangedFields(
+            row.changed_fields
+        )}`,
+        `修改原因：${row.change_reason || "-"}`,
+        `操作人：${row.operator_name ||
+        row.source_type ||
+        "-"
+        }`,
+        "",
+        "修改前：",
+        beforeData,
+        "",
+        "修改后：",
+        afterData
+    ].join("\n");
+
+    openPrototypeNotice(
+        "版本历史详情",
+        content
+    );
+}
+
+
+function translatePiEntityType(type) {
+    const map = {
+        person: "人物",
+        organization: "机构",
+        relationship: "关系",
+        evidence: "证据"
+    };
+
+    return map[type] || type || "-";
+}
+
+
+function translateVersionAction(action) {
+    const map = {
+        create: "新增",
+        update: "修改",
+        approve: "审核通过",
+        verify: "审核通过",
+        publish: "发布",
+        unpublish: "取消发布",
+        trash: "移入垃圾箱",
+        restore: "恢复",
+        correction: "纠错",
+        reject: "驳回"
+    };
+
+    return map[action] || action || "-";
+}
+
+
+function formatChangedFields(value) {
+    if (!value) {
+        return "-";
+    }
+
+    if (Array.isArray(value)) {
+        return value.join(", ");
+    }
+
+    if (typeof value === "object") {
+        return Object.keys(value).join(", ");
+    }
+
+    const text =
+        String(value).trim();
+
+    if (!text) {
+        return "-";
+    }
+
+    try {
+        const parsed =
+            JSON.parse(text);
+
+        if (Array.isArray(parsed)) {
+            return parsed.join(", ");
+        }
+
+        if (
+            parsed &&
+            typeof parsed === "object"
+        ) {
+            return Object.keys(
+                parsed
+            ).join(", ");
+        }
+    } catch (error) {
+        // Plain text is valid here.
+    }
+
+    return text;
+}
+
+
+function prettyPiJson(value) {
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return "-";
+    }
+
+    if (typeof value === "object") {
+        return JSON.stringify(
+            value,
+            null,
+            2
+        );
+    }
+
+    const text =
+        String(value);
+
+    try {
+        return JSON.stringify(
+            JSON.parse(text),
+            null,
+            2
+        );
+    } catch (error) {
+        return text;
+    }
+}
+
+
+function truncatePiText(
+    value,
+    maxLength = 50
+) {
+    const text =
+        String(
+            value ?? ""
+        );
+
+    if (
+        text.length <= maxLength
+    ) {
+        return text || "-";
+    }
+
+    return (
+        text.slice(
+            0,
+            maxLength
+        ) + "..."
+    );
+}
+
+
+function formatPiDateTime(value) {
+    if (!value) {
+        return "-";
+    }
+
+    const date =
+        new Date(value);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return String(value);
+    }
+
+    return date.toLocaleString(
+        "zh-CN",
+        {
+            hour12: false
+        }
+    );
 }
 
 function escapeHtml(value) {

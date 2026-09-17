@@ -390,11 +390,14 @@ router.post(
 router.put(
     "/people/:id",
     verifyAdminToken,
-    (req, res) => {
+    async (req, res) => {
         const id =
             Number(req.params.id);
 
-        if (!Number.isInteger(id)) {
+        if (
+            !Number.isInteger(id) ||
+            id <= 0
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "无效的人物 ID"
@@ -402,10 +405,14 @@ router.put(
         }
 
         const nameZh =
-            normalizeText(req.body.name_zh);
+            normalizeText(
+                req.body.name_zh
+            );
 
         const nameEn =
-            normalizeText(req.body.name_en);
+            normalizeText(
+                req.body.name_en
+            );
 
         if (!nameEn) {
             return res.status(400).json({
@@ -414,112 +421,272 @@ router.put(
             });
         }
 
-        const sql = `
-      UPDATE pi_people
-      SET
-        name_zh = ?,
-        name_en = ?,
-        aliases = ?,
-        birth_date = ?,
-        death_date = ?,
-        nationality = ?,
-        country_region = ?,
-        primary_role = ?,
-        biography = ?,
-        tags = ?,
-        profile_image_url = ?,
-        verification_status = ?,
-        confidence_level = ?,
-        is_public = ?,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `;
+        try {
+            /*
+             * 1. 先读取修改前的数据。
+             *    该快照用于版本历史。
+             */
+            const beforePerson =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM pi_people
+                    WHERE id = ?
+                    LIMIT 1
+                    `,
+                    [id]
+                );
 
-        const params = [
-            nameZh || null,
-            nameEn,
-            normalizeText(
-                req.body.aliases
-            ) || null,
-            normalizeText(
-                req.body.birth_date
-            ) || null,
-            normalizeText(
-                req.body.death_date
-            ) || null,
-            normalizeText(
-                req.body.nationality
-            ) || null,
-            normalizeText(
-                req.body.country_region
-            ) || null,
-            normalizeText(
-                req.body.primary_role
-            ) || null,
-            normalizeText(
-                req.body.biography
-            ) || null,
-            normalizeText(
-                req.body.tags
-            ) || null,
-            normalizeText(
-                req.body.profile_image_url
-            ) || null,
-            normalizeText(
-                req.body.verification_status
-            ) || "draft",
-            normalizeText(
-                req.body.confidence_level
-            ) || "medium",
-            req.body.is_public === 1 ||
-                req.body.is_public === true
-                ? 1
-                : 0,
-            id
-        ];
+            if (!beforePerson) {
+                return res.status(404).json({
+                    success: false,
+                    message: "人物不存在"
+                });
+            }
 
-        db.run(
-            sql,
-            params,
-            function (err) {
-                if (err) {
-                    console.error(
-                        "People Intelligence update error:",
-                        err
-                    );
+            /*
+             * 2. 保存草稿的业务规则：
+             *
+             *    任何人物资料重新编辑并保存后，
+             *    都必须重新进入审核流程。
+             *
+             *    因此：
+             *    verification_status = draft
+             *    is_public = 0
+             *
+             *    防止出现：
+             *    “草稿 + 已发布”
+             *    这种互相矛盾的状态。
+             */
+            const afterData = {
+                name_zh:
+                    nameZh || null,
 
-                    return res.status(500).json({
-                        success: false,
-                        message: "修改人物资料失败"
-                    });
-                }
+                name_en:
+                    nameEn,
 
-                if (this.changes === 0) {
-                    return res.status(404).json({
-                        success: false,
-                        message: "人物不存在"
-                    });
-                }
+                aliases:
+                    normalizeText(
+                        req.body.aliases
+                    ) || null,
 
-                getPersonById(
-                    id,
-                    (readErr, person) => {
-                        if (readErr) {
-                            return res.json({
-                                success: true,
-                                message: "人物资料已更新"
-                            });
-                        }
+                birth_date:
+                    normalizeText(
+                        req.body.birth_date
+                    ) || null,
 
-                        return res.json({
-                            success: true,
-                            message: "人物资料已更新",
-                            person
-                        });
+                death_date:
+                    normalizeText(
+                        req.body.death_date
+                    ) || null,
+
+                nationality:
+                    normalizeText(
+                        req.body.nationality
+                    ) || null,
+
+                country_region:
+                    normalizeText(
+                        req.body.country_region
+                    ) || null,
+
+                primary_role:
+                    normalizeText(
+                        req.body.primary_role
+                    ) || null,
+
+                biography:
+                    normalizeText(
+                        req.body.biography
+                    ) || null,
+
+                tags:
+                    normalizeText(
+                        req.body.tags
+                    ) || null,
+
+                profile_image_url:
+                    normalizeText(
+                        req.body.profile_image_url
+                    ) || null,
+
+                verification_status:
+                    "draft",
+
+                confidence_level:
+                    normalizeText(
+                        req.body.confidence_level
+                    ) || "medium",
+
+                is_public:
+                    0
+            };
+
+            /*
+             * 3. 计算哪些字段真正发生了变化。
+             */
+            const trackedFields = [
+                "name_zh",
+                "name_en",
+                "aliases",
+                "birth_date",
+                "death_date",
+                "nationality",
+                "country_region",
+                "primary_role",
+                "biography",
+                "tags",
+                "profile_image_url",
+                "verification_status",
+                "confidence_level",
+                "is_public"
+            ];
+
+            const changedFields =
+                trackedFields.filter(
+                    (field) => {
+                        const beforeValue =
+                            beforePerson[field] ??
+                            null;
+
+                        const afterValue =
+                            afterData[field] ??
+                            null;
+
+                        return String(
+                            beforeValue
+                        ) !== String(
+                            afterValue
+                        );
                     }
                 );
+
+            /*
+             * 4. 更新人物主记录。
+             */
+            await dbRun(
+                `
+                UPDATE pi_people
+                SET
+                    name_zh = ?,
+                    name_en = ?,
+                    aliases = ?,
+                    birth_date = ?,
+                    death_date = ?,
+                    nationality = ?,
+                    country_region = ?,
+                    primary_role = ?,
+                    biography = ?,
+                    tags = ?,
+                    profile_image_url = ?,
+                    verification_status = ?,
+                    confidence_level = ?,
+                    is_public = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                `,
+                [
+                    afterData.name_zh,
+                    afterData.name_en,
+                    afterData.aliases,
+                    afterData.birth_date,
+                    afterData.death_date,
+                    afterData.nationality,
+                    afterData.country_region,
+                    afterData.primary_role,
+                    afterData.biography,
+                    afterData.tags,
+                    afterData.profile_image_url,
+                    afterData.verification_status,
+                    afterData.confidence_level,
+                    afterData.is_public,
+                    id
+                ]
+            );
+
+            /*
+             * 5. 读取数据库真正保存后的新版本。
+             */
+            const updatedPerson =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM pi_people
+                    WHERE id = ?
+                    LIMIT 1
+                    `,
+                    [id]
+                );
+
+            /*
+             * 6. 只有真正发生变化时才创建版本记录。
+             *
+             *    防止管理员没有修改任何东西，
+             *    只是重复点击“保存草稿”，
+             *    就产生无意义版本。
+             */
+            if (changedFields.length > 0) {
+                await writePiVersionHistory({
+                    entityType:
+                        "person",
+
+                    entityId:
+                        id,
+
+                    actionType:
+                        "update",
+
+                    changedFields,
+
+                    beforeData:
+                        beforePerson,
+
+                    afterData:
+                        updatedPerson,
+
+                    changeReason:
+                        "管理员编辑人物资料并保存草稿",
+
+                    sourceType:
+                        "admin",
+
+                    operatorId:
+                        req.admin?.id ||
+                        req.user?.id ||
+                        null,
+
+                    operatorName:
+                        req.admin?.name ||
+                        req.admin?.username ||
+                        req.user?.name ||
+                        req.user?.username ||
+                        "Admin"
+                });
             }
-        );
+
+            return res.json({
+                success: true,
+                message:
+                    changedFields.length > 0
+                        ? "人物资料已保存为草稿，并记录版本历史"
+                        : "人物资料没有发生变化",
+                person:
+                    updatedPerson,
+                changed_fields:
+                    changedFields
+            });
+        } catch (error) {
+            console.error(
+                "People Intelligence update error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "修改人物资料失败"
+            });
+        }
     }
 );
 
@@ -4087,6 +4254,96 @@ function reviewDbAll(
     );
 }
 
+/*
+ * =========================================================
+ * Shared SQLite Promise Helpers
+ * People Intelligence
+ * =========================================================
+ *
+ * dbAll()
+ *   查询多条记录，返回数组。
+ *
+ * dbGet()
+ *   查询单条记录，返回对象或 null。
+ *
+ * dbRun()
+ *   执行 INSERT / UPDATE / DELETE，
+ *   返回 lastID 和 changes。
+ * =========================================================
+ */
+
+function dbAll(
+    sql,
+    params = []
+) {
+    return new Promise(
+        (resolve, reject) => {
+            db.all(
+                sql,
+                params,
+                (err, rows) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    resolve(rows || []);
+                }
+            );
+        }
+    );
+}
+
+
+function dbGet(
+    sql,
+    params = []
+) {
+    return new Promise(
+        (resolve, reject) => {
+            db.get(
+                sql,
+                params,
+                (err, row) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    resolve(row || null);
+                }
+            );
+        }
+    );
+}
+
+
+function dbRun(
+    sql,
+    params = []
+) {
+    return new Promise(
+        (resolve, reject) => {
+            db.run(
+                sql,
+                params,
+                function (err) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    resolve({
+                        lastID:
+                            this.lastID,
+                        changes:
+                            this.changes
+                    });
+                }
+            );
+        }
+    );
+}
 
 router.get(
     "/review-queue",

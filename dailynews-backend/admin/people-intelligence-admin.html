@@ -1829,8 +1829,8 @@
 
 
                 <!-- =================================================
-             Corrections
-        ================================================== -->
+                                Corrections
+                           ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="corrections" hidden>
 
                     <div class="pia-page-heading">
@@ -1843,8 +1843,47 @@
                             <h2>纠错中心</h2>
 
                             <p>
-                                处理用户、媒体、企业或当事人提交的数据更正申请。
+                                处理用户、媒体、企业或当事人提交的数据更正申请，并保留完整审核记录。
                             </p>
+                        </div>
+
+                        <button type="button" class="pia-secondary-btn" id="piaCorrectionRefreshBtn">
+                            刷新数据
+                        </button>
+
+                    </div>
+
+
+                    <div class="pia-correction-summary">
+
+                        <div class="pia-stat-card">
+                            <span>全部申请</span>
+                            <strong id="piaCorrectionTotal">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>待处理</span>
+                            <strong id="piaCorrectionPending">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>审核中</span>
+                            <strong id="piaCorrectionReviewing">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>已批准</span>
+                            <strong id="piaCorrectionApproved">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>已驳回</span>
+                            <strong id="piaCorrectionRejected">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>已应用</span>
+                            <strong id="piaCorrectionApplied">0</strong>
                         </div>
 
                     </div>
@@ -1852,19 +1891,87 @@
 
                     <div class="pia-card">
 
-                        <div class="pia-placeholder">
-                            纠错申请、原始数据、新证据、审核意见、
-                            批准 / 驳回状态将在这里显示。
+                        <div class="pia-card-heading">
+
+                            <div>
+                                <span class="pia-eyebrow">
+                                    CORRECTION REQUESTS
+                                </span>
+
+                                <h3>纠错申请</h3>
+                            </div>
+
+                            <span id="piaCorrectionCount">
+                                共 0 条
+                            </span>
+
+                        </div>
+
+
+                        <div class="pia-correction-toolbar">
+
+                            <input type="search" id="piaCorrectionSearch" placeholder="搜索字段、原始值、建议值、原因、来源、提交人...">
+
+                            <select id="piaCorrectionEntityType">
+                                <option value="all">全部对象类型</option>
+                                <option value="person">人物</option>
+                                <option value="organization">机构</option>
+                                <option value="relationship">关系</option>
+                                <option value="evidence">证据</option>
+                            </select>
+
+                            <select id="piaCorrectionStatus">
+                                <option value="all">全部状态</option>
+                                <option value="pending">待处理</option>
+                                <option value="reviewing">审核中</option>
+                                <option value="approved">已批准</option>
+                                <option value="rejected">已驳回</option>
+                                <option value="applied">已应用</option>
+                            </select>
+
+                        </div>
+
+
+                        <div class="pia-table-wrap">
+
+                            <table class="pia-correction-table">
+
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>对象</th>
+                                        <th>字段</th>
+                                        <th>原始值</th>
+                                        <th>建议值</th>
+                                        <th>提交原因</th>
+                                        <th>提交人</th>
+                                        <th>状态</th>
+                                        <th>提交时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="piaCorrectionTableBody">
+
+                                    <tr>
+                                        <td colspan="10" class="pia-correction-empty">
+                                            正在读取纠错申请...
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
                         </div>
 
                     </div>
 
                 </section>
 
-
                 <!-- =================================================
-             Versions
-        ================================================== -->
+                                Versions
+                           ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="versions" hidden>
 
                     <div class="pia-page-heading">
@@ -1877,8 +1984,37 @@
                             <h2>版本历史</h2>
 
                             <p>
-                                查看数据修改记录、前后差异、修改原因及恢复旧版本。
+                                查看人物、机构、关系和证据的数据修改记录、前后差异、修改原因及历史版本。
                             </p>
+                        </div>
+
+                        <button type="button" class="pia-secondary-btn" id="piaVersionRefreshBtn">
+                            刷新历史
+                        </button>
+
+                    </div>
+
+
+                    <div class="pia-stat-grid">
+
+                        <div class="pia-stat-card">
+                            <span>历史版本</span>
+                            <strong id="piaVersionTotal">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>人物</span>
+                            <strong id="piaVersionPeople">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>机构</span>
+                            <strong id="piaVersionOrganizations">0</strong>
+                        </div>
+
+                        <div class="pia-stat-card">
+                            <span>关系</span>
+                            <strong id="piaVersionRelationships">0</strong>
                         </div>
 
                     </div>
@@ -1886,9 +2022,80 @@
 
                     <div class="pia-card">
 
-                        <div class="pia-placeholder">
-                            所有重要资料修改都将保留历史版本，
-                            不直接覆盖后消失。
+                        <div class="pia-card-heading">
+
+                            <div>
+                                <span class="pia-eyebrow">
+                                    VERSION DIRECTORY
+                                </span>
+
+                                <h3>版本记录</h3>
+                            </div>
+
+                            <span id="piaVersionCount">
+                                共 0 条
+                            </span>
+
+                        </div>
+
+
+                        <div class="pia-filter-row">
+
+                            <input type="search" id="piaVersionSearch" placeholder="搜索实体、版本号、操作类型、修改原因...">
+
+                            <select id="piaVersionEntityTypeFilter">
+                                <option value="all">全部对象类型</option>
+                                <option value="person">人物 Person</option>
+                                <option value="organization">机构 Organization</option>
+                                <option value="relationship">关系 Relationship</option>
+                                <option value="evidence">证据 Evidence</option>
+                            </select>
+
+                            <select id="piaVersionActionFilter">
+                                <option value="all">全部操作类型</option>
+                                <option value="create">新增 Create</option>
+                                <option value="update">修改 Update</option>
+                                <option value="approve">审核 Approve</option>
+                                <option value="publish">发布 Publish</option>
+                                <option value="unpublish">取消发布</option>
+                                <option value="trash">移入垃圾箱</option>
+                                <option value="restore">恢复 Restore</option>
+                                <option value="correction">纠错 Correction</option>
+                            </select>
+
+                        </div>
+
+
+                        <div class="pia-table-wrap">
+
+                            <table class="pia-data-table">
+
+                                <thead>
+                                    <tr>
+                                        <th>对象类型</th>
+                                        <th>对象 ID</th>
+                                        <th>版本</th>
+                                        <th>操作</th>
+                                        <th>修改字段</th>
+                                        <th>修改原因</th>
+                                        <th>操作人</th>
+                                        <th>时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="piaVersionTableBody">
+
+                                    <tr>
+                                        <td colspan="9" class="pia-review-empty">
+                                            正在读取版本历史...
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
                         </div>
 
                     </div>
