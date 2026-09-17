@@ -1261,15 +1261,37 @@ async function loadPublicPeopleIntelligence(query) {
 
         const data = await response.json().catch(() => null);
 
+        /*
+         * “没有找到公开数据”属于正常搜索结果，
+         * 不是系统故障。
+         *
+         * 后端可能使用 404 + found:false 表示未找到，
+         * 因此前端必须先处理 found:false，
+         * 再判断真正的 HTTP/API 错误。
+         */
+        if (data && data.found === false) {
+            renderPublicNotFound(
+                query,
+                data.message
+            );
+            return;
+        }
+
         if (!response.ok) {
             throw new Error(
-                data?.message || `公开情报接口请求失败（HTTP ${response.status}）`
+                data?.message ||
+                `公开情报接口请求失败（HTTP ${response.status}）`
             );
         }
 
-        if (!data?.success || !data?.found || !data?.entity) {
-            renderPublicNotFound(query, data?.message);
-            return;
+        if (
+            !data?.success ||
+            !data?.entity
+        ) {
+            throw new Error(
+                data?.message ||
+                "公开情报接口返回的数据格式不完整"
+            );
         }
 
         applyPublicIntelligenceData(data);
@@ -1553,8 +1575,15 @@ function updateOverview(entity) {
         }
     });
 
-    const center = document.querySelector(".pi-network-center");
-    if (center) center.textContent = displayName;
+    const relationshipSummaryCenter =
+        document.getElementById(
+            "relationshipSummaryCenter"
+        );
+
+    if (relationshipSummaryCenter) {
+        relationshipSummaryCenter.textContent =
+            displayName;
+    }
 }
 
 function updateEvidencePanel(entity, relationships) {
@@ -1603,18 +1632,26 @@ function updateEvidencePanel(entity, relationships) {
 }
 
 function updateDataStatus(entity) {
-    const statusValues = document.querySelectorAll(
-        ".pi-side-panel .pi-section-card:nth-child(2) .pi-side-info dd"
-    );
+    const statusValues =
+        document.querySelectorAll(
+            "#peopleDataStatus dd"
+        );
 
     const values = [
         "已公开发布",
-        entity.verification_status === "verified" ? "已核验" : "已发布",
-        formatDate(entity.data_updated_at || entity.updated_at || "") || "暂无"
+        entity.verification_status === "verified"
+            ? "已核验"
+            : "已发布",
+        formatDate(
+            entity.data_updated_at ||
+            entity.updated_at ||
+            ""
+        ) || "暂无"
     ];
 
     statusValues.forEach((item, index) => {
-        item.textContent = values[index] || "暂无";
+        item.textContent =
+            values[index] || "暂无";
     });
 }
 
@@ -1702,22 +1739,168 @@ function setPageLoadingState(query) {
 }
 
 function renderPublicNotFound(query, message) {
-    setText(".pi-profile-title-row h1", `未找到：${query}`);
+    currentPublicEntityType = "person";
+
+    document.body.dataset.entityType = "person";
+
+    updateMetricLabels(false);
+    updateOverviewLabels(false);
+    updateTabLabels(false);
+
     setText(
-        ".pi-profile-role",
-        message || "暂未找到已核验并已发布的公开情报数据"
+        ".pi-profile-title-row h1",
+        `未找到：${query}`
     );
 
-    const badge = document.querySelector(".pi-verified-badge");
-    if (badge) badge.textContent = "暂无公开数据";
+    setText(
+        ".pi-profile-role",
+        message ||
+        "暂未找到已核验并已发布的公开情报数据"
+    );
 
-    const overview = document.querySelector(".pi-overview-text");
+    const badge =
+        document.querySelector(
+            ".pi-verified-badge"
+        );
+
+    if (badge) {
+        badge.textContent = "暂无公开数据";
+    }
+
+    const avatar =
+        document.querySelector(
+            ".pi-avatar-placeholder"
+        );
+
+    if (avatar) {
+        avatar.textContent = "--";
+    }
+
+    const meta =
+        document.querySelector(
+            ".pi-profile-meta"
+        );
+
+    if (meta) {
+        meta.innerHTML = "";
+    }
+
+    const tags =
+        document.querySelector(
+            ".pi-profile-tags"
+        );
+
+    if (tags) {
+        tags.innerHTML = "";
+    }
+
+    const summary =
+        document.querySelector(
+            ".pi-profile-summary p"
+        );
+
+    if (summary) {
+        summary.textContent =
+            "当前公开数据库中暂无该实体的已核验公开情报。";
+    }
+
+    const metricCards =
+        document.querySelectorAll(
+            ".pi-metric-card strong"
+        );
+
+    metricCards.forEach((card) => {
+        card.textContent = "0";
+    });
+
+    setText(
+        '[data-panel="overview"] .pi-section-heading h2',
+        `关于${query}`
+    );
+
+    const overview =
+        document.querySelector(
+            ".pi-overview-text"
+        );
+
     if (overview) {
         overview.textContent =
             "当前公开数据库中没有匹配结果。未审核、未发布、已回收或已归档的数据不会通过公开 API 返回。";
     }
 
+    const infoValues =
+        document.querySelectorAll(
+            ".pi-info-list dd"
+        );
+
+    infoValues.forEach((item) => {
+        item.textContent = "暂无公开数据";
+    });
+
+    const relationshipSummaryCenter =
+        document.getElementById(
+            "relationshipSummaryCenter"
+        );
+
+    if (relationshipSummaryCenter) {
+        relationshipSummaryCenter.textContent =
+            query;
+    }
+
+    const evidencePanel =
+        document.querySelector(
+            ".pi-side-panel .pi-section-card"
+        );
+
+    if (evidencePanel) {
+        evidencePanel.innerHTML = `
+            <div class="pi-section-heading">
+                <div>
+                    <span class="pi-eyebrow">
+                        数据质量
+                    </span>
+                    <h2>
+                        证据资料
+                    </h2>
+                </div>
+            </div>
+
+            <div class="pi-confidence-box">
+                <span>
+                    资料可信度
+                </span>
+                <strong>
+                    暂无
+                </strong>
+            </div>
+
+            <div class="pi-evidence-item">
+                <div class="pi-evidence-type">
+                    暂无数据
+                </div>
+
+                <strong>
+                    暂无公开证据资料
+                </strong>
+
+                <p>
+                    当前数据库尚未找到该实体的已核验并公开发布的证据资料。
+                </p>
+            </div>
+        `;
+    }
+
+    const statusValues =
+        document.querySelectorAll(
+            "#peopleDataStatus dd"
+        );
+
+    statusValues.forEach((item) => {
+        item.textContent = "暂无公开数据";
+    });
+
     peopleIntelligenceDemo.nodes = [];
+
     peopleIntelligenceDemo.center = {
         id: "not-found",
         type: "person",
@@ -1726,7 +1909,14 @@ function renderPublicNotFound(query, message) {
         englishName: "",
         subtitle: "暂无公开数据"
     };
+
+    peopleNetworkState.selectedNodeId = null;
+    peopleNetworkState.expandedNodeIds.clear();
+
     renderPeopleNetwork("all");
+
+    document.title =
+        `${query} | 暂无公开人谱情报 | Daily News`;
 }
 
 function renderPublicLoadError(query, error) {
