@@ -6752,16 +6752,67 @@ function renderCorrections(data) {
             )}
                     </td>
                     <td>
-                        <button
-                            type="button"
-                            class="pia-secondary-btn"
-                            data-correction-id="${Number(
-                row.id
-            )}"
-                        >
-                            查看
-                        </button>
-                    </td>
+    <div class="pia-correction-actions">
+        <button
+            type="button"
+            class="pia-secondary-btn"
+            data-correction-id="${Number(row.id)}"
+        >
+            查看
+        </button>
+
+        ${row.status === "pending"
+                    ? `
+                    <button
+                        type="button"
+                        class="pia-secondary-btn"
+                        data-correction-action="reviewing"
+                        data-correction-action-id="${Number(row.id)}"
+                    >
+                        开始审核
+                    </button>
+                `
+                    : ""
+                }
+
+        ${row.status === "reviewing"
+                    ? `
+                    <button
+                        type="button"
+                        class="pia-primary-btn"
+                        data-correction-action="approved"
+                        data-correction-action-id="${Number(row.id)}"
+                    >
+                        批准
+                    </button>
+
+                    <button
+                        type="button"
+                        class="pia-secondary-btn"
+                        data-correction-action="rejected"
+                        data-correction-action-id="${Number(row.id)}"
+                    >
+                        驳回
+                    </button>
+                `
+                    : ""
+                }
+
+        ${row.status === "approved"
+                    ? `
+                    <button
+                        type="button"
+                        class="pia-primary-btn"
+                        data-correction-action="applied"
+                        data-correction-action-id="${Number(row.id)}"
+                    >
+                        应用到资料
+                    </button>
+                `
+                    : ""
+                }
+    </div>
+</td>
                 </tr>
             `;
         }).join("");
@@ -6795,8 +6846,143 @@ function renderCorrections(data) {
                 }
             );
         });
+
+    tableBody
+        .querySelectorAll(
+            "[data-correction-action]"
+        )
+        .forEach((button) => {
+            button.addEventListener(
+                "click",
+                async () => {
+                    const correctionId =
+                        Number(
+                            button.dataset
+                                .correctionActionId
+                        );
+
+                    const nextStatus =
+                        button.dataset
+                            .correctionAction;
+
+                    if (
+                        !correctionId ||
+                        !nextStatus
+                    ) {
+                        return;
+                    }
+
+                    await updateCorrectionStatus(
+                        correctionId,
+                        nextStatus,
+                        button
+                    );
+                }
+            );
+        });
 }
 
+async function updateCorrectionStatus(
+    correctionId,
+    nextStatus,
+    button
+) {
+    const actionLabels = {
+        reviewing: "开始审核",
+        approved: "批准",
+        rejected: "驳回",
+        applied: "应用到资料"
+    };
+
+    const actionLabel =
+        actionLabels[nextStatus] ||
+        "更新状态";
+
+    if (nextStatus === "rejected") {
+        const confirmed =
+            window.confirm(
+                "确定要驳回这条纠错申请吗？"
+            );
+
+        if (!confirmed) {
+            return;
+        }
+    }
+
+    if (nextStatus === "approved") {
+        const confirmed =
+            window.confirm(
+                "确定批准这条纠错申请吗？批准后还需要点击“应用到资料”，才会真正修改人物资料。"
+            );
+
+        if (!confirmed) {
+            return;
+        }
+    }
+
+    if (nextStatus === "applied") {
+        const confirmed =
+            window.confirm(
+                "确定将这条纠错应用到人物资料吗？\n\n应用后人物资料将自动转为“草稿”并取消发布，需要重新审核后才能再次发布。"
+            );
+
+        if (!confirmed) {
+            return;
+        }
+    }
+
+    const oldText =
+        button?.textContent || actionLabel;
+
+    if (button) {
+        button.disabled = true;
+        button.textContent =
+            `${actionLabel}中...`;
+    }
+
+    try {
+        const data =
+            await relationshipApiFetch(
+                `/corrections/${correctionId}/status`,
+                {
+                    method: "PATCH",
+
+                    body: JSON.stringify({
+                        status:
+                            nextStatus
+                    })
+                }
+            );
+
+        if (
+            nextStatus === "applied" &&
+            data.applied_entity
+        ) {
+            window.alert(
+                "纠错已经成功应用到人物资料。\n\n人物资料已自动转为草稿并取消发布，请重新审核后再发布。"
+            );
+        }
+
+        await loadCorrections();
+
+    } catch (error) {
+        console.error(
+            "Correction status update error:",
+            error
+        );
+
+        window.alert(
+            error.message ||
+            "纠错状态更新失败"
+        );
+
+        if (button) {
+            button.disabled = false;
+            button.textContent =
+                oldText;
+        }
+    }
+}
 
 function showCorrectionDetails(row) {
     const content = [

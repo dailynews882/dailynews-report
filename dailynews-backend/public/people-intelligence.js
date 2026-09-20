@@ -11,6 +11,7 @@ const PEOPLE_INTELLIGENCE_PUBLIC_API = "/api/people-intelligence/search";
 document.addEventListener("DOMContentLoaded", async () => {
     initPeopleTabs();
     initNetworkFilters();
+    initPeopleCorrection();
 
     const query = new URLSearchParams(window.location.search)
         .get("q")
@@ -36,6 +37,7 @@ const peopleNetworkState = {
 };
 
 let currentPublicEntityType = "person";
+let currentPublicEntity = null;
 
 
 /* =========================================================
@@ -1303,11 +1305,27 @@ async function loadPublicPeopleIntelligence(query) {
 
 function applyPublicIntelligenceData(data) {
     const entity = data.entity || {};
+
+    currentPublicEntityType =
+        normalizeEntityType(
+            data.entity_type ||
+            entity.entity_type ||
+            "person"
+        );
+
+    currentPublicEntity = {
+        ...entity,
+        entity_type:
+            currentPublicEntityType
+    };
+
     const relationships = Array.isArray(data.relationships)
         ? data.relationships
         : [];
 
-    applyEntityPageMode(entity);
+    applyEntityPageMode(
+        currentPublicEntity
+    );
     updateProfileHero(entity);
     updateMetrics(entity, relationships);
     updateOverview(entity);
@@ -1741,6 +1759,8 @@ function setPageLoadingState(query) {
 function renderPublicNotFound(query, message) {
     currentPublicEntityType = "person";
 
+    currentPublicEntity = null;
+
     document.body.dataset.entityType = "person";
 
     updateMetricLabels(false);
@@ -2042,4 +2062,874 @@ function formatDate(value) {
 function setText(selector, value) {
     const element = document.querySelector(selector);
     if (element) element.textContent = value || "";
+}
+
+/* =========================================================
+   People Intelligence V1.4
+   Public correction interaction
+   ========================================================= */
+
+function initPeopleCorrection() {
+    const openButton =
+        document.getElementById(
+            "peopleCorrectionOpenButton"
+        );
+
+    const modal =
+        document.getElementById(
+            "peopleCorrectionModal"
+        );
+
+    const form =
+        document.getElementById(
+            "peopleCorrectionForm"
+        );
+
+    const fieldOptions =
+        document.getElementById(
+            "peopleCorrectionFieldOptions"
+        );
+
+    const closeButtons =
+        document.querySelectorAll(
+            "[data-correction-close]"
+        );
+
+    const closeButton =
+        document.getElementById(
+            "peopleCorrectionCloseButton"
+        );
+
+    if (
+        !openButton ||
+        !modal ||
+        !form ||
+        !fieldOptions
+    ) {
+        return;
+    }
+
+    openButton.addEventListener(
+        "click",
+        () => {
+            openPeopleCorrectionModal();
+        }
+    );
+
+    fieldOptions.addEventListener(
+        "change",
+        (event) => {
+            const checkbox =
+                event.target.closest(
+                    'input[name="correction_fields"]'
+                );
+
+            if (!checkbox) {
+                return;
+            }
+
+            updatePeopleCorrectionItems();
+        }
+    );
+
+    closeButtons.forEach(
+        (button) => {
+            button.addEventListener(
+                "click",
+                () => {
+                    closePeopleCorrectionModal();
+                }
+            );
+        }
+    );
+
+    if (closeButton) {
+        closeButton.addEventListener(
+            "click",
+            () => {
+                closePeopleCorrectionModal();
+            }
+        );
+    }
+
+    modal.addEventListener(
+        "click",
+        (event) => {
+            if (event.target === modal) {
+                closePeopleCorrectionModal();
+            }
+        }
+    );
+
+    document.addEventListener(
+        "keydown",
+        (event) => {
+            if (
+                event.key === "Escape" &&
+                !modal.hidden
+            ) {
+                closePeopleCorrectionModal();
+            }
+        }
+    );
+
+    form.addEventListener(
+        "submit",
+        async (event) => {
+            event.preventDefault();
+
+            const selectedFields =
+                getSelectedPeopleCorrectionFields();
+
+            const message =
+                document.getElementById(
+                    "peopleCorrectionMessage"
+                );
+
+            const submitButton =
+                document.getElementById(
+                    "peopleCorrectionSubmitButton"
+                );
+
+            if (!selectedFields.length) {
+                if (message) {
+                    message.textContent =
+                        "请至少选择一个需要纠错的字段。";
+                }
+
+                return;
+            }
+
+            if (
+                !currentPublicEntity ||
+                !currentPublicEntity.id
+            ) {
+                if (message) {
+                    message.textContent =
+                        "当前资料不存在，暂时无法提交纠错。";
+                }
+
+                return;
+            }
+
+            const items =
+                selectedFields.map(
+                    (field) => {
+                        const fieldName =
+                            field.name;
+
+                        const input =
+                            document.querySelector(
+                                `[data-correction-suggested="${fieldName}"]`
+                            );
+
+                        return {
+                            field_name:
+                                fieldName,
+
+                            proposed_value:
+                                input
+                                    ? input.value.trim()
+                                    : ""
+                        };
+                    }
+                );
+
+            const hasEmptySuggestedValue =
+                items.some(
+                    (item) =>
+                        !item.proposed_value
+                );
+
+            if (hasEmptySuggestedValue) {
+                if (message) {
+                    message.textContent =
+                        "请填写所有已选择字段的建议修改内容。";
+                }
+
+                return;
+            }
+
+            const reasonInput =
+                document.getElementById(
+                    "peopleCorrectionReason"
+                );
+
+            const evidenceUrlInput =
+                document.getElementById(
+                    "peopleCorrectionEvidenceUrl"
+                );
+
+            const correctionReason =
+                reasonInput
+                    ? reasonInput.value.trim()
+                    : "";
+
+            const evidenceUrl =
+                evidenceUrlInput
+                    ? evidenceUrlInput.value.trim()
+                    : "";
+
+            if (!correctionReason) {
+                if (message) {
+                    message.textContent =
+                        "请填写纠错原因。";
+                }
+
+                if (reasonInput) {
+                    reasonInput.focus();
+                }
+
+                return;
+            }
+
+            const payload = {
+                entity_type:
+                    currentPublicEntityType ||
+                    "person",
+
+                entity_id:
+                    currentPublicEntity.id,
+
+                items,
+
+                correction_reason:
+                    correctionReason,
+
+                evidence_url:
+                    evidenceUrl
+            };
+
+            if (submitButton) {
+                submitButton.disabled =
+                    true;
+
+                submitButton.textContent =
+                    "提交中...";
+            }
+
+            if (message) {
+                message.textContent =
+                    `正在提交 ${items.length} 项纠错...`;
+            }
+
+            try {
+                const response =
+                    await fetch(
+                        `${PEOPLE_INTELLIGENCE_PUBLIC_API.replace(
+                            /\/search$/,
+                            ""
+                        )}/corrections`,
+                        {
+                            method:
+                                "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    payload
+                                )
+                        }
+                    );
+
+                const result =
+                    await response.json();
+
+                if (
+                    !response.ok ||
+                    !result.success
+                ) {
+                    throw new Error(
+                        result.message ||
+                        "提交纠错申请失败"
+                    );
+                }
+
+                if (message) {
+                    message.textContent =
+                        `提交成功！已提交 ${result.count || items.length} 项纠错，等待管理员审核。`;
+                }
+
+                form.reset();
+
+                updatePeopleCorrectionItems();
+
+                window.setTimeout(
+                    () => {
+                        closePeopleCorrectionModal();
+                    },
+                    1800
+                );
+
+            } catch (error) {
+                console.error(
+                    "Submit public correction error:",
+                    error
+                );
+
+                if (message) {
+                    message.textContent =
+                        error.message ||
+                        "提交纠错申请失败，请稍后重试。";
+                }
+
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled =
+                        false;
+
+                    submitButton.textContent =
+                        "提交纠错";
+                }
+            }
+        }
+    );
+}
+
+
+function openPeopleCorrectionModal() {
+    const modal =
+        document.getElementById(
+            "peopleCorrectionModal"
+        );
+
+    const entityName =
+        document.getElementById(
+            "peopleCorrectionEntityName"
+        );
+
+    const form =
+        document.getElementById(
+            "peopleCorrectionForm"
+        );
+
+    const message =
+        document.getElementById(
+            "peopleCorrectionMessage"
+        );
+
+    if (!modal) {
+        return;
+    }
+
+    if (
+        !currentPublicEntity ||
+        !currentPublicEntity.id
+    ) {
+        window.alert(
+            "当前没有可提交纠错的人物资料。"
+        );
+
+        return;
+    }
+
+    if (form) {
+        form.reset();
+    }
+
+    renderPeopleCorrectionFieldOptions();
+
+    if (message) {
+        message.textContent = "";
+    }
+
+    if (entityName) {
+        const nameZh =
+            currentPublicEntity.name_zh ||
+            "";
+
+        const nameEn =
+            currentPublicEntity.name_en ||
+            "";
+
+        let displayName =
+            nameZh ||
+            nameEn ||
+            `ID ${currentPublicEntity.id}`;
+
+        if (
+            nameZh &&
+            nameEn
+        ) {
+            displayName =
+                `${nameZh} / ${nameEn}`;
+        }
+
+        entityName.textContent =
+            `当前资料：${displayName}`;
+    }
+
+    updatePeopleCorrectionItems();
+
+    modal.hidden = false;
+
+    document.body.style.overflow =
+        "hidden";
+
+    const firstCheckbox =
+        document.querySelector(
+            '#peopleCorrectionFieldOptions input[name="correction_fields"]'
+        );
+
+    if (firstCheckbox) {
+        firstCheckbox.focus();
+    }
+}
+
+
+function closePeopleCorrectionModal() {
+    const modal =
+        document.getElementById(
+            "peopleCorrectionModal"
+        );
+
+    if (!modal) {
+        return;
+    }
+
+    modal.hidden = true;
+
+    document.body.style.overflow =
+        "";
+}
+
+function getPeopleCorrectionFieldDefinitions() {
+    if (
+        currentPublicEntityType ===
+        "organization"
+    ) {
+        return [
+            {
+                name: "name_zh",
+                label: "中文名称"
+            },
+            {
+                name: "name_en",
+                label: "英文名称"
+            },
+            {
+                name: "aliases",
+                label: "其他名称 / 别名"
+            },
+            {
+                name: "organization_type",
+                label: "机构类型"
+            },
+            {
+                name: "country_region",
+                label: "国家 / 地区"
+            },
+            {
+                name: "headquarters",
+                label: "总部"
+            },
+            {
+                name: "founded_date",
+                label: "成立日期"
+            },
+            {
+                name: "industry",
+                label: "所属行业"
+            },
+            {
+                name: "description",
+                label: "机构简介"
+            },
+            {
+                name: "website_url",
+                label: "官方网站"
+            },
+            {
+                name: "listed_status",
+                label: "上市状态"
+            },
+            {
+                name: "ticker_symbol",
+                label: "股票代码"
+            },
+            {
+                name: "other",
+                label: "其他"
+            }
+        ];
+    }
+
+    return [
+        {
+            name: "name_zh",
+            label: "中文姓名"
+        },
+        {
+            name: "name_en",
+            label: "英文姓名"
+        },
+        {
+            name: "aliases",
+            label: "其他姓名 / 别名"
+        },
+        {
+            name: "birth_date",
+            label: "出生日期"
+        },
+        {
+            name: "country_region",
+            label: "国家 / 地区"
+        },
+        {
+            name: "primary_role",
+            label: "主要身份"
+        },
+        {
+            name: "biography",
+            label: "人物简介"
+        },
+        {
+            name: "tags",
+            label: "人物标签"
+        },
+        {
+            name: "other",
+            label: "其他"
+        }
+    ];
+}
+
+
+function renderPeopleCorrectionFieldOptions() {
+    const container =
+        document.getElementById(
+            "peopleCorrectionFieldOptions"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    const fields =
+        getPeopleCorrectionFieldDefinitions();
+
+    container.innerHTML =
+        fields
+            .map(
+                (field) => `
+                    <label class="pi-correction-field-option">
+                        <input
+                            type="checkbox"
+                            name="correction_fields"
+                            value="${escapeHtml(field.name)}"
+                        >
+                        <span>
+                            ${escapeHtml(field.label)}
+                        </span>
+                    </label>
+                `
+            )
+            .join("");
+}
+
+function getSelectedPeopleCorrectionFields() {
+    return Array.from(
+        document.querySelectorAll(
+            '#peopleCorrectionFieldOptions input[name="correction_fields"]:checked'
+        )
+    ).map(
+        (checkbox) => ({
+            name:
+                checkbox.value,
+
+            label:
+                checkbox
+                    .closest(
+                        ".pi-correction-field-option"
+                    )
+                    ?.querySelector(
+                        "span"
+                    )
+                    ?.textContent
+                    ?.trim() ||
+                checkbox.value
+        })
+    );
+}
+
+
+function updatePeopleCorrectionItems() {
+    const container =
+        document.getElementById(
+            "peopleCorrectionItems"
+        );
+
+    const submitButton =
+        document.getElementById(
+            "peopleCorrectionSubmitButton"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    const previousValues = {};
+
+    container
+        .querySelectorAll(
+            "[data-correction-suggested]"
+        )
+        .forEach(
+            (input) => {
+                previousValues[
+                    input.dataset
+                        .correctionSuggested
+                ] = input.value;
+            }
+        );
+
+    const selectedFields =
+        getSelectedPeopleCorrectionFields();
+
+    if (!selectedFields.length) {
+        container.innerHTML = `
+            <div
+                class="pi-correction-items-empty"
+                id="peopleCorrectionItemsEmpty"
+            >
+                请先选择需要纠错的字段，系统将在这里显示对应的当前资料和修改输入框。
+            </div>
+        `;
+
+        if (submitButton) {
+            submitButton.textContent =
+                "提交纠错";
+        }
+
+        return;
+    }
+
+    container.innerHTML =
+        selectedFields
+            .map(
+                (field, index) => {
+                    const originalValue =
+                        getPeopleCorrectionFieldValue(
+                            currentPublicEntity,
+                            field.name
+                        );
+
+                    const suggestedValue =
+                        previousValues[
+                        field.name
+                        ] || "";
+
+                    return `
+                        <section
+                            class="pi-correction-item"
+                            data-correction-item="${escapeHtml(field.name)}"
+                        >
+                            <div class="pi-correction-item-heading">
+                                <div>
+                                    <span class="pi-correction-item-number">
+                                        ${index + 1}
+                                    </span>
+
+                                    <strong>
+                                        ${escapeHtml(field.label)}
+                                    </strong>
+                                </div>
+
+                                <span class="pi-correction-item-status">
+                                    待填写
+                                </span>
+                            </div>
+
+                            <div class="pi-correction-item-grid">
+
+                                <div class="pi-correction-form-group">
+                                    <label>
+                                        当前资料
+                                    </label>
+
+                                    <textarea
+                                        rows="3"
+                                        readonly
+                                    >${escapeHtml(originalValue)}</textarea>
+                                </div>
+
+                                <div class="pi-correction-form-group">
+                                    <label
+                                        for="peopleCorrectionSuggested_${escapeHtml(field.name)}"
+                                    >
+                                        建议修改为 *
+                                    </label>
+
+                                    <textarea
+                                        id="peopleCorrectionSuggested_${escapeHtml(field.name)}"
+                                        rows="3"
+                                        required
+                                        data-correction-suggested="${escapeHtml(field.name)}"
+                                        placeholder="请输入您认为正确的资料"
+                                    >${escapeHtml(suggestedValue)}</textarea>
+                                </div>
+
+                            </div>
+                        </section>
+                    `;
+                }
+            )
+            .join("");
+
+    if (submitButton) {
+        submitButton.textContent =
+            selectedFields.length === 1
+                ? "提交 1 项纠错"
+                : `提交 ${selectedFields.length} 项纠错`;
+    }
+}
+
+function getPeopleCorrectionFieldValue(
+    entity,
+    fieldName
+) {
+    if (!entity) {
+        return "";
+    }
+
+    switch (fieldName) {
+        case "name_zh":
+            return entity.name_zh || "";
+
+        case "name_en":
+            return entity.name_en || "";
+
+        case "aliases":
+            return formatPeopleCorrectionValue(
+                entity.aliases
+            );
+
+        case "birth_date":
+            return entity.birth_date || "";
+
+        case "country_region":
+            return (
+                entity.country_region ||
+                entity.nationality ||
+                ""
+            );
+
+        case "primary_role":
+            return (
+                entity.primary_role ||
+                entity.industry ||
+                ""
+            );
+
+        case "biography":
+            return (
+                entity.biography ||
+                entity.description ||
+                ""
+            );
+
+        case "tags":
+            return formatPeopleCorrectionValue(
+                entity.tags
+            );
+
+        case "organization_type":
+            return entity.organization_type || "";
+
+        case "headquarters":
+            return entity.headquarters || "";
+
+        case "founded_date":
+            return entity.founded_date || "";
+
+        case "industry":
+            return (
+                entity.industry ||
+                entity.industry_primary ||
+                ""
+            );
+
+        case "description":
+            return entity.description || "";
+
+        case "website_url":
+            return entity.website_url || "";
+
+        case "listed_status":
+            return entity.listed_status || "";
+
+        case "ticker_symbol":
+            return entity.ticker_symbol || "";
+
+        case "other":
+            return "";
+
+        default:
+            return formatPeopleCorrectionValue(
+                entity[fieldName]
+            );
+    }
+}
+
+
+function formatPeopleCorrectionValue(
+    value
+) {
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    if (Array.isArray(value)) {
+        return value.join(" / ");
+    }
+
+    if (
+        typeof value === "object"
+    ) {
+        try {
+            return JSON.stringify(
+                value
+            );
+        } catch (error) {
+            return "";
+        }
+    }
+
+    const text =
+        String(value).trim();
+
+    if (!text) {
+        return "";
+    }
+
+    if (
+        (
+            text.startsWith("[") &&
+            text.endsWith("]")
+        ) ||
+        (
+            text.startsWith("{") &&
+            text.endsWith("}")
+        )
+    ) {
+        try {
+            const parsed =
+                JSON.parse(text);
+
+            if (Array.isArray(parsed)) {
+                return parsed.join(" / ");
+            }
+        } catch (error) {
+            // Keep original text.
+        }
+    }
+
+    return text;
 }

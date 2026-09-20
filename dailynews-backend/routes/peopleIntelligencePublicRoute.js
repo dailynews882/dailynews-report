@@ -65,6 +65,32 @@ function dbAll(
     );
 }
 
+function dbRun(
+    sql,
+    params = []
+) {
+    return new Promise(
+        (resolve, reject) => {
+            db.run(
+                sql,
+                params,
+                function (err) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    resolve({
+                        lastID:
+                            this.lastID,
+                        changes:
+                            this.changes
+                    });
+                }
+            );
+        }
+    );
+}
 
 /* =========================================================
    Public search helpers
@@ -545,5 +571,327 @@ router.get(
     }
 );
 
+/* =========================================================
+   POST /corrections
+   Public People Intelligence Correction Submission V1
+========================================================= */
+
+router.post(
+    "/corrections",
+    async (req, res) => {
+        try {
+            const entityType =
+                normalizeText(
+                    req.body.entity_type
+                ).toLowerCase();
+
+            const entityId =
+                Number(
+                    req.body.entity_id
+                );
+
+            const items =
+                Array.isArray(
+                    req.body.items
+                )
+                    ? req.body.items
+                    : [];
+
+            const correctionReason =
+                normalizeText(
+                    req.body.correction_reason
+                );
+
+            const evidenceUrl =
+                normalizeText(
+                    req.body.evidence_url
+                );
+
+            const submitterName =
+                normalizeText(
+                    req.body.submitter_name
+                );
+
+            const submitterEmail =
+                normalizeText(
+                    req.body.submitter_email
+                );
+
+            if (
+                entityType !== "person" &&
+                entityType !== "organization"
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "纠错对象类型无效"
+                });
+            }
+
+            if (
+                !Number.isInteger(entityId) ||
+                entityId <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "纠错对象 ID 无效"
+                });
+            }
+
+            if (
+                items.length < 1 ||
+                items.length > 9
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "请至少选择 1 个、最多选择 9 个纠错字段"
+                });
+            }
+
+            if (!correctionReason) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "请填写纠错原因"
+                });
+            }
+
+            const allowedPersonFields =
+                new Set([
+                    "name_zh",
+                    "name_en",
+                    "aliases",
+                    "birth_date",
+                    "country_region",
+                    "primary_role",
+                    "biography",
+                    "tags",
+                    "other"
+                ]);
+
+            const allowedOrganizationFields =
+                new Set([
+                    "name_zh",
+                    "name_en",
+                    "aliases",
+                    "organization_type",
+                    "country_region",
+                    "headquarters",
+                    "founded_date",
+                    "industry",
+                    "description",
+                    "website_url",
+                    "listed_status",
+                    "ticker_symbol",
+                    "other"
+                ]);
+
+            const allowedFields =
+                entityType === "person"
+                    ? allowedPersonFields
+                    : allowedOrganizationFields;
+
+            const tableName =
+                entityType === "person"
+                    ? "pi_people"
+                    : "pi_organizations";
+
+            const entity =
+                await dbGet(
+                    `
+                    SELECT *
+                    FROM ${tableName}
+                    WHERE id = ?
+                      AND verification_status = 'verified'
+                      AND record_status = 'active'
+                      AND is_public = 1
+                    LIMIT 1
+                    `,
+                    [entityId]
+                );
+
+            if (!entity) {
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "当前纠错对象不存在，或尚未公开发布"
+                });
+            }
+
+            const normalizedItems = [];
+
+            const seenFields =
+                new Set();
+
+            for (const item of items) {
+                const fieldName =
+                    normalizeText(
+                        item?.field_name
+                    );
+
+                const proposedValue =
+                    normalizeText(
+                        item?.proposed_value
+                    );
+
+                if (
+                    !fieldName ||
+                    !allowedFields.has(
+                        fieldName
+                    )
+                ) {
+                    return res.status(400).json({
+                        success: false,
+                        message:
+                            `存在无效的纠错字段：${fieldName || "未指定"}`
+                    });
+                }
+
+                if (
+                    seenFields.has(
+                        fieldName
+                    )
+                ) {
+                    return res.status(400).json({
+                        success: false,
+                        message:
+                            `纠错字段重复：${fieldName}`
+                    });
+                }
+
+                seenFields.add(
+                    fieldName
+                );
+
+                if (!proposedValue) {
+                    return res.status(400).json({
+                        success: false,
+                        message:
+                            `请填写 ${fieldName} 的建议修改内容`
+                    });
+                }
+
+                let originalValue = "";
+
+                if (
+                    fieldName !== "other"
+                ) {
+                    const rawValue =
+                        entity[fieldName];
+
+                    if (
+                        rawValue !== undefined &&
+                        rawValue !== null
+                    ) {
+                        originalValue =
+                            typeof rawValue ===
+                                "string"
+                                ? rawValue
+                                : JSON.stringify(
+                                    rawValue
+                                );
+                    }
+                }
+
+                normalizedItems.push({
+                    fieldName,
+                    originalValue,
+                    proposedValue
+                });
+            }
+
+            const createdCorrections =
+                [];
+
+            for (
+                const item
+                of normalizedItems
+            ) {
+                const result =
+                    await dbRun(
+                        `
+                        INSERT INTO pi_corrections (
+                            entity_type,
+                            entity_id,
+                            correction_type,
+                            field_name,
+                            original_value,
+                            proposed_value,
+                            correction_reason,
+                            evidence_description,
+                            evidence_url,
+                            submitter_name,
+                            submitter_email,
+                            submitter_type,
+                            status,
+                            created_by,
+                            updated_by,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES (
+                            ?, ?, 'data_correction',
+                            ?, ?, ?, ?, NULL, ?,
+                            ?, ?, 'public',
+                            'pending',
+                            NULL, NULL,
+                            CURRENT_TIMESTAMP,
+                            CURRENT_TIMESTAMP
+                        )
+                        `,
+                        [
+                            entityType,
+                            entityId,
+                            item.fieldName,
+                            JSON.stringify(
+                                item.originalValue
+                            ),
+                            JSON.stringify(
+                                item.proposedValue
+                            ),
+                            correctionReason,
+                            evidenceUrl ||
+                            null,
+                            submitterName ||
+                            null,
+                            submitterEmail ||
+                            null
+                        ]
+                    );
+
+                createdCorrections.push({
+                    id:
+                        result.lastID,
+                    field_name:
+                        item.fieldName
+                });
+            }
+
+            return res.status(201).json({
+                success: true,
+                message:
+                    "纠错申请已提交，等待管理员审核",
+                count:
+                    createdCorrections.length,
+                corrections:
+                    createdCorrections
+            });
+
+        } catch (error) {
+            console.error(
+                "People Intelligence public correction error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "提交纠错申请失败"
+            });
+        }
+    }
+);
 
 module.exports = router;

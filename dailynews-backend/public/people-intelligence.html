@@ -483,12 +483,140 @@
 
                 </section>
 
+                <!-- =========================================
+                                前台资料纠错入口
+                           ========================================== -->
+                <section class="pi-section-card pi-correction-card" id="peopleCorrectionCard">
+
+                    <div class="pi-section-heading">
+                        <div>
+                            <span class="pi-eyebrow">
+                                DATA CORRECTION
+                            </span>
+
+                            <h2>
+                                资料纠错
+                            </h2>
+                        </div>
+                    </div>
+
+                    <p class="pi-correction-description">
+                        如果您发现当前人物资料存在错误、遗漏或需要更新，
+                        可以向我们提交纠错建议。
+                    </p>
+
+                    <button type="button" class="pi-correction-button" id="peopleCorrectionOpenButton">
+                        提交纠错
+                    </button>
+
+                </section>
+
             </aside>
 
         </section>
 
     </main>
 
+    <!-- =========================================
+        人物资料纠错弹窗
+    ========================================== -->
+    <div class="pi-correction-modal" id="peopleCorrectionModal" hidden>
+
+        <div class="pi-correction-modal-backdrop" data-correction-close>
+        </div>
+
+        <div class="pi-correction-modal-dialog" role="dialog" aria-modal="true"
+            aria-labelledby="peopleCorrectionModalTitle">
+
+            <div class="pi-correction-modal-header">
+
+                <div>
+                    <span class="pi-eyebrow">
+                        DATA CORRECTION
+                    </span>
+
+                    <h2 id="peopleCorrectionModalTitle">
+                        提交资料纠错
+                    </h2>
+
+                    <p id="peopleCorrectionEntityName">
+                        当前人物
+                    </p>
+                </div>
+
+                <button type="button" class="pi-correction-modal-close" id="peopleCorrectionCloseButton"
+                    aria-label="关闭纠错窗口">
+                    ×
+                </button>
+
+            </div>
+
+            <form id="peopleCorrectionForm">
+
+                <div class="pi-correction-form-group">
+
+                    <div class="pi-correction-field-heading">
+                        <span class="pi-correction-field-label">
+                            需要纠错的字段 *
+                        </span>
+
+                        <span class="pi-correction-field-hint">
+                            可同时选择多个字段
+                        </span>
+                    </div>
+
+                    <div class="pi-correction-field-options" id="peopleCorrectionFieldOptions"></div>
+
+                    <div class="pi-correction-items" id="peopleCorrectionItems">
+
+                        <div class="pi-correction-items-empty" id="peopleCorrectionItemsEmpty">
+                            请先选择需要纠错的字段，系统将在这里显示对应的当前资料和修改输入框。
+                        </div>
+
+                    </div>
+
+                    <div class="pi-correction-form-group">
+
+                        <label for="peopleCorrectionReason">
+                            纠错原因 *
+                        </label>
+
+                        <textarea id="peopleCorrectionReason" name="reason" rows="4" required
+                            placeholder="请说明为什么需要修改这项资料"></textarea>
+
+                    </div>
+
+                    <div class="pi-correction-form-group">
+
+                        <label for="peopleCorrectionEvidenceUrl">
+                            证据 / 来源网址
+                        </label>
+
+                        <input type="url" id="peopleCorrectionEvidenceUrl" name="evidence_url"
+                            placeholder="https://...">
+
+                    </div>
+
+                    <div class="pi-correction-modal-actions">
+
+                        <button type="button" class="pi-correction-cancel-button" data-correction-close>
+                            取消
+                        </button>
+
+                        <button type="submit" class="pi-correction-submit-button" id="peopleCorrectionSubmitButton">
+                            提交纠错
+                        </button>
+
+                    </div>
+
+                    <p class="pi-correction-message" id="peopleCorrectionMessage" aria-live="polite">
+                    </p>
+
+            </form>
+
+        </div>
+
+    </div>
 
     <script src="/people-intelligence.js"></script>
 

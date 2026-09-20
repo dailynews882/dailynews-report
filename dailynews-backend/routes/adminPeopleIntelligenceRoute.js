@@ -4345,6 +4345,34 @@ function dbRun(
     );
 }
 
+function safeJsonParse(value) {
+    if (
+        value === undefined ||
+        value === null
+    ) {
+        return null;
+    }
+
+    if (
+        typeof value !== "string"
+    ) {
+        return value;
+    }
+
+    const text =
+        value.trim();
+
+    if (!text) {
+        return "";
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        return text;
+    }
+}
+
 router.get(
     "/review-queue",
     verifyAdminToken,
@@ -5261,6 +5289,235 @@ router.post(
     }
 );
 
+/*
+ * ------------------------------------------------------------
+ * CORRECTION CENTER
+ * Apply approved correction to entity
+ * ------------------------------------------------------------
+ */
+
+async function applyPiCorrectionToEntity(
+    correction,
+    admin
+) {
+    if (!correction) {
+        throw new Error(
+            "Correction record is required"
+        );
+    }
+
+    if (
+        correction.status !== "approved"
+    ) {
+        throw new Error(
+            "Only approved corrections can be applied"
+        );
+    }
+
+    const entityType =
+        normalizePiEntityType(
+            correction.entity_type
+        );
+
+    const entityId =
+        Number(
+            correction.entity_id
+        );
+
+    const fieldName =
+        String(
+            correction.field_name || ""
+        ).trim();
+
+    const allowedPersonFields =
+        new Set([
+            "name_zh",
+            "name_en",
+            "aliases",
+            "birth_date",
+            "country_region",
+            "primary_role",
+            "biography",
+            "tags"
+        ]);
+
+    const allowedOrganizationFields =
+        new Set([
+            "name_zh",
+            "name_en",
+            "aliases",
+            "organization_type",
+            "country_region",
+            "headquarters",
+            "founded_date",
+            "industry",
+            "description",
+            "website_url",
+            "listed_status",
+            "ticker_symbol"
+        ]);
+
+    if (
+        entityType !== "person" &&
+        entityType !== "organization"
+    ) {
+        throw new Error(
+            `Unsupported correction entity type: ${entityType}`
+        );
+    }
+
+    const allowedFields =
+        entityType === "person"
+            ? allowedPersonFields
+            : allowedOrganizationFields;
+
+    if (
+        !allowedFields.has(
+            fieldName
+        )
+    ) {
+        throw new Error(
+            `Correction field is not allowed: ${fieldName}`
+        );
+    }
+
+    const tableName =
+        entityType === "person"
+            ? "pi_people"
+            : "pi_organizations";
+
+    const beforeEntity =
+        await dbGet(
+            `
+            SELECT *
+            FROM ${tableName}
+            WHERE id = ?
+            LIMIT 1
+            `,
+            [entityId]
+        );
+
+    if (!beforeEntity) {
+        throw new Error(
+            entityType === "person"
+                ? "Person record not found"
+                : "Organization record not found"
+        );
+    }
+
+    let proposedValue =
+        safeJsonParse(
+            correction.proposed_value
+        );
+
+    if (
+        proposedValue === null ||
+        proposedValue === undefined
+    ) {
+        proposedValue = "";
+    }
+
+    if (
+        typeof proposedValue !== "string"
+    ) {
+        proposedValue =
+            String(proposedValue);
+    }
+
+    proposedValue =
+        proposedValue.trim();
+
+    await dbRun(
+        `
+        UPDATE ${tableName}
+        SET
+            ${fieldName} = ?,
+            verification_status = 'draft',
+            is_public = 0,
+            updated_by = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        `,
+        [
+            proposedValue,
+            admin?.id || null,
+            entityId
+        ]
+    );
+
+    const afterEntity =
+        await dbGet(
+            `
+            SELECT *
+            FROM ${tableName}
+            WHERE id = ?
+            LIMIT 1
+            `,
+            [entityId]
+        );
+
+    await writePiVersionHistory({
+        entityType,
+
+        entityId,
+
+        actionType:
+            "correction_applied_to_entity",
+
+        changedFields: [
+            fieldName,
+            "verification_status",
+            "is_public"
+        ],
+
+        beforeData: {
+            [fieldName]:
+                beforeEntity[fieldName],
+
+            verification_status:
+                beforeEntity.verification_status,
+
+            is_public:
+                beforeEntity.is_public
+        },
+
+        afterData: {
+            [fieldName]:
+                afterEntity[fieldName],
+
+            verification_status:
+                afterEntity.verification_status,
+
+            is_public:
+                afterEntity.is_public
+        },
+
+        changeReason:
+            correction.correction_reason ||
+            "管理员应用纠错",
+
+        sourceType:
+            "correction",
+
+        operatorId:
+            admin?.id || null,
+
+        operatorName:
+            admin?.username ||
+            admin?.email ||
+            null,
+
+        correctionId:
+            correction.id
+    });
+
+    return {
+        entityType,
+        entityId,
+        beforeEntity,
+        afterEntity
+    };
+}
 
 /*
  * ------------------------------------------------------------
@@ -5293,27 +5550,21 @@ router.patch(
                 ]);
 
             if (
-                !Number.isInteger(
-                    correctionId
-                ) ||
+                !Number.isInteger(correctionId) ||
                 correctionId <= 0
             ) {
                 return res.status(400).json({
                     success: false,
-                    message:
-                        "无效的纠错记录 ID"
+                    message: "无效的纠错记录 ID"
                 });
             }
 
             if (
-                !allowedStatuses.has(
-                    nextStatus
-                )
+                !allowedStatuses.has(nextStatus)
             ) {
                 return res.status(400).json({
                     success: false,
-                    message:
-                        "无效的纠错状态"
+                    message: "无效的纠错状态"
                 });
             }
 
@@ -5331,9 +5582,42 @@ router.patch(
             if (!before) {
                 return res.status(404).json({
                     success: false,
-                    message:
-                        "纠错记录不存在"
+                    message: "纠错记录不存在"
                 });
+            }
+
+            /*
+             * ------------------------------------------------
+             * APPLIED 是真正的数据操作，不只是状态变化。
+             *
+             * 必须：
+             * approved
+             *   -> 修改人物真实资料
+             *   -> 人物转 draft
+             *   -> 自动取消发布
+             *   -> 写人物版本历史
+             *   -> 最后 correction 才变 applied
+             * ------------------------------------------------
+             */
+
+            let appliedEntityResult = null;
+
+            if (nextStatus === "applied") {
+                if (
+                    before.status !== "approved"
+                ) {
+                    return res.status(409).json({
+                        success: false,
+                        message:
+                            "只有已经批准的纠错申请才能应用到正式资料"
+                    });
+                }
+
+                appliedEntityResult =
+                    await applyPiCorrectionToEntity(
+                        before,
+                        req.admin
+                    );
             }
 
             const reviewedAt =
@@ -5342,14 +5626,12 @@ router.patch(
                     "rejected",
                     "applied"
                 ].includes(nextStatus)
-                    ? new Date()
-                        .toISOString()
+                    ? new Date().toISOString()
                     : null;
 
             const appliedAt =
                 nextStatus === "applied"
-                    ? new Date()
-                        .toISOString()
+                    ? new Date().toISOString()
                     : null;
 
             await dbRun(
@@ -5362,8 +5644,7 @@ router.patch(
                     reviewed_at = ?,
                     applied_at = ?,
                     updated_by = ?,
-                    updated_at =
-                        CURRENT_TIMESTAMP
+                    updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 `,
                 [
@@ -5384,9 +5665,20 @@ router.patch(
                     SELECT *
                     FROM pi_corrections
                     WHERE id = ?
+                    LIMIT 1
                     `,
                     [correctionId]
                 );
+
+            /*
+             * approved / rejected：
+             * 记录纠错审核状态变化。
+             *
+             * applied：
+             * applyPiCorrectionToEntity()
+             * 已经负责写人物资料修改版本，
+             * 这里再记录纠错流程本身进入 applied。
+             */
 
             if (
                 nextStatus === "approved" ||
@@ -5396,48 +5688,87 @@ router.patch(
                 await writePiVersionHistory({
                     entityType:
                         before.entity_type,
+
                     entityId:
                         before.entity_id,
+
                     actionType:
                         `correction_${nextStatus}`,
+
                     changedFields: [
                         before.field_name ||
                         "correction"
                     ],
+
                     beforeData: {
                         correction_status:
                             before.status,
+
                         original_value:
                             before.original_value
                     },
+
                     afterData: {
                         correction_status:
                             after.status,
+
                         proposed_value:
                             after.proposed_value
                     },
+
                     changeReason:
                         req.body.review_comment ||
                         before.correction_reason ||
                         null,
+
                     sourceType:
                         "correction",
+
                     operatorId:
                         req.admin?.id || null,
+
                     operatorName:
                         req.admin?.username ||
                         req.admin?.email ||
                         null,
+
                     correctionId
                 });
             }
 
             return res.json({
                 success: true,
+
                 message:
-                    "纠错状态已更新",
-                correction: after
+                    nextStatus === "applied"
+                        ? "纠错已经应用到人物资料，人物已转为草稿并自动取消发布"
+                        : "纠错状态已更新",
+
+                correction:
+                    after,
+
+                applied_entity:
+                    appliedEntityResult
+                        ? {
+                            entity_type:
+                                before.entity_type,
+
+                            entity_id:
+                                before.entity_id,
+
+                            verification_status:
+                                appliedEntityResult
+                                    .afterPerson
+                                    ?.verification_status,
+
+                            is_public:
+                                appliedEntityResult
+                                    .afterPerson
+                                    ?.is_public
+                        }
+                        : null
             });
+
         } catch (error) {
             console.error(
                 "People Intelligence correction status error:",
@@ -5447,12 +5778,12 @@ router.patch(
             return res.status(500).json({
                 success: false,
                 message:
+                    error.message ||
                     "更新纠错状态失败"
             });
         }
     }
 );
-
 
 /*
  * ------------------------------------------------------------
