@@ -16,6 +16,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     initVersionHistory();
 
     await loadPeopleFromApi();
+
+    hidePersonEditor();
+    hideOrganizationEditor();
 });
 
 /* =========================================================
@@ -63,7 +66,12 @@ function initAdminNavigation() {
             targetPanel.hidden = false;
             targetPanel.classList.add("active");
 
+            if (target === "people") {
+                hidePersonEditor();
+            }
+
             if (target === "organizations") {
+                hideOrganizationEditor();
                 ensureOrganizationDataLoaded();
             }
 
@@ -698,24 +706,15 @@ function replacePrototypePeopleWithApiData(
 
     updateVisiblePersonCount();
 
-    if (apiPeople.length > 0) {
-        const firstPerson =
-            mapApiPersonToFrontend(
-                apiPeople[0]
-            );
-
-        openPersonEditor(
-            firstPerson.id
-        );
-    } else {
-        resetPersonEditorForNewRecord();
-
-        updatePersonEditorStatus(
-            "draft"
-        );
-
-        updateEvidenceCount(0);
-    }
+    /*
+ * 人物管理默认只显示人物列表。
+ * 不自动打开第一条人物资料。
+ *
+ * 只有以下操作才显示上方人物资料编辑区：
+ * 1. 点击人物列表中的“编辑”
+ * 2. 点击“+ 新增人物”
+ */
+    hidePersonEditor();
 }
 
 function initPersonFormTracking() {
@@ -1961,17 +1960,11 @@ function bindPrototypePersonRow(row) {
         }
     );
 
-    row.addEventListener(
-        "click",
-        () => {
-            const personId =
-                row.dataset.personId;
-
-            openPersonEditor(
-                personId
-            );
-        }
-    );
+    /*
+     * 人物列表默认只展示目录。
+     * 只有点击“编辑”按钮或“+ 新增人物”时才打开上方编辑器。
+     * 因此这里不再给整行绑定打开人物编辑器的点击事件。
+     */
 }
 
 function refreshPersonListRow(
@@ -2491,6 +2484,8 @@ function enterPersonEditMode(personId) {
 
     activatePeopleManagementPage();
 
+    showPersonEditor();
+
     setActivePersonRow(
         personId
     );
@@ -2529,6 +2524,8 @@ function openPersonEditor(personId) {
 
     activatePeopleManagementPage();
 
+    showPersonEditor();
+
     setActivePersonRow(personId);
 
     loadPersonIntoEditor(person);
@@ -2550,6 +2547,58 @@ function openPersonEditor(personId) {
     );
 }
 
+function showPersonEditor() {
+    const editor =
+        document.querySelector(
+            ".pia-person-editor"
+        );
+
+    if (editor) {
+        editor.hidden = false;
+    }
+}
+
+
+function hidePersonEditor() {
+    const editor =
+        document.querySelector(
+            ".pia-person-editor"
+        );
+
+    if (editor) {
+        editor.hidden = true;
+    }
+
+    currentEditingPersonId = null;
+
+    setActivePersonRow(null);
+}
+
+
+function showOrganizationEditor() {
+    const editor =
+        document.querySelector(
+            ".pia-organization-editor-card"
+        );
+
+    if (editor) {
+        editor.hidden = false;
+    }
+}
+
+
+function hideOrganizationEditor() {
+    const editor =
+        document.querySelector(
+            ".pia-organization-editor-card"
+        );
+
+    if (editor) {
+        editor.hidden = true;
+    }
+
+    currentEditingOrganizationId = null;
+}
 
 function activatePeopleManagementPage() {
     const peopleNav =
@@ -2892,28 +2941,7 @@ function updateEvidenceCount(count) {
 
 
 function openNewPersonForm() {
-    activatePeopleManagementPage();
-
-    currentEditingPersonId = null;
-    personFormDirty = false;
-
-    setActivePersonRow(null);
-
-    resetPersonEditorForNewRecord();
-
-    updatePersonEditorStatus(
-        "pending"
-    );
-
-    updateEvidenceCount(0);
-
-    personFormSnapshot =
-        capturePersonFormSnapshot();
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    openCreatePersonModal();
 }
 
 function resetPersonEditorForNewRecord() {
@@ -3117,7 +3145,7 @@ let currentEditingOrganizationId = null;
 
 function initOrganizationManagement() {
     document.getElementById("piaNewOrganizationButton")
-        ?.addEventListener("click", resetOrganizationForm);
+        ?.addEventListener("click", openCreateOrganizationModal);
 
     document.getElementById("piaOrganizationResetButton")
         ?.addEventListener("click", resetOrganizationForm);
@@ -3184,17 +3212,8 @@ async function ensureOrganizationDataLoaded(force = false) {
         organizationDataLoaded = true;
         renderOrganizationTable();
 
-        if (
-            organizationsCache.length > 0 &&
-            !currentEditingOrganizationId
-        ) {
-            loadOrganizationIntoForm(
-                organizationsCache[0]
-            );
-        } else if (
-            organizationsCache.length === 0
-        ) {
-            resetOrganizationForm();
+        if (!currentEditingOrganizationId) {
+            hideOrganizationEditor();
         }
     } catch (error) {
         console.error(
@@ -4124,6 +4143,8 @@ function renderOrganizationTable() {
                 if (!organization) {
                     return;
                 }
+
+                showOrganizationEditor();
 
                 loadOrganizationIntoForm(
                     organization
@@ -7588,4 +7609,217 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+/* =========================================================
+   People Intelligence Create Modals
+   新增人物 / 新增机构独立弹窗
+========================================================= */
+
+function closePeopleCreateModal() {
+    document.getElementById("piaCreateEntityModal")?.remove();
+    document.body.classList.remove("pia-modal-open");
+}
+
+function mountPeopleCreateModal(title, subtitle, formHtml) {
+    closePeopleCreateModal();
+
+    const modal = document.createElement("div");
+    modal.id = "piaCreateEntityModal";
+    modal.className = "pia-create-modal";
+    modal.innerHTML = `
+        <div class="pia-create-modal-backdrop" data-create-modal-close></div>
+        <section class="pia-create-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="piaCreateModalTitle">
+            <header class="pia-create-modal-header">
+                <div>
+                    <span class="pia-eyebrow">CREATE NEW RECORD</span>
+                    <h3 id="piaCreateModalTitle">${escapeHtml(title)}</h3>
+                    <p>${escapeHtml(subtitle)}</p>
+                </div>
+                <button type="button" class="pia-create-modal-close" data-create-modal-close aria-label="关闭">×</button>
+            </header>
+            <div class="pia-create-modal-body">${formHtml}</div>
+        </section>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.classList.add("pia-modal-open");
+
+    modal.querySelectorAll("[data-create-modal-close]").forEach((element) => {
+        element.addEventListener("click", closePeopleCreateModal);
+    });
+
+    return modal;
+}
+
+function openCreatePersonModal() {
+    const modal = mountPeopleCreateModal(
+        "新增人物",
+        "创建一条新的人物资料。保存后将以草稿状态加入人物列表。",
+        `
+        <form id="piaCreatePersonForm" class="pia-create-form">
+            <div class="pia-create-form-grid">
+                <label><span>中文姓名 *</span><input id="piaCreatePersonNameZh" required placeholder="请输入中文姓名"></label>
+                <label><span>英文姓名 *</span><input id="piaCreatePersonNameEn" required placeholder="请输入英文姓名"></label>
+                <label><span>其他姓名 / 别名</span><input id="piaCreatePersonAliases" placeholder="多个别名可用逗号分隔"></label>
+                <label><span>出生日期</span><input id="piaCreatePersonBirthDate" type="date"></label>
+                <label><span>国家 / 地区</span><input id="piaCreatePersonCountry" placeholder="例如：新加坡"></label>
+                <label><span>主要身份</span><input id="piaCreatePersonRole" placeholder="例如：公司创始人 / CEO"></label>
+                <label><span>可信度</span><select id="piaCreatePersonConfidence"><option value="medium">中</option><option value="high">高</option><option value="low">低</option></select></label>
+                <label><span>人物标签</span><input id="piaCreatePersonTags" placeholder="例如：科技, 投资"></label>
+            </div>
+            <label class="pia-create-form-full"><span>人物简介</span><textarea id="piaCreatePersonBiography" rows="4" placeholder="请输入人物简介"></textarea></label>
+            <div class="pia-create-modal-actions">
+                <button type="button" class="pia-secondary-btn" data-create-modal-close>取消</button>
+                <button type="submit" class="pia-primary-btn" id="piaCreatePersonSave">保存草稿</button>
+            </div>
+        </form>`
+    );
+
+    modal.querySelectorAll("[data-create-modal-close]").forEach((element) => {
+        element.addEventListener("click", closePeopleCreateModal);
+    });
+
+    document.getElementById("piaCreatePersonForm")?.addEventListener("submit", createPersonFromModal);
+    document.getElementById("piaCreatePersonNameZh")?.focus();
+}
+
+async function createPersonFromModal(event) {
+    event.preventDefault();
+
+    const nameZh = document.getElementById("piaCreatePersonNameZh")?.value.trim() || "";
+    const nameEn = document.getElementById("piaCreatePersonNameEn")?.value.trim() || "";
+
+    if (!nameZh || !nameEn) {
+        openPrototypeNotice("资料不完整", "请填写中文姓名和英文姓名。");
+        return;
+    }
+
+    const button = document.getElementById("piaCreatePersonSave");
+    if (button) { button.disabled = true; button.textContent = "保存中..."; }
+
+    try {
+        const token = getAdminToken();
+        if (!token) throw new Error("管理员登录已失效，请重新登录。");
+
+        const response = await fetch(`${PEOPLE_INTELLIGENCE_API}/people`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                name_zh: nameZh,
+                name_en: nameEn,
+                aliases: document.getElementById("piaCreatePersonAliases")?.value.trim() || "",
+                birth_date: document.getElementById("piaCreatePersonBirthDate")?.value || "",
+                country_region: document.getElementById("piaCreatePersonCountry")?.value.trim() || "",
+                primary_role: document.getElementById("piaCreatePersonRole")?.value.trim() || "",
+                biography: document.getElementById("piaCreatePersonBiography")?.value.trim() || "",
+                tags: document.getElementById("piaCreatePersonTags")?.value.trim() || "",
+                verification_status: "draft",
+                confidence_level: document.getElementById("piaCreatePersonConfidence")?.value || "medium",
+                is_public: false
+            })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || "新增人物失败");
+
+        closePeopleCreateModal();
+        await loadPeopleFromApi();
+        hidePersonEditor();
+        openPrototypeNotice("新增成功", "人物资料已作为草稿保存，并加入人物列表。");
+    } catch (error) {
+        openPrototypeNotice("新增人物失败", error.message || "无法保存人物资料。");
+        if (button) { button.disabled = false; button.textContent = "保存草稿"; }
+    }
+}
+
+function openCreateOrganizationModal() {
+    const modal = mountPeopleCreateModal(
+        "新增机构",
+        "创建一条新的机构资料。保存后将以草稿状态加入机构列表。",
+        `
+        <form id="piaCreateOrganizationForm" class="pia-create-form">
+            <div class="pia-create-form-grid">
+                <label><span>中文名称</span><input id="piaCreateOrganizationNameZh" placeholder="请输入机构中文名称"></label>
+                <label><span>英文名称 *</span><input id="piaCreateOrganizationNameEn" required placeholder="请输入机构英文名称"></label>
+                <label><span>别名 / 简称</span><input id="piaCreateOrganizationAliases" placeholder="例如：PI Test"></label>
+                <label><span>机构类型 *</span><select id="piaCreateOrganizationType"><option value="company">企业 / Company</option><option value="listed_company">上市公司</option><option value="fund">基金</option><option value="trust">信托</option><option value="family_office">Family Office</option><option value="government">政府机构</option><option value="other">其他</option></select></label>
+                <label><span>国家 / 地区</span><input id="piaCreateOrganizationCountry" placeholder="例如：新加坡"></label>
+                <label><span>总部所在地</span><input id="piaCreateOrganizationHeadquarters" placeholder="例如：Singapore"></label>
+                <label><span>成立日期</span><input id="piaCreateOrganizationFoundedDate" type="date"></label>
+                <label><span>一级行业</span><input id="piaCreateOrganizationIndustryPrimary" placeholder="例如：科技"></label>
+                <label><span>二级行业</span><input id="piaCreateOrganizationIndustrySecondary" placeholder="例如：人工智能"></label>
+                <label><span>股票代码</span><input id="piaCreateOrganizationTicker" placeholder="例如：NVDA"></label>
+                <label><span>交易所</span><input id="piaCreateOrganizationExchange" placeholder="例如：NASDAQ"></label>
+                <label><span>可信度</span><select id="piaCreateOrganizationConfidence"><option value="medium">中</option><option value="high">高</option><option value="low">低</option></select></label>
+            </div>
+            <label class="pia-create-form-full"><span>机构简介</span><textarea id="piaCreateOrganizationDescription" rows="4" placeholder="请输入机构简介"></textarea></label>
+            <div class="pia-create-modal-actions">
+                <button type="button" class="pia-secondary-btn" data-create-modal-close>取消</button>
+                <button type="submit" class="pia-primary-btn" id="piaCreateOrganizationSave">保存草稿</button>
+            </div>
+        </form>`
+    );
+
+    modal.querySelectorAll("[data-create-modal-close]").forEach((element) => {
+        element.addEventListener("click", closePeopleCreateModal);
+    });
+
+    document.getElementById("piaCreateOrganizationForm")?.addEventListener("submit", createOrganizationFromModal);
+    document.getElementById("piaCreateOrganizationNameZh")?.focus();
+}
+
+async function createOrganizationFromModal(event) {
+    event.preventDefault();
+
+    const nameEn = document.getElementById("piaCreateOrganizationNameEn")?.value.trim() || "";
+    if (!nameEn) {
+        openPrototypeNotice("机构资料不完整", "请填写机构英文名称。");
+        return;
+    }
+
+    const button = document.getElementById("piaCreateOrganizationSave");
+    if (button) { button.disabled = true; button.textContent = "保存中..."; }
+
+    try {
+        const result = await organizationApiFetch("/organizations", {
+            method: "POST",
+            body: JSON.stringify({
+                name_zh: document.getElementById("piaCreateOrganizationNameZh")?.value.trim() || "",
+                name_en: nameEn,
+                aliases: document.getElementById("piaCreateOrganizationAliases")?.value.trim() || "",
+                organization_type: document.getElementById("piaCreateOrganizationType")?.value || "company",
+                country_region: document.getElementById("piaCreateOrganizationCountry")?.value.trim() || "",
+                headquarters: document.getElementById("piaCreateOrganizationHeadquarters")?.value.trim() || "",
+                founded_date: document.getElementById("piaCreateOrganizationFoundedDate")?.value || "",
+                industry_primary: document.getElementById("piaCreateOrganizationIndustryPrimary")?.value.trim() || "",
+                industry_secondary: document.getElementById("piaCreateOrganizationIndustrySecondary")?.value.trim() || "",
+                industry: [
+                    document.getElementById("piaCreateOrganizationIndustryPrimary")?.value.trim(),
+                    document.getElementById("piaCreateOrganizationIndustrySecondary")?.value.trim()
+                ].filter(Boolean).join(" / "),
+                description: document.getElementById("piaCreateOrganizationDescription")?.value.trim() || "",
+                ticker_symbol: document.getElementById("piaCreateOrganizationTicker")?.value.trim().toUpperCase() || "",
+                exchange_name: document.getElementById("piaCreateOrganizationExchange")?.value.trim() || "",
+                verification_status: "draft",
+                confidence_level: document.getElementById("piaCreateOrganizationConfidence")?.value || "medium",
+                is_public: false
+            })
+        });
+
+        if (!result.organization) throw new Error("机构 API 未返回新增记录。");
+
+        closePeopleCreateModal();
+        await loadOrganizations();
+        organizationDataLoaded = true;
+        renderOrganizationTable();
+        hideOrganizationEditor();
+        openPrototypeNotice("新增成功", "机构资料已作为草稿保存，并加入机构列表。");
+    } catch (error) {
+        openPrototypeNotice("新增机构失败", error.message || "无法保存机构资料。");
+        if (button) { button.disabled = false; button.textContent = "保存草稿"; }
+    }
 }

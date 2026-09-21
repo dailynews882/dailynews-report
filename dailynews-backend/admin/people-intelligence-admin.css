@@ -2507,3 +2507,173 @@ body {
     background: #ffffff;
     color: #53647b;
 }
+
+/* =========================================================
+   People / Organization editor visibility
+   ========================================================= */
+
+.pia-person-editor[hidden],
+.pia-organization-editor-card[hidden] {
+    display: none !important;
+}
+
+/* =========================================================
+   CREATE ENTITY MODAL
+   新增人物 / 新增机构独立弹窗
+========================================================= */
+body.pia-modal-open {
+    overflow: hidden;
+}
+
+.pia-create-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+}
+
+.pia-create-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 25, 50, 0.52);
+}
+
+.pia-create-modal-dialog {
+    position: relative;
+    width: min(980px, 96vw);
+    max-height: 90vh;
+    overflow: auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 24px 70px rgba(10, 25, 50, 0.28);
+}
+
+.pia-create-modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid #e5eaf1;
+    background: #fff;
+}
+
+.pia-create-modal-header h3 {
+    margin: 5px 0 4px;
+    color: #10264a;
+    font-size: 22px;
+}
+
+.pia-create-modal-header p {
+    margin: 0;
+    color: #718096;
+    font-size: 12px;
+}
+
+.pia-create-modal-close {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 7px;
+    background: #f3f6fa;
+    color: #526277;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pia-create-modal-body {
+    padding: 22px 24px 24px;
+}
+
+.pia-create-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.pia-create-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pia-create-form label>span {
+    color: #5f6f84;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pia-create-form input,
+.pia-create-form select,
+.pia-create-form textarea {
+    width: 100%;
+    border: 1px solid #d7e0eb;
+    border-radius: 6px;
+    background: #fff;
+    color: #27364c;
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+}
+
+.pia-create-form input,
+.pia-create-form select {
+    height: 40px;
+    padding: 0 11px;
+}
+
+.pia-create-form textarea {
+    padding: 10px 11px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.pia-create-form input:focus,
+.pia-create-form select:focus,
+.pia-create-form textarea:focus {
+    border-color: #1769df;
+    box-shadow: 0 0 0 3px rgba(23, 105, 223, 0.08);
+}
+
+.pia-create-form-full {
+    margin-top: 15px;
+}
+
+.pia-create-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #e7ecf2;
+}
+
+@media (max-width: 900px) {
+    .pia-create-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .pia-create-modal {
+        padding: 12px;
+    }
+
+    .pia-create-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pia-create-modal-header,
+    .pia-create-modal-body {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
