@@ -31,7 +31,7 @@ function escapeHtml(val) {
 }
 
 /* =========================================================
-   1. 侧边栏与导航
+   1. 侧边栏与页面切换
 ========================================================= */
 
 function initAdminNavigation() {
@@ -56,9 +56,6 @@ function initAdminNavigation() {
             targetPanel.classList.add("active");
 
             if (target === "people") hidePersonEditor();
-            if (target === "organizations") ensureOrganizationDataLoaded();
-            if (target === "relationships") ensureRelationshipDataLoaded();
-
             window.scrollTo({ top: 0, behavior: "smooth" });
         });
     });
@@ -89,7 +86,7 @@ function openPrototypeNotice(title, message) {
                 <button type="button" id="piaPrototypeClose">×</button>
             </div>
             <div class="pia-prototype-body">
-                <p style="white-space: pre-line;">${escapeHtml(message)}</p>
+                <p style="white-space: pre-line; line-height: 1.6;">${escapeHtml(message)}</p>
             </div>
             <div class="pia-prototype-footer">
                 <button type="button" class="pia-primary-btn" id="piaPrototypeConfirm">知道了</button>
@@ -104,13 +101,13 @@ function openPrototypeNotice(title, message) {
 }
 
 /* =========================================================
-   2. 人物管理 + 自由分页控制器
+   2. 人物管理 + 自由分页 + 操作栏家谱成员按钮
 ========================================================= */
 
 let allPeopleCache = [];
 let filteredPeople = [];
 let currentPage = 1;
-let pageSize = 20; // 默认每页 20 条
+let pageSize = 20;
 let currentEditingPersonId = null;
 
 function initPersonManagement() {
@@ -185,18 +182,28 @@ async function loadPeopleFromApi() {
                 nameZh: p.name_zh || "",
                 nameEn: p.name_en || "",
                 aliases: p.aliases || "",
+                gender: p.gender || "",
+                maritalStatus: p.marital_status || "",
                 birthDate: p.birth_date || "",
                 country: p.country_region || "",
                 role: p.primary_role || "",
+                professionType: p.profession_type || "",
+                coreOrganization: p.core_organization || "",
+                titleHonor: p.title_honor || "",
+                education: p.education || "",
+                estimatedNetWorth: p.estimated_net_worth || "",
+                wealthSource: p.wealth_source || "",
+                familyTrust: p.family_trust || "",
                 verificationStatus: p.verification_status || "draft",
                 isPublic: Number(p.is_public) === 1,
-                evidenceCount: 0,
                 updatedAt: p.updated_at ? String(p.updated_at).slice(0, 10) : "",
                 biography: p.biography || "",
                 tags: p.tags || "",
-                confidence: p.confidence_level || "medium"
+                confidence: p.confidence_level || "high"
             }));
             applyPersonFilters();
+            const dashCount = document.getElementById("dashPeopleCount");
+            if (dashCount) dashCount.textContent = allPeopleCache.length;
         }
     } catch (e) {
         console.error("Load people error:", e);
@@ -208,7 +215,7 @@ function applyPersonFilters() {
     const st = document.getElementById("piaPersonStatusFilter")?.value || "all";
 
     filteredPeople = allPeopleCache.filter(p => {
-        const matchesQ = !q || [p.nameZh, p.nameEn, p.role, p.country].join(" ").toLowerCase().includes(q);
+        const matchesQ = !q || [p.nameZh, p.nameEn, p.role, p.country, p.coreOrganization, p.titleHonor].join(" ").toLowerCase().includes(q);
         const matchesSt = st === "all" || p.verificationStatus === st;
         return matchesQ && matchesSt;
     });
@@ -237,7 +244,6 @@ function renderPeopleTablePage() {
     document.getElementById("piaPrevPageBtn").disabled = currentPage <= 1;
     document.getElementById("piaNextPageBtn").disabled = currentPage >= totalPages;
 
-    // 渲染页码按钮
     const pageBtnsBox = document.getElementById("piaPageNumberBtns");
     if (pageBtnsBox) {
         pageBtnsBox.innerHTML = "";
@@ -259,28 +265,43 @@ function renderPeopleTablePage() {
         <tr class="pia-person-row ${currentEditingPersonId === p.id ? "active" : ""}">
             <td>
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <div class="pia-person-avatar" style="width:34px;height:34px;font-size:12px;">${escapeHtml(p.nameEn.slice(0, 2).toUpperCase() || "PT")}</div>
+                    <div class="pia-person-avatar" style="width:34px;height:34px;font-size:12px;">${escapeHtml((p.nameEn || p.nameZh).slice(0, 2).toUpperCase())}</div>
                     <div>
                         <strong>${escapeHtml(p.nameZh || p.nameEn)}</strong>
                         <div style="font-size:11px;color:#64748b;">${escapeHtml(p.nameEn)}</div>
                     </div>
                 </div>
             </td>
-            <td>${escapeHtml(p.role || "-")}</td>
+            <td>
+                <strong>${escapeHtml(p.titleHonor || p.role || "-")}</strong>
+                <div style="font-size:11px;color:#64748b;">${escapeHtml(p.professionType || "")}</div>
+            </td>
+            <td>${escapeHtml(p.coreOrganization || "-")}</td>
             <td>${escapeHtml(p.country || "-")}</td>
             <td><span class="pia-status ${p.verificationStatus}">${p.verificationStatus === "verified" ? "已核验" : (p.verificationStatus === "pending" ? "待审核" : "草稿")}</span></td>
             <td><span class="pia-publication-status ${p.isPublic ? "published" : "unpublished"}">${p.isPublic ? "已发布" : "未发布"}</span></td>
-            <td>${p.evidenceCount}</td>
             <td>${escapeHtml(p.updatedAt || "-")}</td>
             <td>
-                <button type="button" class="pia-primary-btn" style="min-height:30px;padding:0 12px;font-size:12px;" onclick="enterPersonEditMode('${escapeHtml(p.id)}')">编辑</button>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <!-- 【核心功能】查看家谱成员树状图按钮 -->
+                    <button type="button" class="pia-primary-btn" style="min-height:30px;padding:0 10px;font-size:12px;background:#10b981;border-color:#10b981;display:flex;align-items:center;gap:3px;" onclick="viewFamilyTree('${escapeHtml(p.nameZh || p.nameEn)}')">
+                        <span>🌳</span> 家谱成员
+                    </button>
+                    <button type="button" class="pia-secondary-btn" style="min-height:30px;padding:0 10px;font-size:12px;" onclick="enterPersonEditMode('${escapeHtml(p.id)}')">编辑</button>
+                </div>
             </td>
         </tr>
     `).join("");
 }
 
+// 点击【家谱成员】直接在新标签页打开全景家谱大树
+window.viewFamilyTree = function (name) {
+    if (!name) return;
+    window.open(`/people-intelligence.html?q=${encodeURIComponent(name)}`, "_blank");
+};
+
 /* =========================================================
-   3. 人物编辑表单逻辑（仅在点击“编辑”时从顶部展开）
+   3. 详细档案编辑展开
 ========================================================= */
 
 window.enterPersonEditMode = function (personId) {
@@ -299,12 +320,19 @@ window.enterPersonEditMode = function (personId) {
     setValue("piaPersonNameZh", person.nameZh);
     setValue("piaPersonNameEn", person.nameEn);
     setValue("piaPersonAliases", person.aliases);
+    setValue("piaPersonGender", person.gender);
+    setValue("piaPersonMaritalStatus", person.maritalStatus);
     setValue("piaPersonBirthDate", person.birthDate);
     setValue("piaPersonCountry", person.country);
-    setValue("piaPersonRole", person.role);
+    setValue("piaPersonProfessionType", person.professionType);
+    setValue("piaPersonTitleHonor", person.titleHonor);
+    setValue("piaPersonCoreOrganization", person.coreOrganization);
+    setValue("piaPersonEducation", person.education);
+    setValue("piaPersonNetWorth", person.estimatedNetWorth);
+    setValue("piaPersonWealthSource", person.wealthSource);
+    setValue("piaPersonFamilyTrust", person.familyTrust);
     setValue("piaPersonVerificationStatus", person.verificationStatus);
     setValue("piaPersonConfidence", person.confidence);
-    setValue("piaPersonUpdatedAt", person.updatedAt);
     setValue("piaPersonBiography", person.biography);
     setValue("piaPersonTags", person.tags);
 
@@ -345,9 +373,20 @@ async function savePersonDraft() {
     const payload = {
         name_zh: document.getElementById("piaPersonNameZh")?.value.trim(),
         name_en: document.getElementById("piaPersonNameEn")?.value.trim(),
-        primary_role: document.getElementById("piaPersonRole")?.value.trim(),
+        aliases: document.getElementById("piaPersonAliases")?.value.trim(),
+        gender: document.getElementById("piaPersonGender")?.value,
+        marital_status: document.getElementById("piaPersonMaritalStatus")?.value,
+        birth_date: document.getElementById("piaPersonBirthDate")?.value,
         country_region: document.getElementById("piaPersonCountry")?.value.trim(),
+        profession_type: document.getElementById("piaPersonProfessionType")?.value,
+        title_honor: document.getElementById("piaPersonTitleHonor")?.value.trim(),
+        core_organization: document.getElementById("piaPersonCoreOrganization")?.value.trim(),
+        education: document.getElementById("piaPersonEducation")?.value.trim(),
+        estimated_net_worth: document.getElementById("piaPersonNetWorth")?.value.trim(),
+        wealth_source: document.getElementById("piaPersonWealthSource")?.value.trim(),
+        family_trust: document.getElementById("piaPersonFamilyTrust")?.value.trim(),
         biography: document.getElementById("piaPersonBiography")?.value.trim(),
+        tags: document.getElementById("piaPersonTags")?.value.trim(),
         verification_status: "draft",
         is_public: false
     };
@@ -363,7 +402,7 @@ async function savePersonDraft() {
             await loadPeopleFromApi();
             const updated = allPeopleCache.find(p => p.id === currentEditingPersonId);
             if (updated) updateWorkflowButtonStates(updated);
-            openPrototypeNotice("保存成功", "修改已保存至数据库！现在您可以点击【提交审核】推进流程。");
+            openPrototypeNotice("保存成功", "深度档案已保存！您现在可以点击【提交审核】推进核验。");
         }
     } catch (e) {
         openPrototypeNotice("保存失败", e.message);
@@ -403,7 +442,7 @@ async function approvePerson() {
             await loadPeopleFromApi();
             const updated = allPeopleCache.find(p => p.id === currentEditingPersonId);
             if (updated) updateWorkflowButtonStates(updated);
-            openPrototypeNotice("审核通过", "状态已更新为【已核验】！您可以直接点击【发布】。");
+            openPrototypeNotice("审核通过", "状态已更新为【已核验】！您可以直接点击【发布】推送到前台。");
         }
     } catch (e) { }
 }
@@ -425,7 +464,7 @@ async function togglePersonPublication() {
             await loadPeopleFromApi();
             const updated = allPeopleCache.find(p => p.id === currentEditingPersonId);
             if (updated) updateWorkflowButtonStates(updated);
-            openPrototypeNotice(shouldPublish ? "发布成功 🎉" : "已取消发布", shouldPublish ? "前台可直接搜索浏览。" : "已转为非公开。");
+            openPrototypeNotice(shouldPublish ? "发布成功 🎉" : "已取消发布", shouldPublish ? "前台可直接搜索浏览该人物图谱。" : "已转为非公开。");
         }
     } catch (e) { }
 }
@@ -447,7 +486,7 @@ async function moveCurrentPersonToTrash() {
 }
 
 /* =========================================================
-   4. 【核心改进】新增人物独立模态弹窗逻辑
+   4. 独立弹窗：全要素新增人物
 ========================================================= */
 
 function initPersonCreateModal() {
@@ -476,11 +515,25 @@ function initPersonCreateModal() {
 
     form?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const zh = document.getElementById("modalPersonNameZh")?.value.trim();
-        const en = document.getElementById("modalPersonNameEn")?.value.trim();
-        const role = document.getElementById("modalPersonRole")?.value.trim();
-        const country = document.getElementById("modalPersonCountry")?.value.trim();
-        const bio = document.getElementById("modalPersonBiography")?.value.trim();
+        const payload = {
+            name_zh: document.getElementById("modalPersonNameZh")?.value.trim(),
+            name_en: document.getElementById("modalPersonNameEn")?.value.trim(),
+            aliases: document.getElementById("modalPersonAliases")?.value.trim(),
+            gender: document.getElementById("modalPersonGender")?.value,
+            marital_status: document.getElementById("modalPersonMaritalStatus")?.value,
+            birth_date: document.getElementById("modalPersonBirthDate")?.value,
+            country_region: document.getElementById("modalPersonCountry")?.value.trim(),
+            profession_type: document.getElementById("modalPersonProfessionType")?.value,
+            title_honor: document.getElementById("modalPersonTitleHonor")?.value.trim(),
+            core_organization: document.getElementById("modalPersonCoreOrganization")?.value.trim(),
+            education: document.getElementById("modalPersonEducation")?.value.trim(),
+            estimated_net_worth: document.getElementById("modalPersonNetWorth")?.value.trim(),
+            family_trust: document.getElementById("modalPersonFamilyTrust")?.value.trim(),
+            biography: document.getElementById("modalPersonBiography")?.value.trim(),
+            verification_status: "draft",
+            confidence_level: "high",
+            is_public: false
+        };
 
         const token = getAdminToken();
         const saveBtn = document.getElementById("piaSaveCreatePersonBtn");
@@ -490,28 +543,20 @@ function initPersonCreateModal() {
             const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/people`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    name_zh: zh,
-                    name_en: en,
-                    primary_role: role,
-                    country_region: country,
-                    biography: bio,
-                    verification_status: "draft",
-                    is_public: false
-                })
+                body: JSON.stringify(payload)
             });
             const d = await res.json();
             if (d.success) {
                 closeModal();
                 await loadPeopleFromApi();
-                openPrototypeNotice("创建成功 🎉", `人物【${zh || en}】已作为草稿创建入库！`);
+                openPrototypeNotice("创建成功 🎉", `人物【${payload.name_zh || payload.name_en}】深度档案已成功入库！`);
             } else {
                 alert(d.message || "创建失败");
             }
         } catch (err) {
             alert("请求错误: " + err.message);
         } finally {
-            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "保存入库"; }
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "保存完整档案入库"; }
         }
     });
 }
@@ -533,7 +578,7 @@ function initWikidataPipeline() {
         if (listContainer) listContainer.innerHTML = "";
         if (statusBox) {
             statusBox.style.display = "block";
-            statusBox.textContent = `⏳ 正在连接维基百科数据库，检索【${query}】候选条目...`;
+            statusBox.textContent = `⏳ 正在连接维基百科，检索【${query}】候选条目...`;
         }
 
         try {
@@ -558,7 +603,7 @@ function initWikidataPipeline() {
                         </div>
                         <div style="font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.5;">${escapeHtml(item.description)}</div>
                     </div>
-                    <button type="button" class="pia-primary-btn" style="min-height: 36px; padding: 0 16px; font-size: 13px; background: #10b981; border-color: #10b981;" onclick="executeWikidataIngest('${escapeHtml(item.qid)}')">
+                    <button type="button" class="pia-primary-btn" style="min-height: 36px; padding: 0 16px; font-size: 13px; background: #10b981; border-color: #10b981; white-space: nowrap;" onclick="executeWikidataIngest('${escapeHtml(item.qid)}')">
                         一键抓取并建档入库
                     </button>
                 </div>
@@ -605,61 +650,3 @@ window.executeWikidataIngest = async function (qid) {
         openPrototypeNotice("执行抓取错误", e.message);
     }
 };
-
-/* =========================================================
-   6. 机构与关系数据只读展示
-========================================================= */
-
-async function ensureOrganizationDataLoaded() {
-    try {
-        const token = getAdminToken();
-        const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/organizations`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success && Array.isArray(data.organizations)) {
-            const tbody = document.getElementById("piaOrganizationTableBody");
-            if (!tbody) return;
-            tbody.innerHTML = data.organizations.map(org => `
-                <tr>
-                    <td><strong>${escapeHtml(org.name_zh || org.name_en)}</strong></td>
-                    <td>${escapeHtml(org.organization_type || "公司")}</td>
-                    <td>${escapeHtml(org.country_region || "-")}</td>
-                    <td>${escapeHtml(org.industry_primary || org.industry || "-")}</td>
-                    <td>${escapeHtml(org.ticker_symbol || "-")}</td>
-                    <td><span class="pia-status ${org.verification_status}">${org.verification_status}</span></td>
-                    <td>${Number(org.is_public) === 1 ? "已发布" : "未发布"}</td>
-                    <td>${escapeHtml(String(org.updated_at || "").slice(0, 10))}</td>
-                    <td><button type="button" class="pia-primary-btn" style="min-height:28px;padding:0 10px;font-size:11px;">查看</button></td>
-                </tr>
-            `).join("");
-        }
-    } catch (e) { }
-}
-
-async function ensureRelationshipDataLoaded() {
-    try {
-        const token = getAdminToken();
-        const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/relationships`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success && Array.isArray(data.relationships)) {
-            const tbody = document.getElementById("piaRelationshipTableBody");
-            if (!tbody) return;
-            tbody.innerHTML = data.relationships.map(rel => `
-                <tr>
-                    <td><strong>${escapeHtml(rel.source_entity_name || `ID ${rel.source_entity_id}`)}</strong></td>
-                    <td>${escapeHtml(rel.relationship_name_zh || rel.relationship_type)}</td>
-                    <td><strong>${escapeHtml(rel.target_entity_name || `ID ${rel.target_entity_id}`)}</strong></td>
-                    <td>${escapeHtml(rel.role_title || "-")}</td>
-                    <td><span class="pia-status ${rel.verification_status}">${rel.verification_status}</span></td>
-                    <td>${Number(rel.verified_evidence_count || 0)} / ${Number(rel.evidence_count || 0)}</td>
-                    <td>${Number(rel.is_public) === 1 ? "已公开" : "未公开"}</td>
-                    <td>${escapeHtml(String(rel.updated_at || "").slice(0, 10))}</td>
-                    <td><button type="button" class="pia-primary-btn" style="min-height:28px;padding:0 10px;font-size:11px;">查看</button></td>
-                </tr>
-            `).join("");
-        }
-    } catch (e) { }
-}

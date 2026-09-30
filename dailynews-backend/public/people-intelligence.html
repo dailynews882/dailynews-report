@@ -2,625 +2,436 @@
 <html lang="zh-CN">
 
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球名门望族与资本脉络树状图谱 | Daily News Intelligence</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        :root {
+            --bg-canvas: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --blue-primary: #1d4ed8;
+            --blue-light: #eff6ff;
+            --rose: #e11d48;
+            --emerald: #059669;
+        }
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        * {
+            box-sizing: border-box;
+        }
 
-    <title>人谱情报 | Daily News</title>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+        }
 
-    <meta name="description" content="人谱情报 - 全球人物、家族、企业、资本与关系情报网络" />
+        /* 顶部通栏 */
+        .g-header {
+            height: 60px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 50;
+        }
 
-    <link rel="stylesheet" href="/people-intelligence.css" />
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+        .g-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .g-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #1d4ed8, #4338ca);
+            border-radius: 6px;
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+        }
+
+        .g-search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 440px;
+        }
+
+        .g-search-box input {
+            flex: 1;
+            height: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0 14px;
+            font-size: 13px;
+            outline: none;
+            background: #f1f5f9;
+        }
+
+        .g-search-box input:focus {
+            background: #fff;
+            border-color: var(--blue-primary);
+        }
+
+        .g-search-btn {
+            height: 38px;
+            padding: 0 18px;
+            background: var(--blue-primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* 左右分栏工作区 */
+        .g-workspace {
+            display: flex;
+            height: calc(100vh - 60px);
+            width: 100vw;
+        }
+
+        /* 左侧严谨家谱树主画布 */
+        .g-canvas-pane {
+            flex: 1;
+            position: relative;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+            background-size: 26px 26px;
+            overflow: hidden;
+        }
+
+        #familyTreeSvg {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #familyTreeSvg:active {
+            cursor: grabbing;
+        }
+
+        .g-canvas-toolbar {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px;
+            display: flex;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+
+        .g-canvas-toolbar button {
+            border: none;
+            background: transparent;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .g-canvas-toolbar button:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        /* 右侧商业与百科 Infobox */
+        .g-info-pane {
+            width: 450px;
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 16px rgba(0, 0, 0, 0.03);
+            z-index: 20;
+            overflow: hidden;
+        }
+
+        .g-info-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+
+        .g-info-header h3 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .g-info-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* 维基标准 Infobox 风格 */
+        .wiki-infobox {
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .wiki-infobox-header {
+            background: #f3f4f6;
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .wiki-infobox-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .wiki-infobox-header span {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .wiki-photo-box {
+            text-align: center;
+            padding: 14px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .wiki-photo {
+            max-width: 170px;
+            max-height: 200px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            object-fit: cover;
+        }
+
+        .wiki-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .wiki-table th {
+            width: 32%;
+            padding: 7px 10px;
+            background: #f9fafb;
+            color: #4b5563;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: top;
+            font-weight: 600;
+        }
+
+        .wiki-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #111827;
+            line-height: 1.5;
+        }
+
+        .biz-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .biz-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin: 0 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .biz-company-item {
+            padding: 8px 10px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 树状连接线 */
+        .family-line {
+            fill: none;
+            stroke: #94a3b8;
+            stroke-width: 1.8px;
+        }
+
+        .marriage-line {
+            fill: none;
+            stroke: #e11d48;
+            stroke-width: 2px;
+            stroke-dasharray: 4, 4;
+        }
+
+        .branch-box {
+            fill: #ffffff;
+            stroke: #e2e8f0;
+            stroke-width: 1.5px;
+            rx: 10px;
+        }
+
+        .branch-title {
+            font-size: 11px;
+            font-weight: 700;
+            fill: #e11d48;
+        }
+
+        .node-circle {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .node-circle:hover {
+            filter: drop-shadow(0 4px 10px rgba(29, 78, 216, 0.3));
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
 <body>
 
-    <main class="pi-page">
-
-        <!-- =========================================
-         人物顶部主卡片
-    ========================================== -->
-        <section class="pi-profile-hero">
-
-            <div class="pi-profile-main">
-
-                <div class="pi-avatar">
-                    <div class="pi-avatar-placeholder">
-                        DT
-                    </div>
-                </div>
-
-                <div class="pi-profile-info">
-
-                    <div class="pi-profile-title-row">
-                        <h1>唐纳德·特朗普（Donald Trump）</h1>
-
-                        <span class="pi-verified-badge">
-                            已核验
-                        </span>
-                    </div>
-
-                    <p class="pi-profile-role">
-                        商人 · 政治人物 · 特朗普集团
-                    </p>
-
-                    <div class="pi-profile-meta">
-                        <span>美国</span>
-                        <span>出生：1946年6月14日</span>
-                        <span>更新：2026年9月</span>
-                    </div>
-
-                    <div class="pi-profile-tags">
-                        <span>政治</span>
-                        <span>房地产</span>
-                        <span>媒体</span>
-                        <span>家族企业</span>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="pi-profile-summary">
-                <p>
-                    以人物为核心，连接家族、企业、股权、行业、事件与证据，
-                    形成可验证、可追溯的人物关系情报网络。
-                </p>
-            </div>
-
-        </section>
-
-
-        <!-- =========================================
-         核心情报指标
-    ========================================== -->
-        <section class="pi-metrics" aria-label="人物情报指标">
-
-            <article class="pi-metric-card">
-                <strong>18</strong>
-                <span>家族成员</span>
-            </article>
-
-            <article class="pi-metric-card">
-                <strong>27</strong>
-                <span>关联企业</span>
-            </article>
-
-            <article class="pi-metric-card">
-                <strong>8</strong>
-                <span>股权关系</span>
-            </article>
-
-            <article class="pi-metric-card">
-                <strong>6</strong>
-                <span>关联行业</span>
-            </article>
-
-            <article class="pi-metric-card">
-                <strong>39</strong>
-                <span>重要事件</span>
-            </article>
-
-            <article class="pi-metric-card pi-metric-risk">
-                <strong>7</strong>
-                <span>风险事件</span>
-            </article>
-
-        </section>
-
-
-        <!-- =========================================
-         人物功能标签页
-    ========================================== -->
-        <section class="pi-tabs-section">
-
-            <div class="pi-tabs" role="tablist" aria-label="人物信息分类">
-
-                <button type="button" class="pi-tab active" data-tab="overview">
-                    概览
-                </button>
-
-                <button type="button" class="pi-tab" data-tab="network">
-                    关系网络
-                </button>
-
-                <button type="button" class="pi-tab" data-tab="family">
-                    家族
-                </button>
-
-                <button type="button" class="pi-tab" data-tab="business">
-                    商业
-                </button>
-
-                <button type="button" class="pi-tab" data-tab="ownership">
-                    股权控制
-                </button>
-
-                <button type="button" class="pi-tab" data-tab="assets">
-                    资产
-                </button>
-
-                <button type="button" class="pi-tab" data-tab="events">
-                    事件
-                </button>
-
-                <button type="button" class="pi-tab" data-tab="risk">
-                    风险
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <!-- =========================================
-         页面主体
-    ========================================== -->
-        <section class="pi-content-layout">
-
-            <div class="pi-content-main">
-
-                <!-- Overview -->
-                <section class="pi-tab-panel active" data-panel="overview">
-
-                    <div class="pi-section-card">
-
-                        <div class="pi-section-heading">
-                            <div>
-                                <span class="pi-eyebrow">
-                                    情报概览
-                                </span>
-
-                                <h2>
-                                    关于唐纳德·特朗普
-                                </h2>
-                            </div>
-                        </div>
-
-                        <p class="pi-overview-text">
-                            本页面用于验证“人谱情报”第一版产品结构：以一个核心人物为入口，
-                            连接家族成员、企业、行业、股权结构、重要事件以及支持这些关系的证据资料。
-                        </p>
-
-                    </div>
-
-
-                    <div class="pi-two-column">
-
-                        <article class="pi-section-card">
-
-                            <div class="pi-section-heading">
-                                <h2>关键信息</h2>
-                            </div>
-
-                            <dl class="pi-info-list">
-
-                                <div>
-                                    <dt>姓名</dt>
-                                    <dd>唐纳德·约翰·特朗普（Donald John Trump）</dd>
-                                </div>
-
-                                <div>
-                                    <dt>国籍</dt>
-                                    <dd>美国</dd>
-                                </div>
-
-                                <div>
-                                    <dt>主要身份</dt>
-                                    <dd>商人 / 政治人物</dd>
-                                </div>
-
-                                <div>
-                                    <dt>核心关系网络</dt>
-                                    <dd>特朗普家族 / 特朗普集团</dd>
-                                </div>
-
-                            </dl>
-
-                        </article>
-
-
-                        <article class="pi-section-card" id="relationshipSummaryCard">
-
-                            <div class="pi-section-heading">
-                                <h2>关系网络摘要</h2>
-                            </div>
-
-                            <div class="pi-network-preview" id="relationshipSummaryPreview">
-
-                                <div class="pi-network-center" id="relationshipSummaryCenter">
-                                    暂无公开数据
-                                </div>
-
-                                <div class="pi-network-node family">
-                                    家族
-                                </div>
-
-                                <div class="pi-network-node company">
-                                    企业
-                                </div>
-
-                                <div class="pi-network-node industry">
-                                    行业
-                                </div>
-
-                                <div class="pi-network-node event">
-                                    事件
-                                </div>
-
-                            </div>
-                        </article>
-
-                    </div>
-
-                </section>
-
-
-                <!-- Network -->
-                <section class="pi-tab-panel" data-panel="network" hidden>
-
-                    <div class="pi-section-card">
-
-                        <div class="pi-section-heading">
-                            <div>
-                                <span class="pi-eyebrow">
-                                    关系探索
-                                </span>
-
-                                <h2>
-                                    关系网络
-                                </h2>
-                            </div>
-                        </div>
-
-                        <div class="pi-network-toolbar">
-
-                            <button type="button" class="active" data-network-filter="all">
-                                全部
-                            </button>
-
-                            <button type="button" data-network-filter="family">
-                                家族
-                            </button>
-
-                            <button type="button" data-network-filter="business">
-                                商业
-                            </button>
-
-                            <button type="button" data-network-filter="ownership">
-                                股权 / 行业
-                            </button>
-
-                        </div>
-
-                        <div id="peopleNetwork" class="pi-network-canvas">
-                            <div class="pi-network-empty">
-                                关系网络将在这里显示。
-                            </div>
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                <!-- Family -->
-                <section class="pi-tab-panel" data-panel="family" hidden>
-
-                    <div class="pi-section-card">
-                        <h2>家族关系</h2>
-
-                        <p>
-                            这里将展示家族成员以及人物与人物之间的关系。
-                        </p>
-                    </div>
-
-                </section>
-
-
-                <!-- Business -->
-                <section class="pi-tab-panel" data-panel="business" hidden>
-
-                    <div class="pi-section-card">
-                        <h2>商业关系</h2>
-
-                        <p>
-                            这里将展示关联企业、董事、高管、管理角色及其他商业关系。
-                        </p>
-                    </div>
-
-                </section>
-
-
-                <!-- Ownership -->
-                <section class="pi-tab-panel" data-panel="ownership" hidden>
-
-                    <div class="pi-section-card">
-                        <h2>股权与控制</h2>
-
-                        <p>
-                            这里将展示直接持股、间接持股以及实际控制关系。
-                        </p>
-                    </div>
-
-                </section>
-
-
-                <!-- Assets -->
-                <section class="pi-tab-panel" data-panel="assets" hidden>
-
-                    <div class="pi-section-card">
-                        <h2>资产</h2>
-
-                        <p>
-                            这里将展示资产估值、估算方法以及支持这些估值的证据来源。
-                        </p>
-                    </div>
-
-                </section>
-
-
-                <!-- Events -->
-                <section class="pi-tab-panel" data-panel="events" hidden>
-
-                    <div class="pi-section-card">
-                        <h2>重要事件</h2>
-
-                        <p>
-                            这里将展示重要商业、法律、政治及公共事件。
-                        </p>
-                    </div>
-
-                </section>
-
-
-                <!-- Risk -->
-                <section class="pi-tab-panel" data-panel="risk" hidden>
-
-                    <div class="pi-section-card">
-                        <h2>风险情报</h2>
-
-                        <p>
-                            这里将展示已核验的风险事件、法律事项、监管事项及其他风险指标。
-                        </p>
-                    </div>
-
-                </section>
-
-            </div>
-
-
-            <!-- =========================================
-           右侧证据与来源面板
-      ========================================== -->
-            <aside class="pi-side-panel">
-
-                <section class="pi-section-card">
-
-                    <div class="pi-section-heading">
-                        <div>
-                            <span class="pi-eyebrow">
-                                数据质量
-                            </span>
-
-                            <h2>
-                                证据资料
-                            </h2>
-                        </div>
-                    </div>
-
-                    <div class="pi-confidence-box">
-
-                        <span>
-                            人物资料可信度
-                        </span>
-
-                        <strong>
-                            高
-                        </strong>
-
-                    </div>
-
-                    <div class="pi-evidence-item">
-
-                        <div class="pi-evidence-type">
-                            官方
-                        </div>
-
-                        <strong>
-                            第一手来源
-                        </strong>
-
-                        <p>
-                            官方文件、监管披露和已核验记录将在这里显示。
-                        </p>
-
-                    </div>
-
-                    <div class="pi-evidence-item">
-
-                        <div class="pi-evidence-type">
-                            媒体
-                        </div>
-
-                        <strong>
-                            可信媒体报道
-                        </strong>
-
-                        <p>
-                            经过筛选的可信媒体证据将在这里显示。
-                        </p>
-
-                    </div>
-
-                </section>
-
-
-                <section class="pi-section-card" id="peopleDataStatusCard">
-
-                    <div class="pi-section-heading">
-                        <h2>数据状态</h2>
-                    </div>
-
-                    <dl class="pi-side-info" id="peopleDataStatus">
-
-                        <div>
-                            <dt>状态</dt>
-                            <dd>暂无公开数据</dd>
-                        </div>
-
-                        <div>
-                            <dt>核验状态</dt>
-                            <dd>暂无公开数据</dd>
-                        </div>
-
-                        <div>
-                            <dt>最后更新</dt>
-                            <dd>暂无公开数据</dd>
-                        </div>
-
-                    </dl>
-
-                </section>
-
-                <!-- =========================================
-                                前台资料纠错入口
-                           ========================================== -->
-                <section class="pi-section-card pi-correction-card" id="peopleCorrectionCard">
-
-                    <div class="pi-section-heading">
-                        <div>
-                            <span class="pi-eyebrow">
-                                DATA CORRECTION
-                            </span>
-
-                            <h2>
-                                资料纠错
-                            </h2>
-                        </div>
-                    </div>
-
-                    <p class="pi-correction-description">
-                        如果您发现当前人物资料存在错误、遗漏或需要更新，
-                        可以向我们提交纠错建议。
-                    </p>
-
-                    <button type="button" class="pi-correction-button" id="peopleCorrectionOpenButton">
-                        提交纠错
-                    </button>
-
-                </section>
-
-            </aside>
-
-        </section>
-
-    </main>
-
-    <!-- =========================================
-        人物资料纠错弹窗
-    ========================================== -->
-    <div class="pi-correction-modal" id="peopleCorrectionModal" hidden>
-
-        <div class="pi-correction-modal-backdrop" data-correction-close>
+    <header class="g-header">
+        <div class="g-logo">
+            <div class="g-logo-icon">DN</div>
+            <span>全球名门望族与资本脉络树状图谱 (严谨支系版)</span>
         </div>
 
-        <div class="pi-correction-modal-dialog" role="dialog" aria-modal="true"
-            aria-labelledby="peopleCorrectionModalTitle">
+        <form id="globalSearchForm" class="g-search-box">
+            <input type="search" id="globalSearchInput" placeholder="输入何鸿燊、唐纳德·特朗普等..." required>
+            <button type="submit" class="g-search-btn">生成全景家谱树</button>
+        </form>
+    </header>
 
-            <div class="pi-correction-modal-header">
+    <div class="g-workspace">
+        <!-- 左侧画布 -->
+        <main class="g-canvas-pane">
+            <div class="g-canvas-toolbar">
+                <button type="button" id="btnTreeCenter">适应居中</button>
+                <button type="button" id="btnZoomIn">放大 (+)</button>
+                <button type="button" id="btnZoomOut">缩小 (-)</button>
+            </div>
+            <svg id="familyTreeSvg"></svg>
+        </main>
 
-                <div>
-                    <span class="pi-eyebrow">
-                        DATA CORRECTION
-                    </span>
-
-                    <h2 id="peopleCorrectionModalTitle">
-                        提交资料纠错
-                    </h2>
-
-                    <p id="peopleCorrectionEntityName">
-                        当前人物
-                    </p>
-                </div>
-
-                <button type="button" class="pi-correction-modal-close" id="peopleCorrectionCloseButton"
-                    aria-label="关闭纠错窗口">
-                    ×
-                </button>
-
+        <!-- 右侧 Infobox -->
+        <aside class="g-info-pane">
+            <div class="g-info-header">
+                <h3>INTELLIGENCE & CAPITAL INFOBOX</h3>
+                <span style="font-size: 11px; color: #059669; font-weight: 700;">● 权威核验</span>
             </div>
 
-            <form id="peopleCorrectionForm">
-
-                <div class="pi-correction-form-group">
-
-                    <div class="pi-correction-field-heading">
-                        <span class="pi-correction-field-label">
-                            需要纠错的字段 *
-                        </span>
-
-                        <span class="pi-correction-field-hint">
-                            可同时选择多个字段
-                        </span>
+            <div class="g-info-body">
+                <div class="wiki-infobox">
+                    <div class="wiki-infobox-header">
+                        <h2 id="infoNameZh">--</h2>
+                        <span id="infoNameEn">--</span>
                     </div>
 
-                    <div class="pi-correction-field-options" id="peopleCorrectionFieldOptions"></div>
-
-                    <div class="pi-correction-items" id="peopleCorrectionItems">
-
-                        <div class="pi-correction-items-empty" id="peopleCorrectionItemsEmpty">
-                            请先选择需要纠错的字段，系统将在这里显示对应的当前资料和修改输入框。
-                        </div>
-
+                    <div class="wiki-photo-box" id="infoPhotoWrap">
+                        <img id="infoPhoto" class="wiki-photo" src="" alt="肖像">
                     </div>
 
-                    <div class="pi-correction-form-group">
+                    <table class="wiki-table">
+                        <tbody>
+                            <tr>
+                                <th>主要身份</th>
+                                <td id="infoRole">--</td>
+                            </tr>
+                            <tr>
+                                <th>出生日期</th>
+                                <td id="infoBirth">--</td>
+                            </tr>
+                            <tr>
+                                <th>逝世日期</th>
+                                <td id="infoDeath">--</td>
+                            </tr>
+                            <tr>
+                                <th>国籍 / 居住地</th>
+                                <td id="infoCountry">--</td>
+                            </tr>
+                            <tr>
+                                <th>母校 / 最高学历</th>
+                                <td id="infoEducation">--</td>
+                            </tr>
+                            <tr>
+                                <th>婚姻历程</th>
+                                <td id="infoMarital">--</td>
+                            </tr>
+                            <tr>
+                                <th>核心旗舰企业</th>
+                                <td id="infoCoreOrg">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                        <label for="peopleCorrectionReason">
-                            纠错原因 *
-                        </label>
-
-                        <textarea id="peopleCorrectionReason" name="reason" rows="4" required
-                            placeholder="请说明为什么需要修改这项资料"></textarea>
-
+                <!-- 商业版图 (天眼查风格) -->
+                <div class="biz-card">
+                    <div class="biz-card-title">
+                        <span>旗下商业帝国与参控股机构 (商业穿透)</span>
+                        <span
+                            style="font-size: 10px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;">核心版图</span>
                     </div>
+                    <div id="infoBizList"></div>
+                </div>
 
-                    <div class="pi-correction-form-group">
-
-                        <label for="peopleCorrectionEvidenceUrl">
-                            证据 / 来源网址
-                        </label>
-
-                        <input type="url" id="peopleCorrectionEvidenceUrl" name="evidence_url"
-                            placeholder="https://...">
-
+                <!-- 维基百科生平长文 -->
+                <div class="biz-card" style="background: #fff;">
+                    <div class="biz-card-title"><span>维基百科生平与资本轨迹</span></div>
+                    <div id="infoBiography"
+                        style="font-size: 12px; line-height: 1.7; color: #334155; max-height: 260px; overflow-y: auto;">
+                        正在加载档案...
                     </div>
-
-                    <div class="pi-correction-modal-actions">
-
-                        <button type="button" class="pi-correction-cancel-button" data-correction-close>
-                            取消
-                        </button>
-
-                        <button type="submit" class="pi-correction-submit-button" id="peopleCorrectionSubmitButton">
-                            提交纠错
-                        </button>
-
+                    <div style="margin-top: 10px;">
+                        <a id="infoWikiUrl" href="#" target="_blank"
+                            style="font-size: 12px; color: var(--blue-primary); text-decoration: none;">
+                            🔗 查看维基百科官方词条原文 ↗
+                        </a>
                     </div>
-
-                    <p class="pi-correction-message" id="peopleCorrectionMessage" aria-live="polite">
-                    </p>
-
-            </form>
-
-        </div>
-
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script src="/people-intelligence.js"></script>
-
 </body>
 
 </html>
