@@ -2383,6 +2383,126 @@ db.serialize(() => {
      )
  `);
 
+
+  /*
+   * ---------------------------------------------------------
+   * People Intelligence - External Source Layer V1
+   * 外部数据源身份映射
+   * ---------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_external_identities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+      provider TEXT NOT NULL,
+      external_id TEXT NOT NULL,
+      external_url TEXT,
+      language_code TEXT,
+      project_code TEXT,
+      is_primary INTEGER NOT NULL DEFAULT 0,
+      last_synced_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(provider, external_id, entity_type, entity_id)
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_external_identities_entity
+    ON pi_external_identities(entity_type, entity_id, provider)
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_external_identities_external
+    ON pi_external_identities(provider, external_id)
+  `);
+
+  /*
+   * ---------------------------------------------------------
+   * People Intelligence - Source Snapshots V1
+   * 外部数据源原始快照
+   * ---------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_source_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      provider TEXT NOT NULL,
+      external_id TEXT NOT NULL,
+      source_url TEXT,
+      revision_id TEXT,
+      source_updated_at DATETIME,
+      retrieved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      raw_data TEXT NOT NULL,
+      data_hash TEXT,
+      processing_status TEXT NOT NULL DEFAULT 'pending',
+      processing_error TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_source_snapshots_source
+    ON pi_source_snapshots(provider, external_id, retrieved_at)
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_source_snapshots_revision
+    ON pi_source_snapshots(provider, external_id, revision_id)
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_source_snapshots_hash
+    ON pi_source_snapshots(provider, external_id, data_hash)
+  `);
+
+  /*
+   * ---------------------------------------------------------
+   * People Intelligence - Ingestion Changes V1
+   * 外部数据变更候选 / 审核入口
+   * ---------------------------------------------------------
+   */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pi_ingestion_changes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      provider TEXT NOT NULL,
+      external_id TEXT NOT NULL,
+      snapshot_id INTEGER,
+      entity_type TEXT,
+      entity_id INTEGER,
+      change_type TEXT NOT NULL DEFAULT 'update',
+      field_name TEXT,
+      old_value TEXT,
+      new_value TEXT,
+      mapping_type TEXT NOT NULL DEFAULT 'field',
+      confidence_level TEXT NOT NULL DEFAULT 'medium',
+      review_status TEXT NOT NULL DEFAULT 'pending',
+      reviewed_by INTEGER,
+      reviewed_at DATETIME,
+      review_note TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (snapshot_id)
+        REFERENCES pi_source_snapshots(id)
+        ON DELETE SET NULL
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_ingestion_changes_review
+    ON pi_ingestion_changes(review_status, created_at)
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_ingestion_changes_entity
+    ON pi_ingestion_changes(entity_type, entity_id, review_status)
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_pi_ingestion_changes_source
+    ON pi_ingestion_changes(provider, external_id, snapshot_id)
+  `);
+
 });
 
 module.exports = db;

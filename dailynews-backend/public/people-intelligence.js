@@ -1,5 +1,5 @@
 /* =========================================================
-   People Intelligence V1.3
+   People Intelligence V1.3 (Integrated Dynamic Graph Engine)
    File: public/people-intelligence.js
 
    中文显示版
@@ -38,6 +38,7 @@ const peopleNetworkState = {
 
 let currentPublicEntityType = "person";
 let currentPublicEntity = null;
+let echartsGraphInstance = null;
 
 
 /* =========================================================
@@ -52,7 +53,22 @@ const relationTextMap = {
     ASSOCIATED_WITH: "商业关联",
     EXPOSED_TO: "行业关联",
     RELATED_ENTITY: "关联实体",
-    RELATED_TO: "关联关系"
+    RELATED_TO: "关联关系",
+    founder_of: "创始人",
+    cofounder_of: "联合创始人",
+    ceo_of: "首席执行官",
+    chairman_of: "董事长",
+    director_of: "董事",
+    executive_of: "高管",
+    employee_of: "任职",
+    advisor_of: "顾问",
+    owner_of: "所有人",
+    shareholder_of: "股东",
+    beneficial_owner_of: "最终受益人",
+    controls: "控制",
+    invested_in: "投资",
+    parent_company_of: "母公司",
+    subsidiary_of: "子公司"
 };
 
 const categoryTextMap = {
@@ -65,6 +81,7 @@ const categoryTextMap = {
 const entityTypeTextMap = {
     person: "人物",
     company: "企业",
+    organization: "机构",
     industry: "行业"
 };
 
@@ -121,9 +138,13 @@ function initPeopleTabs() {
             targetPanel.classList.add("active");
 
             if (targetName === "network") {
-                renderPeopleNetwork(
-                    peopleNetworkState.activeFilter
-                );
+                // 切换到关系网络 Tab 时重新适配图谱容器
+                setTimeout(() => {
+                    renderPeopleNetwork(peopleNetworkState.activeFilter);
+                    if (echartsGraphInstance) {
+                        echartsGraphInstance.resize();
+                    }
+                }, 60);
             }
         });
     });
@@ -365,476 +386,235 @@ const peopleIntelligenceDemo = {
 
 
 /* =========================================================
-   Main network rendering
+   动态确保 ECharts 脚本载入
    ========================================================= */
 
-function renderPeopleNetwork(filter = "all") {
-    const networkContainer =
-        document.getElementById("peopleNetwork");
+function ensureEchartsLoaded() {
+    return new Promise((resolve) => {
+        if (window.echarts) {
+            return resolve(window.echarts);
+        }
 
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js";
+        script.onload = () => resolve(window.echarts);
+        script.onerror = () => {
+            console.error("Failed to load ECharts engine from CDN.");
+            resolve(null);
+        };
+        document.head.appendChild(script);
+    });
+}
+
+
+/* =========================================================
+   Main network rendering (真实力导向星系图引擎)
+   ========================================================= */
+
+async function renderPeopleNetwork(filter = "all") {
+    const networkContainer = document.getElementById("peopleNetwork");
     if (!networkContainer) {
         return;
     }
 
-    const allNodes = peopleIntelligenceDemo.nodes;
+    const echartsLib = await ensureEchartsLoaded();
 
-    const visibleNodes =
-        filter === "all"
-            ? allNodes
-            : allNodes.filter(
-                (node) => node.category === filter
-            );
-
-    networkContainer.innerHTML = "";
-
-    const stage = document.createElement("div");
-    stage.className = "pi-demo-network-stage";
-
-    const centerPosition = {
-        x: 50,
-        y: 50
-    };
-
-    const centerNode = createNetworkNode(
-        peopleIntelligenceDemo.center,
-        "center"
-    );
-
-    centerNode.style.left =
-        `${centerPosition.x}%`;
-
-    centerNode.style.top =
-        `${centerPosition.y}%`;
-
-    stage.appendChild(centerNode);
-
-    visibleNodes.forEach((node, index) => {
-        const position = calculateNodePosition(
-            index,
-            visibleNodes.length
-        );
-
-        const line = createNetworkLine(
-            centerPosition,
-            position,
-            "primary"
-        );
-
-        const nodeElement = createNetworkNode(
-            node,
-            node.type
-        );
-
-        nodeElement.style.left =
-            `${position.x}%`;
-
-        nodeElement.style.top =
-            `${position.y}%`;
-
-        nodeElement.dataset.nodeId =
-            node.id;
-
-        if (
-            peopleNetworkState.selectedNodeId ===
-            node.id
-        ) {
-            nodeElement.classList.add("selected");
-        }
-
-        nodeElement.addEventListener(
-            "click",
-            () => {
-                peopleNetworkState.selectedNodeId =
-                    node.id;
-
-                renderPeopleNetwork(
-                    peopleNetworkState.activeFilter
-                );
-
-                showRelationshipDetails(
-                    peopleIntelligenceDemo.center,
-                    node
-                );
-            }
-        );
-
-        stage.appendChild(line);
-        stage.appendChild(nodeElement);
-
-        if (
-            peopleNetworkState.expandedNodeIds.has(
-                node.id
-            )
-        ) {
-            renderChildConnections(
-                stage,
-                node,
-                position
-            );
-        }
-    });
-
-    networkContainer.appendChild(stage);
-}
-
-
-/* =========================================================
-   Second-level connection rendering
-   ========================================================= */
-
-function renderChildConnections(
-    stage,
-    parentNode,
-    parentPosition
-) {
-    const children = parentNode.children || [];
-
-    if (!children.length) {
+    // 如果因极端网络情况未载入 ECharts，使用基础卡片占位，不卡崩页面
+    if (!echartsLib) {
+        networkContainer.innerHTML = `
+            <div class="pi-network-empty">
+                图谱可视化引擎正在加载中，请刷新重试……
+            </div>
+        `;
         return;
     }
 
-    children.forEach((child, index) => {
-        const childPosition =
-            calculateChildPosition(
-                parentPosition,
-                index,
-                children.length
-            );
+    if (!echartsGraphInstance) {
+        networkContainer.innerHTML = "";
+        echartsGraphInstance = echartsLib.init(networkContainer);
 
-        const line = createNetworkLine(
-            parentPosition,
-            childPosition,
-            "secondary"
-        );
+        window.addEventListener("resize", () => {
+            if (echartsGraphInstance) {
+                echartsGraphInstance.resize();
+            }
+        });
 
-        const relationshipLabel =
-            createRelationshipLabel(
-                parentPosition,
-                childPosition,
-                child.relation || "RELATED_TO"
-            );
-
-        const childElement =
-            createNetworkNode(
-                child,
-                child.type
-            );
-
-        childElement.classList.add(
-            "pi-demo-network-child"
-        );
-
-        childElement.style.left =
-            `${childPosition.x}%`;
-
-        childElement.style.top =
-            `${childPosition.y}%`;
-
-        childElement.dataset.nodeId =
-            child.id;
-
-        if (
-            peopleNetworkState.selectedNodeId ===
-            child.id
-        ) {
-            childElement.classList.add(
-                "selected"
-            );
-        }
-
-        childElement.addEventListener(
-            "click",
-            (event) => {
-                event.stopPropagation();
-
-                peopleNetworkState.selectedNodeId =
-                    child.id;
-
-                renderPeopleNetwork(
-                    peopleNetworkState.activeFilter
-                );
-
+        // 点击节点联动右侧证据资料面板展示详情
+        echartsGraphInstance.on("click", (params) => {
+            if (params.dataType === "node") {
+                peopleNetworkState.selectedNodeId = params.data.id;
                 showRelationshipDetails(
-                    parentNode,
-                    child
+                    peopleIntelligenceDemo.center,
+                    params.data
                 );
             }
-        );
+        });
+    }
 
-        stage.appendChild(line);
-        stage.appendChild(
-            relationshipLabel
-        );
-        stage.appendChild(childElement);
+    const allNodes = peopleIntelligenceDemo.nodes || [];
+    const visibleNodes = filter === "all"
+        ? allNodes
+        : allNodes.filter((node) => node.category === filter);
+
+    const centerNode = peopleIntelligenceDemo.center;
+
+    // 构建力导向图谱节点与连线数据
+    const graphNodes = [];
+    const graphLinks = [];
+
+    // 1. 核心中心节点
+    graphNodes.push({
+        id: String(centerNode.id),
+        name: centerNode.name,
+        category: 0,
+        symbolSize: 72,
+        itemStyle: {
+            color: "#1769e0",
+            borderColor: "#ffffff",
+            borderWidth: 3,
+            shadowColor: "rgba(23, 105, 224, 0.35)",
+            shadowBlur: 16
+        },
+        label: {
+            show: true,
+            position: "bottom",
+            fontWeight: 800,
+            fontSize: 13,
+            color: "#172033"
+        },
+        ...centerNode
     });
-}
 
+    // 2. 周边关联节点
+    visibleNodes.forEach((node) => {
+        const isOrg = node.type === "company" || node.category === "business";
+        const isFamily = node.category === "family";
+        const isOwnership = node.category === "ownership";
 
-/* =========================================================
-   Position calculations
-   ========================================================= */
+        // 按类型赋色：紫色(家族)、绿色(企业/机构)、橙色(股权/行业)
+        const nodeColor = isFamily ? "#7357d9" : (isOrg ? "#159455" : "#e98416");
 
-function calculateNodePosition(index, total) {
-    const centerX = 50;
-    const centerY = 50;
+        graphNodes.push({
+            id: String(node.id),
+            name: node.name,
+            symbolSize: isOrg ? 54 : 48,
+            itemStyle: {
+                color: nodeColor,
+                borderColor: "#ffffff",
+                borderWidth: 2,
+                shadowColor: "rgba(0,0,0,0.08)",
+                shadowBlur: 8
+            },
+            label: {
+                show: true,
+                position: "bottom",
+                fontSize: 11,
+                color: "#475467"
+            },
+            ...node
+        });
 
-    const radiusX =
-        total <= 4 ? 34 : 40;
+        // 建立与中心节点的边
+        const relationLabel = node.relationLabel || node.subtitle || "";
+        graphLinks.push({
+            source: String(centerNode.id),
+            target: String(node.id),
+            value: relationLabel,
+            lineStyle: {
+                color: "#cbd5e1",
+                width: 1.8,
+                curveness: 0.08
+            },
+            label: {
+                show: true,
+                formatter: relationLabel,
+                fontSize: 10,
+                color: "#64748b"
+            }
+        });
 
-    const radiusY =
-        total <= 4 ? 32 : 38;
+        // 如果存在二级节点并且已被展开
+        if (
+            peopleNetworkState.expandedNodeIds.has(node.id) &&
+            Array.isArray(node.children)
+        ) {
+            node.children.forEach((child) => {
+                graphNodes.push({
+                    id: String(child.id),
+                    name: child.name,
+                    symbolSize: 40,
+                    itemStyle: {
+                        color: "#94a3b8",
+                        borderColor: "#ffffff",
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        position: "bottom",
+                        fontSize: 10,
+                        color: "#64748b"
+                    },
+                    ...child
+                });
 
-    const angle =
-        (Math.PI * 2 * index) /
-        Math.max(total, 1) -
-        Math.PI / 2;
+                graphLinks.push({
+                    source: String(node.id),
+                    target: String(child.id),
+                    value: child.relationLabel || "",
+                    lineStyle: {
+                        color: "#94a3b8",
+                        width: 1.2,
+                        type: "dashed"
+                    },
+                    label: {
+                        show: true,
+                        formatter: child.relationLabel || "",
+                        fontSize: 9,
+                        color: "#94a3b8"
+                    }
+                });
+            });
+        }
+    });
 
-    return {
-        x:
-            centerX +
-            Math.cos(angle) * radiusX,
-
-        y:
-            centerY +
-            Math.sin(angle) * radiusY
+    const option = {
+        tooltip: {
+            trigger: "item",
+            backgroundColor: "rgba(17, 34, 64, 0.95)",
+            borderColor: "#233554",
+            textStyle: { color: "#ffffff", fontSize: 12 },
+            formatter: (params) => {
+                if (params.dataType === "node") {
+                    return `<strong>${escapeHtml(params.data.name)}</strong><br/><span style="color:#94a3b8;">${escapeHtml(params.data.subtitle || "")}</span>`;
+                }
+                return params.data.value ? `关系：${escapeHtml(params.data.value)}` : "";
+            }
+        },
+        series: [
+            {
+                type: "graph",
+                layout: "force",
+                roam: true,
+                draggable: true,
+                data: graphNodes,
+                links: graphLinks,
+                force: {
+                    repulsion: 420,
+                    edgeLength: [120, 200],
+                    gravity: 0.12
+                },
+                emphasis: {
+                    focus: "adjacency",
+                    lineStyle: {
+                        width: 3.5,
+                        color: "#1769e0"
+                    }
+                }
+            }
+        ]
     };
-}
 
-
-function calculateChildPosition(
-    parentPosition,
-    index,
-    total
-) {
-    const centerX = 50;
-    const centerY = 50;
-
-    const directionX =
-        parentPosition.x - centerX;
-
-    const directionY =
-        parentPosition.y - centerY;
-
-    const distance = Math.sqrt(
-        directionX * directionX +
-        directionY * directionY
-    );
-
-    const normalizedX =
-        distance === 0
-            ? 1
-            : directionX / distance;
-
-    const normalizedY =
-        distance === 0
-            ? 0
-            : directionY / distance;
-
-    const perpendicularX =
-        -normalizedY;
-
-    const perpendicularY =
-        normalizedX;
-
-    const outwardDistance =
-        total <= 1
-            ? 30
-            : 21;
-
-    const spacing =
-        total <= 2
-            ? 14
-            : 11;
-
-    const offset =
-        (index - (total - 1) / 2) *
-        spacing;
-
-    let x =
-        parentPosition.x +
-        normalizedX * outwardDistance +
-        perpendicularX * offset;
-
-    let y =
-        parentPosition.y +
-        normalizedY * outwardDistance +
-        perpendicularY * offset;
-
-    if (parentPosition.y > 75) {
-        y -= 4;
-
-        x +=
-            normalizedX >= 0
-                ? 4
-                : -4;
-    }
-
-    if (parentPosition.y < 25) {
-        y += 4;
-
-        x +=
-            normalizedX >= 0
-                ? 4
-                : -4;
-    }
-
-    if (parentPosition.x > 78) {
-        x -= 5;
-    }
-
-    if (parentPosition.x < 22) {
-        x += 5;
-    }
-
-    x = clamp(x, 8, 92);
-    y = clamp(y, 10, 90);
-
-    return {
-        x,
-        y
-    };
-}
-
-
-function clamp(value, min, max) {
-    return Math.min(
-        Math.max(value, min),
-        max
-    );
-}
-
-
-/* =========================================================
-   Network nodes
-   ========================================================= */
-
-function createNetworkNode(node, type) {
-    const element =
-        document.createElement("button");
-
-    element.type = "button";
-
-    element.className =
-        `pi-demo-network-node pi-demo-network-node-${type}`;
-
-    const title =
-        document.createElement("strong");
-
-    title.textContent =
-        node.name;
-
-    const englishName =
-        document.createElement("span");
-
-    englishName.textContent =
-        node.englishName || "";
-
-    const subtitle =
-        document.createElement("span");
-
-    subtitle.textContent =
-        node.subtitle || "";
-
-    element.appendChild(title);
-
-    if (node.englishName) {
-        element.appendChild(
-            englishName
-        );
-    }
-
-    element.appendChild(subtitle);
-
-    return element;
-}
-
-
-/* =========================================================
-   Connection lines
-   ========================================================= */
-
-function createNetworkLine(
-    startPosition,
-    endPosition,
-    level = "primary"
-) {
-    const deltaX =
-        endPosition.x -
-        startPosition.x;
-
-    const deltaY =
-        endPosition.y -
-        startPosition.y;
-
-    const length = Math.sqrt(
-        deltaX * deltaX +
-        deltaY * deltaY
-    );
-
-    const angle =
-        Math.atan2(
-            deltaY,
-            deltaX
-        ) *
-        (180 / Math.PI);
-
-    const line =
-        document.createElement("div");
-
-    line.className =
-        `pi-demo-network-line pi-demo-network-line-${level}`;
-
-    line.style.width =
-        `${length}%`;
-
-    line.style.left =
-        `${startPosition.x}%`;
-
-    line.style.top =
-        `${startPosition.y}%`;
-
-    line.style.transform =
-        `rotate(${angle}deg)`;
-
-    return line;
-}
-
-
-/* =========================================================
-   Relationship labels
-   ========================================================= */
-
-function createRelationshipLabel(
-    startPosition,
-    endPosition,
-    relation
-) {
-    const label =
-        document.createElement("div");
-
-    label.className =
-        "pi-network-relation-label";
-
-    label.textContent =
-        getRelationText(relation);
-
-    const midpointX =
-        (startPosition.x +
-            endPosition.x) /
-        2;
-
-    const midpointY =
-        (startPosition.y +
-            endPosition.y) /
-        2;
-
-    label.style.left =
-        `${midpointX}%`;
-
-    label.style.top =
-        `${midpointY}%`;
-
-    return label;
+    echartsGraphInstance.setOption(option);
 }
 
 
@@ -976,13 +756,13 @@ function showRelationshipDetails(
       </div>
 
       <strong>
-        原型关系数据
+        ${targetNode.rawRelationship ? "公开核验证据" : "原型关系数据"}
       </strong>
 
       <p>
-        当前仍为演示数据。
-        后续接入数据库后，这里将显示真实来源、
-        文件引用、证据日期、可信度和历史核验记录。
+        ${targetNode.rawRelationship
+            ? "已接入后端关系数据库，包含可核验证据支撑。"
+            : "当前为演示节点。数据库接入后将显示真实来源、文件引用与审计记录。"}
       </p>
     </div>
 
@@ -1006,7 +786,6 @@ function showRelationshipDetails(
             : ""
         }
 
-
     ${hasChildren
             ? `
           <button
@@ -1023,7 +802,6 @@ function showRelationshipDetails(
             : ""
         }
   `;
-
 
     const openEntityButton =
         document.getElementById(
@@ -1063,7 +841,6 @@ function showRelationshipDetails(
             }
         );
     }
-
 
     const expandButton =
         document.getElementById(
@@ -1243,6 +1020,7 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
+
 /* =========================================================
    Public read-only API integration
    ========================================================= */
@@ -1263,14 +1041,6 @@ async function loadPublicPeopleIntelligence(query) {
 
         const data = await response.json().catch(() => null);
 
-        /*
-         * “没有找到公开数据”属于正常搜索结果，
-         * 不是系统故障。
-         *
-         * 后端可能使用 404 + found:false 表示未找到，
-         * 因此前端必须先处理 found:false，
-         * 再判断真正的 HTTP/API 错误。
-         */
         if (data && data.found === false) {
             renderPublicNotFound(
                 query,
@@ -1758,169 +1528,72 @@ function setPageLoadingState(query) {
 
 function renderPublicNotFound(query, message) {
     currentPublicEntityType = "person";
-
     currentPublicEntity = null;
-
     document.body.dataset.entityType = "person";
 
     updateMetricLabels(false);
     updateOverviewLabels(false);
     updateTabLabels(false);
 
-    setText(
-        ".pi-profile-title-row h1",
-        `未找到：${query}`
-    );
+    setText(".pi-profile-title-row h1", `未找到：${query}`);
+    setText(".pi-profile-role", message || "暂未找到已核验并已发布的公开情报数据");
 
-    setText(
-        ".pi-profile-role",
-        message ||
-        "暂未找到已核验并已发布的公开情报数据"
-    );
+    const badge = document.querySelector(".pi-verified-badge");
+    if (badge) badge.textContent = "暂无公开数据";
 
-    const badge =
-        document.querySelector(
-            ".pi-verified-badge"
-        );
+    const avatar = document.querySelector(".pi-avatar-placeholder");
+    if (avatar) avatar.textContent = "--";
 
-    if (badge) {
-        badge.textContent = "暂无公开数据";
-    }
+    const meta = document.querySelector(".pi-profile-meta");
+    if (meta) meta.innerHTML = "";
 
-    const avatar =
-        document.querySelector(
-            ".pi-avatar-placeholder"
-        );
+    const tags = document.querySelector(".pi-profile-tags");
+    if (tags) tags.innerHTML = "";
 
-    if (avatar) {
-        avatar.textContent = "--";
-    }
+    const summary = document.querySelector(".pi-profile-summary p");
+    if (summary) summary.textContent = "当前公开数据库中暂无该实体的已核验公开情报。";
 
-    const meta =
-        document.querySelector(
-            ".pi-profile-meta"
-        );
+    const metricCards = document.querySelectorAll(".pi-metric-card strong");
+    metricCards.forEach((card) => { card.textContent = "0"; });
 
-    if (meta) {
-        meta.innerHTML = "";
-    }
+    setText('[data-panel="overview"] .pi-section-heading h2', `关于${query}`);
 
-    const tags =
-        document.querySelector(
-            ".pi-profile-tags"
-        );
-
-    if (tags) {
-        tags.innerHTML = "";
-    }
-
-    const summary =
-        document.querySelector(
-            ".pi-profile-summary p"
-        );
-
-    if (summary) {
-        summary.textContent =
-            "当前公开数据库中暂无该实体的已核验公开情报。";
-    }
-
-    const metricCards =
-        document.querySelectorAll(
-            ".pi-metric-card strong"
-        );
-
-    metricCards.forEach((card) => {
-        card.textContent = "0";
-    });
-
-    setText(
-        '[data-panel="overview"] .pi-section-heading h2',
-        `关于${query}`
-    );
-
-    const overview =
-        document.querySelector(
-            ".pi-overview-text"
-        );
-
+    const overview = document.querySelector(".pi-overview-text");
     if (overview) {
-        overview.textContent =
-            "当前公开数据库中没有匹配结果。未审核、未发布、已回收或已归档的数据不会通过公开 API 返回。";
+        overview.textContent = "当前公开数据库中没有匹配结果。未审核、未发布、已回收或已归档的数据不会通过公开 API 返回。";
     }
 
-    const infoValues =
-        document.querySelectorAll(
-            ".pi-info-list dd"
-        );
+    const infoValues = document.querySelectorAll(".pi-info-list dd");
+    infoValues.forEach((item) => { item.textContent = "暂无公开数据"; });
 
-    infoValues.forEach((item) => {
-        item.textContent = "暂无公开数据";
-    });
+    const relationshipSummaryCenter = document.getElementById("relationshipSummaryCenter");
+    if (relationshipSummaryCenter) relationshipSummaryCenter.textContent = query;
 
-    const relationshipSummaryCenter =
-        document.getElementById(
-            "relationshipSummaryCenter"
-        );
-
-    if (relationshipSummaryCenter) {
-        relationshipSummaryCenter.textContent =
-            query;
-    }
-
-    const evidencePanel =
-        document.querySelector(
-            ".pi-side-panel .pi-section-card"
-        );
-
+    const evidencePanel = document.querySelector(".pi-side-panel .pi-section-card");
     if (evidencePanel) {
         evidencePanel.innerHTML = `
             <div class="pi-section-heading">
                 <div>
-                    <span class="pi-eyebrow">
-                        数据质量
-                    </span>
-                    <h2>
-                        证据资料
-                    </h2>
+                    <span class="pi-eyebrow">数据质量</span>
+                    <h2>证据资料</h2>
                 </div>
             </div>
-
             <div class="pi-confidence-box">
-                <span>
-                    资料可信度
-                </span>
-                <strong>
-                    暂无
-                </strong>
+                <span>资料可信度</span>
+                <strong>暂无</strong>
             </div>
-
             <div class="pi-evidence-item">
-                <div class="pi-evidence-type">
-                    暂无数据
-                </div>
-
-                <strong>
-                    暂无公开证据资料
-                </strong>
-
-                <p>
-                    当前数据库尚未找到该实体的已核验并公开发布的证据资料。
-                </p>
+                <div class="pi-evidence-type">暂无数据</div>
+                <strong>暂无公开证据资料</strong>
+                <p>当前数据库尚未找到该实体的已核验并公开发布的证据资料。</p>
             </div>
         `;
     }
 
-    const statusValues =
-        document.querySelectorAll(
-            "#peopleDataStatus dd"
-        );
-
-    statusValues.forEach((item) => {
-        item.textContent = "暂无公开数据";
-    });
+    const statusValues = document.querySelectorAll("#peopleDataStatus dd");
+    statusValues.forEach((item) => { item.textContent = "暂无公开数据"; });
 
     peopleIntelligenceDemo.nodes = [];
-
     peopleIntelligenceDemo.center = {
         id: "not-found",
         type: "person",
@@ -1935,8 +1608,7 @@ function renderPublicNotFound(query, message) {
 
     renderPeopleNetwork("all");
 
-    document.title =
-        `${query} | 暂无公开人谱情报 | Daily News`;
+    document.title = `${query} | 暂无公开人谱情报 | Daily News`;
 }
 
 function renderPublicLoadError(query, error) {
@@ -2032,7 +1704,7 @@ function joinNames(nameZh, nameEn) {
 
 function makeInitials(nameZh, nameEn) {
     if (nameEn) {
-        const words = String(nameEn).trim().split(/\\s+/).filter(Boolean);
+        const words = String(nameEn).trim().split(/\s+/).filter(Boolean);
         if (words.length >= 2) {
             return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
         }
@@ -2070,565 +1742,226 @@ function setText(selector, value) {
    ========================================================= */
 
 function initPeopleCorrection() {
-    const openButton =
-        document.getElementById(
-            "peopleCorrectionOpenButton"
-        );
+    const openButton = document.getElementById("peopleCorrectionOpenButton");
+    const modal = document.getElementById("peopleCorrectionModal");
+    const form = document.getElementById("peopleCorrectionForm");
+    const fieldOptions = document.getElementById("peopleCorrectionFieldOptions");
+    const closeButtons = document.querySelectorAll("[data-correction-close]");
+    const closeButton = document.getElementById("peopleCorrectionCloseButton");
 
-    const modal =
-        document.getElementById(
-            "peopleCorrectionModal"
-        );
-
-    const form =
-        document.getElementById(
-            "peopleCorrectionForm"
-        );
-
-    const fieldOptions =
-        document.getElementById(
-            "peopleCorrectionFieldOptions"
-        );
-
-    const closeButtons =
-        document.querySelectorAll(
-            "[data-correction-close]"
-        );
-
-    const closeButton =
-        document.getElementById(
-            "peopleCorrectionCloseButton"
-        );
-
-    if (
-        !openButton ||
-        !modal ||
-        !form ||
-        !fieldOptions
-    ) {
+    if (!openButton || !modal || !form || !fieldOptions) {
         return;
     }
 
-    openButton.addEventListener(
-        "click",
-        () => {
-            openPeopleCorrectionModal();
-        }
-    );
+    openButton.addEventListener("click", () => {
+        openPeopleCorrectionModal();
+    });
 
-    fieldOptions.addEventListener(
-        "change",
-        (event) => {
-            const checkbox =
-                event.target.closest(
-                    'input[name="correction_fields"]'
-                );
+    fieldOptions.addEventListener("change", (event) => {
+        const checkbox = event.target.closest('input[name="correction_fields"]');
+        if (!checkbox) return;
+        updatePeopleCorrectionItems();
+    });
 
-            if (!checkbox) {
-                return;
-            }
-
-            updatePeopleCorrectionItems();
-        }
-    );
-
-    closeButtons.forEach(
-        (button) => {
-            button.addEventListener(
-                "click",
-                () => {
-                    closePeopleCorrectionModal();
-                }
-            );
-        }
-    );
+    closeButtons.forEach((button) => {
+        button.addEventListener("click", () => closePeopleCorrectionModal());
+    });
 
     if (closeButton) {
-        closeButton.addEventListener(
-            "click",
-            () => {
-                closePeopleCorrectionModal();
-            }
-        );
+        closeButton.addEventListener("click", () => closePeopleCorrectionModal());
     }
 
-    modal.addEventListener(
-        "click",
-        (event) => {
-            if (event.target === modal) {
-                closePeopleCorrectionModal();
-            }
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal) closePeopleCorrectionModal();
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !modal.hidden) closePeopleCorrectionModal();
+    });
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const selectedFields = getSelectedPeopleCorrectionFields();
+        const message = document.getElementById("peopleCorrectionMessage");
+        const submitButton = document.getElementById("peopleCorrectionSubmitButton");
+
+        if (!selectedFields.length) {
+            if (message) message.textContent = "请至少选择一个需要纠错的字段。";
+            return;
         }
-    );
 
-    document.addEventListener(
-        "keydown",
-        (event) => {
-            if (
-                event.key === "Escape" &&
-                !modal.hidden
-            ) {
-                closePeopleCorrectionModal();
-            }
+        if (!currentPublicEntity || !currentPublicEntity.id) {
+            if (message) message.textContent = "当前资料不存在，暂时无法提交纠错。";
+            return;
         }
-    );
 
-    form.addEventListener(
-        "submit",
-        async (event) => {
-            event.preventDefault();
-
-            const selectedFields =
-                getSelectedPeopleCorrectionFields();
-
-            const message =
-                document.getElementById(
-                    "peopleCorrectionMessage"
-                );
-
-            const submitButton =
-                document.getElementById(
-                    "peopleCorrectionSubmitButton"
-                );
-
-            if (!selectedFields.length) {
-                if (message) {
-                    message.textContent =
-                        "请至少选择一个需要纠错的字段。";
-                }
-
-                return;
-            }
-
-            if (
-                !currentPublicEntity ||
-                !currentPublicEntity.id
-            ) {
-                if (message) {
-                    message.textContent =
-                        "当前资料不存在，暂时无法提交纠错。";
-                }
-
-                return;
-            }
-
-            const items =
-                selectedFields.map(
-                    (field) => {
-                        const fieldName =
-                            field.name;
-
-                        const input =
-                            document.querySelector(
-                                `[data-correction-suggested="${fieldName}"]`
-                            );
-
-                        return {
-                            field_name:
-                                fieldName,
-
-                            proposed_value:
-                                input
-                                    ? input.value.trim()
-                                    : ""
-                        };
-                    }
-                );
-
-            const hasEmptySuggestedValue =
-                items.some(
-                    (item) =>
-                        !item.proposed_value
-                );
-
-            if (hasEmptySuggestedValue) {
-                if (message) {
-                    message.textContent =
-                        "请填写所有已选择字段的建议修改内容。";
-                }
-
-                return;
-            }
-
-            const reasonInput =
-                document.getElementById(
-                    "peopleCorrectionReason"
-                );
-
-            const evidenceUrlInput =
-                document.getElementById(
-                    "peopleCorrectionEvidenceUrl"
-                );
-
-            const correctionReason =
-                reasonInput
-                    ? reasonInput.value.trim()
-                    : "";
-
-            const evidenceUrl =
-                evidenceUrlInput
-                    ? evidenceUrlInput.value.trim()
-                    : "";
-
-            if (!correctionReason) {
-                if (message) {
-                    message.textContent =
-                        "请填写纠错原因。";
-                }
-
-                if (reasonInput) {
-                    reasonInput.focus();
-                }
-
-                return;
-            }
-
-            const payload = {
-                entity_type:
-                    currentPublicEntityType ||
-                    "person",
-
-                entity_id:
-                    currentPublicEntity.id,
-
-                items,
-
-                correction_reason:
-                    correctionReason,
-
-                evidence_url:
-                    evidenceUrl
+        const items = selectedFields.map((field) => {
+            const fieldName = field.name;
+            const input = document.querySelector(`[data-correction-suggested="${fieldName}"]`);
+            return {
+                field_name: fieldName,
+                proposed_value: input ? input.value.trim() : ""
             };
+        });
 
-            if (submitButton) {
-                submitButton.disabled =
-                    true;
+        const hasEmptySuggestedValue = items.some((item) => !item.proposed_value);
+        if (hasEmptySuggestedValue) {
+            if (message) message.textContent = "请填写所有已选择字段的建议修改内容。";
+            return;
+        }
 
-                submitButton.textContent =
-                    "提交中...";
+        const reasonInput = document.getElementById("peopleCorrectionReason");
+        const evidenceUrlInput = document.getElementById("peopleCorrectionEvidenceUrl");
+        const correctionReason = reasonInput ? reasonInput.value.trim() : "";
+        const evidenceUrl = evidenceUrlInput ? evidenceUrlInput.value.trim() : "";
+
+        if (!correctionReason) {
+            if (message) message.textContent = "请填写纠错原因。";
+            if (reasonInput) reasonInput.focus();
+            return;
+        }
+
+        const payload = {
+            entity_type: currentPublicEntityType || "person",
+            entity_id: currentPublicEntity.id,
+            items,
+            correction_reason: correctionReason,
+            evidence_url: evidenceUrl
+        };
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "提交中...";
+        }
+
+        if (message) {
+            message.textContent = `正在提交 ${items.length} 项纠错...`;
+        }
+
+        try {
+            const response = await fetch(
+                `${PEOPLE_INTELLIGENCE_PUBLIC_API.replace(/\/search$/, "")}/corrections`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "提交纠错申请失败");
             }
 
             if (message) {
-                message.textContent =
-                    `正在提交 ${items.length} 项纠错...`;
+                message.textContent = `提交成功！已提交 ${result.count || items.length} 项纠错，等待管理员审核。`;
             }
 
-            try {
-                const response =
-                    await fetch(
-                        `${PEOPLE_INTELLIGENCE_PUBLIC_API.replace(
-                            /\/search$/,
-                            ""
-                        )}/corrections`,
-                        {
-                            method:
-                                "POST",
+            form.reset();
+            updatePeopleCorrectionItems();
 
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    payload
-                                )
-                        }
-                    );
-
-                const result =
-                    await response.json();
-
-                if (
-                    !response.ok ||
-                    !result.success
-                ) {
-                    throw new Error(
-                        result.message ||
-                        "提交纠错申请失败"
-                    );
-                }
-
-                if (message) {
-                    message.textContent =
-                        `提交成功！已提交 ${result.count || items.length} 项纠错，等待管理员审核。`;
-                }
-
-                form.reset();
-
-                updatePeopleCorrectionItems();
-
-                window.setTimeout(
-                    () => {
-                        closePeopleCorrectionModal();
-                    },
-                    1800
-                );
-
-            } catch (error) {
-                console.error(
-                    "Submit public correction error:",
-                    error
-                );
-
-                if (message) {
-                    message.textContent =
-                        error.message ||
-                        "提交纠错申请失败，请稍后重试。";
-                }
-
-            } finally {
-                if (submitButton) {
-                    submitButton.disabled =
-                        false;
-
-                    submitButton.textContent =
-                        "提交纠错";
-                }
+            window.setTimeout(() => {
+                closePeopleCorrectionModal();
+            }, 1800);
+        } catch (error) {
+            console.error("Submit public correction error:", error);
+            if (message) {
+                message.textContent = error.message || "提交纠错申请失败，请稍后重试。";
+            }
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = "提交纠错";
             }
         }
-    );
+    });
 }
 
-
 function openPeopleCorrectionModal() {
-    const modal =
-        document.getElementById(
-            "peopleCorrectionModal"
-        );
+    const modal = document.getElementById("peopleCorrectionModal");
+    const entityName = document.getElementById("peopleCorrectionEntityName");
+    const form = document.getElementById("peopleCorrectionForm");
+    const message = document.getElementById("peopleCorrectionMessage");
 
-    const entityName =
-        document.getElementById(
-            "peopleCorrectionEntityName"
-        );
-
-    const form =
-        document.getElementById(
-            "peopleCorrectionForm"
-        );
-
-    const message =
-        document.getElementById(
-            "peopleCorrectionMessage"
-        );
-
-    if (!modal) {
+    if (!modal) return;
+    if (!currentPublicEntity || !currentPublicEntity.id) {
+        window.alert("当前没有可提交纠错的人物资料。");
         return;
     }
 
-    if (
-        !currentPublicEntity ||
-        !currentPublicEntity.id
-    ) {
-        window.alert(
-            "当前没有可提交纠错的人物资料。"
-        );
-
-        return;
-    }
-
-    if (form) {
-        form.reset();
-    }
-
+    if (form) form.reset();
     renderPeopleCorrectionFieldOptions();
-
-    if (message) {
-        message.textContent = "";
-    }
+    if (message) message.textContent = "";
 
     if (entityName) {
-        const nameZh =
-            currentPublicEntity.name_zh ||
-            "";
-
-        const nameEn =
-            currentPublicEntity.name_en ||
-            "";
-
-        let displayName =
-            nameZh ||
-            nameEn ||
-            `ID ${currentPublicEntity.id}`;
-
-        if (
-            nameZh &&
-            nameEn
-        ) {
-            displayName =
-                `${nameZh} / ${nameEn}`;
-        }
-
-        entityName.textContent =
-            `当前资料：${displayName}`;
+        const nameZh = currentPublicEntity.name_zh || "";
+        const nameEn = currentPublicEntity.name_en || "";
+        let displayName = nameZh || nameEn || `ID ${currentPublicEntity.id}`;
+        if (nameZh && nameEn) displayName = `${nameZh} / ${nameEn}`;
+        entityName.textContent = `当前资料：${displayName}`;
     }
 
     updatePeopleCorrectionItems();
-
     modal.hidden = false;
+    document.body.style.overflow = "hidden";
 
-    document.body.style.overflow =
-        "hidden";
-
-    const firstCheckbox =
-        document.querySelector(
-            '#peopleCorrectionFieldOptions input[name="correction_fields"]'
-        );
-
-    if (firstCheckbox) {
-        firstCheckbox.focus();
-    }
+    const firstCheckbox = document.querySelector(
+        '#peopleCorrectionFieldOptions input[name="correction_fields"]'
+    );
+    if (firstCheckbox) firstCheckbox.focus();
 }
 
-
 function closePeopleCorrectionModal() {
-    const modal =
-        document.getElementById(
-            "peopleCorrectionModal"
-        );
-
-    if (!modal) {
-        return;
-    }
-
+    const modal = document.getElementById("peopleCorrectionModal");
+    if (!modal) return;
     modal.hidden = true;
-
-    document.body.style.overflow =
-        "";
+    document.body.style.overflow = "";
 }
 
 function getPeopleCorrectionFieldDefinitions() {
-    if (
-        currentPublicEntityType ===
-        "organization"
-    ) {
+    if (currentPublicEntityType === "organization") {
         return [
-            {
-                name: "name_zh",
-                label: "中文名称"
-            },
-            {
-                name: "name_en",
-                label: "英文名称"
-            },
-            {
-                name: "aliases",
-                label: "其他名称 / 别名"
-            },
-            {
-                name: "organization_type",
-                label: "机构类型"
-            },
-            {
-                name: "country_region",
-                label: "国家 / 地区"
-            },
-            {
-                name: "headquarters",
-                label: "总部"
-            },
-            {
-                name: "founded_date",
-                label: "成立日期"
-            },
-            {
-                name: "industry",
-                label: "所属行业"
-            },
-            {
-                name: "description",
-                label: "机构简介"
-            },
-            {
-                name: "website_url",
-                label: "官方网站"
-            },
-            {
-                name: "listed_status",
-                label: "上市状态"
-            },
-            {
-                name: "ticker_symbol",
-                label: "股票代码"
-            },
-            {
-                name: "other",
-                label: "其他"
-            }
+            { name: "name_zh", label: "中文名称" },
+            { name: "name_en", label: "英文名称" },
+            { name: "aliases", label: "其他名称 / 别名" },
+            { name: "organization_type", label: "机构类型" },
+            { name: "country_region", label: "国家 / 地区" },
+            { name: "headquarters", label: "总部" },
+            { name: "founded_date", label: "成立日期" },
+            { name: "industry", label: "所属行业" },
+            { name: "description", label: "机构简介" },
+            { name: "website_url", label: "官方网站" },
+            { name: "listed_status", label: "上市状态" },
+            { name: "ticker_symbol", label: "股票代码" },
+            { name: "other", label: "其他" }
         ];
     }
 
     return [
-        {
-            name: "name_zh",
-            label: "中文姓名"
-        },
-        {
-            name: "name_en",
-            label: "英文姓名"
-        },
-        {
-            name: "aliases",
-            label: "其他姓名 / 别名"
-        },
-        {
-            name: "birth_date",
-            label: "出生日期"
-        },
-        {
-            name: "country_region",
-            label: "国家 / 地区"
-        },
-        {
-            name: "primary_role",
-            label: "主要身份"
-        },
-        {
-            name: "biography",
-            label: "人物简介"
-        },
-        {
-            name: "tags",
-            label: "人物标签"
-        },
-        {
-            name: "other",
-            label: "其他"
-        }
+        { name: "name_zh", label: "中文姓名" },
+        { name: "name_en", label: "英文姓名" },
+        { name: "aliases", label: "其他姓名 / 别名" },
+        { name: "birth_date", label: "出生日期" },
+        { name: "country_region", label: "国家 / 地区" },
+        { name: "primary_role", label: "主要身份" },
+        { name: "biography", label: "人物简介" },
+        { name: "tags", label: "人物标签" },
+        { name: "other", label: "其他" }
     ];
 }
 
-
 function renderPeopleCorrectionFieldOptions() {
-    const container =
-        document.getElementById(
-            "peopleCorrectionFieldOptions"
-        );
+    const container = document.getElementById("peopleCorrectionFieldOptions");
+    if (!container) return;
 
-    if (!container) {
-        return;
-    }
-
-    const fields =
-        getPeopleCorrectionFieldDefinitions();
-
-    container.innerHTML =
-        fields
-            .map(
-                (field) => `
-                    <label class="pi-correction-field-option">
-                        <input
-                            type="checkbox"
-                            name="correction_fields"
-                            value="${escapeHtml(field.name)}"
-                        >
-                        <span>
-                            ${escapeHtml(field.label)}
-                        </span>
-                    </label>
-                `
-            )
-            .join("");
+    const fields = getPeopleCorrectionFieldDefinitions();
+    container.innerHTML = fields.map((field) => `
+        <label class="pi-correction-field-option">
+            <input type="checkbox" name="correction_fields" value="${escapeHtml(field.name)}">
+            <span>${escapeHtml(field.label)}</span>
+        </label>
+    `).join("");
 }
 
 function getSelectedPeopleCorrectionFields() {
@@ -2636,300 +1969,105 @@ function getSelectedPeopleCorrectionFields() {
         document.querySelectorAll(
             '#peopleCorrectionFieldOptions input[name="correction_fields"]:checked'
         )
-    ).map(
-        (checkbox) => ({
-            name:
-                checkbox.value,
-
-            label:
-                checkbox
-                    .closest(
-                        ".pi-correction-field-option"
-                    )
-                    ?.querySelector(
-                        "span"
-                    )
-                    ?.textContent
-                    ?.trim() ||
-                checkbox.value
-        })
-    );
+    ).map((checkbox) => ({
+        name: checkbox.value,
+        label: checkbox.closest(".pi-correction-field-option")?.querySelector("span")?.textContent?.trim() || checkbox.value
+    }));
 }
 
-
 function updatePeopleCorrectionItems() {
-    const container =
-        document.getElementById(
-            "peopleCorrectionItems"
-        );
-
-    const submitButton =
-        document.getElementById(
-            "peopleCorrectionSubmitButton"
-        );
-
-    if (!container) {
-        return;
-    }
+    const container = document.getElementById("peopleCorrectionItems");
+    const submitButton = document.getElementById("peopleCorrectionSubmitButton");
+    if (!container) return;
 
     const previousValues = {};
+    container.querySelectorAll("[data-correction-suggested]").forEach((input) => {
+        previousValues[input.dataset.correctionSuggested] = input.value;
+    });
 
-    container
-        .querySelectorAll(
-            "[data-correction-suggested]"
-        )
-        .forEach(
-            (input) => {
-                previousValues[
-                    input.dataset
-                        .correctionSuggested
-                ] = input.value;
-            }
-        );
-
-    const selectedFields =
-        getSelectedPeopleCorrectionFields();
-
+    const selectedFields = getSelectedPeopleCorrectionFields();
     if (!selectedFields.length) {
         container.innerHTML = `
-            <div
-                class="pi-correction-items-empty"
-                id="peopleCorrectionItemsEmpty"
-            >
+            <div class="pi-correction-items-empty" id="peopleCorrectionItemsEmpty">
                 请先选择需要纠错的字段，系统将在这里显示对应的当前资料和修改输入框。
             </div>
         `;
-
-        if (submitButton) {
-            submitButton.textContent =
-                "提交纠错";
-        }
-
+        if (submitButton) submitButton.textContent = "提交纠错";
         return;
     }
 
-    container.innerHTML =
-        selectedFields
-            .map(
-                (field, index) => {
-                    const originalValue =
-                        getPeopleCorrectionFieldValue(
-                            currentPublicEntity,
-                            field.name
-                        );
+    container.innerHTML = selectedFields.map((field, index) => {
+        const originalValue = getPeopleCorrectionFieldValue(currentPublicEntity, field.name);
+        const suggestedValue = previousValues[field.name] || "";
 
-                    const suggestedValue =
-                        previousValues[
-                        field.name
-                        ] || "";
-
-                    return `
-                        <section
-                            class="pi-correction-item"
-                            data-correction-item="${escapeHtml(field.name)}"
-                        >
-                            <div class="pi-correction-item-heading">
-                                <div>
-                                    <span class="pi-correction-item-number">
-                                        ${index + 1}
-                                    </span>
-
-                                    <strong>
-                                        ${escapeHtml(field.label)}
-                                    </strong>
-                                </div>
-
-                                <span class="pi-correction-item-status">
-                                    待填写
-                                </span>
-                            </div>
-
-                            <div class="pi-correction-item-grid">
-
-                                <div class="pi-correction-form-group">
-                                    <label>
-                                        当前资料
-                                    </label>
-
-                                    <textarea
-                                        rows="3"
-                                        readonly
-                                    >${escapeHtml(originalValue)}</textarea>
-                                </div>
-
-                                <div class="pi-correction-form-group">
-                                    <label
-                                        for="peopleCorrectionSuggested_${escapeHtml(field.name)}"
-                                    >
-                                        建议修改为 *
-                                    </label>
-
-                                    <textarea
-                                        id="peopleCorrectionSuggested_${escapeHtml(field.name)}"
-                                        rows="3"
-                                        required
-                                        data-correction-suggested="${escapeHtml(field.name)}"
-                                        placeholder="请输入您认为正确的资料"
-                                    >${escapeHtml(suggestedValue)}</textarea>
-                                </div>
-
-                            </div>
-                        </section>
-                    `;
-                }
-            )
-            .join("");
+        return `
+            <section class="pi-correction-item" data-correction-item="${escapeHtml(field.name)}">
+                <div class="pi-correction-item-heading">
+                    <div>
+                        <span class="pi-correction-item-number">${index + 1}</span>
+                        <strong>${escapeHtml(field.label)}</strong>
+                    </div>
+                    <span class="pi-correction-item-status">待填写</span>
+                </div>
+                <div class="pi-correction-item-grid">
+                    <div class="pi-correction-form-group">
+                        <label>当前资料</label>
+                        <textarea rows="3" readonly>${escapeHtml(originalValue)}</textarea>
+                    </div>
+                    <div class="pi-correction-form-group">
+                        <label for="peopleCorrectionSuggested_${escapeHtml(field.name)}">建议修改为 *</label>
+                        <textarea id="peopleCorrectionSuggested_${escapeHtml(field.name)}" rows="3" required data-correction-suggested="${escapeHtml(field.name)}" placeholder="请输入您认为正确的资料">${escapeHtml(suggestedValue)}</textarea>
+                    </div>
+                </div>
+            </section>
+        `;
+    }).join("");
 
     if (submitButton) {
-        submitButton.textContent =
-            selectedFields.length === 1
-                ? "提交 1 项纠错"
-                : `提交 ${selectedFields.length} 项纠错`;
+        submitButton.textContent = selectedFields.length === 1
+            ? "提交 1 项纠错"
+            : `提交 ${selectedFields.length} 项纠错`;
     }
 }
 
-function getPeopleCorrectionFieldValue(
-    entity,
-    fieldName
-) {
-    if (!entity) {
-        return "";
-    }
+function getPeopleCorrectionFieldValue(entity, fieldName) {
+    if (!entity) return "";
 
     switch (fieldName) {
-        case "name_zh":
-            return entity.name_zh || "";
-
-        case "name_en":
-            return entity.name_en || "";
-
-        case "aliases":
-            return formatPeopleCorrectionValue(
-                entity.aliases
-            );
-
-        case "birth_date":
-            return entity.birth_date || "";
-
-        case "country_region":
-            return (
-                entity.country_region ||
-                entity.nationality ||
-                ""
-            );
-
-        case "primary_role":
-            return (
-                entity.primary_role ||
-                entity.industry ||
-                ""
-            );
-
-        case "biography":
-            return (
-                entity.biography ||
-                entity.description ||
-                ""
-            );
-
-        case "tags":
-            return formatPeopleCorrectionValue(
-                entity.tags
-            );
-
-        case "organization_type":
-            return entity.organization_type || "";
-
-        case "headquarters":
-            return entity.headquarters || "";
-
-        case "founded_date":
-            return entity.founded_date || "";
-
-        case "industry":
-            return (
-                entity.industry ||
-                entity.industry_primary ||
-                ""
-            );
-
-        case "description":
-            return entity.description || "";
-
-        case "website_url":
-            return entity.website_url || "";
-
-        case "listed_status":
-            return entity.listed_status || "";
-
-        case "ticker_symbol":
-            return entity.ticker_symbol || "";
-
-        case "other":
-            return "";
-
-        default:
-            return formatPeopleCorrectionValue(
-                entity[fieldName]
-            );
+        case "name_zh": return entity.name_zh || "";
+        case "name_en": return entity.name_en || "";
+        case "aliases": return formatPeopleCorrectionValue(entity.aliases);
+        case "birth_date": return entity.birth_date || "";
+        case "country_region": return entity.country_region || entity.nationality || "";
+        case "primary_role": return entity.primary_role || entity.industry || "";
+        case "biography": return entity.biography || entity.description || "";
+        case "tags": return formatPeopleCorrectionValue(entity.tags);
+        case "organization_type": return entity.organization_type || "";
+        case "headquarters": return entity.headquarters || "";
+        case "founded_date": return entity.founded_date || "";
+        case "industry": return entity.industry || entity.industry_primary || "";
+        case "description": return entity.description || "";
+        case "website_url": return entity.website_url || "";
+        case "listed_status": return entity.listed_status || "";
+        case "ticker_symbol": return entity.ticker_symbol || "";
+        case "other": return "";
+        default: return formatPeopleCorrectionValue(entity[fieldName]);
     }
 }
 
-
-function formatPeopleCorrectionValue(
-    value
-) {
-    if (
-        value === null ||
-        value === undefined
-    ) {
-        return "";
+function formatPeopleCorrectionValue(value) {
+    if (value === null || value === undefined) return "";
+    if (Array.isArray(value)) return value.join(" / ");
+    if (typeof value === "object") {
+        try { return JSON.stringify(value); } catch (e) { return ""; }
     }
-
-    if (Array.isArray(value)) {
-        return value.join(" / ");
-    }
-
-    if (
-        typeof value === "object"
-    ) {
+    const text = String(value).trim();
+    if (!text) return "";
+    if ((text.startsWith("[") && text.endsWith("]")) || (text.startsWith("{") && text.endsWith("}"))) {
         try {
-            return JSON.stringify(
-                value
-            );
-        } catch (error) {
-            return "";
-        }
+            const parsed = JSON.parse(text);
+            if (Array.isArray(parsed)) return parsed.join(" / ");
+        } catch (e) { }
     }
-
-    const text =
-        String(value).trim();
-
-    if (!text) {
-        return "";
-    }
-
-    if (
-        (
-            text.startsWith("[") &&
-            text.endsWith("]")
-        ) ||
-        (
-            text.startsWith("{") &&
-            text.endsWith("}")
-        )
-    ) {
-        try {
-            const parsed =
-                JSON.parse(text);
-
-            if (Array.isArray(parsed)) {
-                return parsed.join(" / ");
-            }
-        } catch (error) {
-            // Keep original text.
-        }
-    }
-
     return text;
 }

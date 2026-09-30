@@ -3827,7 +3827,7 @@ router.post(
                     normalizeText(
                         req.body.confidence_level
                     ) || "medium",
-                    normalized.verificationStatus,
+                    "pending",
                     normalizeBooleanInteger(
                         req.body.is_primary_source
                     ),
@@ -4025,7 +4025,7 @@ router.put(
                             normalizeText(
                                 mergedPayload.confidence_level
                             ) || "medium",
-                            normalized.verificationStatus,
+                            "pending",
                             normalizeBooleanInteger(
                                 mergedPayload.is_primary_source
                             ),
@@ -4058,14 +4058,14 @@ router.put(
                                             return res.json({
                                                 success: true,
                                                 message:
-                                                    "证据已更新"
+                                                    "证据已保存，审核状态已自动退回待审核"
                                             });
                                         }
 
                                         return res.json({
                                             success: true,
                                             message:
-                                                "证据已更新",
+                                                "证据已保存，审核状态已自动退回待审核",
                                             evidence
                                         });
                                     }

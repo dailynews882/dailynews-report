@@ -1,0 +1,14 @@
+{
+  "status": "completed",
+  "requested_start_draw": 5530,
+  "requested_end_draw": 5528,
+  "current_draw": 5528,
+  "next_draw": null,
+  "processed_this_run": 2,
+  "inserted_this_run": 0,
+  "updated_this_run": 2,
+  "failed_this_run": 0,
+  "quality_warnings_this_run": 0,
+  "completed_at": "2026-09-04T02:27:19.492Z",
+  "updated_at": "2026-09-04T02:27:19.492Z"
+}

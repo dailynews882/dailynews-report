@@ -28,6 +28,7 @@ const economicCalendarRoute = require("./routes/economicCalendarRoute");
 const storeRoute = require("./routes/storeRoute");
 const marketTickerRoute = require("./routes/marketTickerRoute");
 const adminPeopleIntelligenceRoute = require("./routes/adminPeopleIntelligenceRoute");
+const adminPeopleIntelligenceSourceRoute = require("./routes/adminPeopleIntelligenceSourceRoute");
 const peopleIntelligencePublicRoute = require("./routes/peopleIntelligencePublicRoute");
 
 const {
@@ -151,6 +152,11 @@ app.use("/api/lottery", lotteryRoute);
 app.use(
   "/api/admin/people-intelligence",
   adminPeopleIntelligenceRoute
+);
+
+app.use(
+  "/api/admin/people-intelligence/sources",
+  adminPeopleIntelligenceSourceRoute
 );
 
 app.use(

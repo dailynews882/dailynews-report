@@ -49,6 +49,7 @@ async function loadNewsDetail(id) {
 
     document.getElementById("newsTitle").value = news.title || "";
     document.getElementById("newsCategory").value = news.category || "general";
+    document.getElementById("newsCountryCode").value = news.country_code || "";
     document.getElementById("newsSummary").value = news.summary || "";
     document.getElementById("newsContent").value = news.content || "";
     document.getElementById("newsImageUrl").value = news.image_url || "";
@@ -98,6 +99,7 @@ async function updateNews(event) {
 
   const title = document.getElementById("newsTitle").value.trim();
   const category = document.getElementById("newsCategory").value;
+  const country_code = document.getElementById("newsCountryCode").value;
   const summary = document.getElementById("newsSummary").value.trim();
   const content = document.getElementById("newsContent").value.trim();
   const image_url = document.getElementById("newsImageUrl").value.trim();
@@ -120,6 +122,7 @@ async function updateNews(event) {
   const newsData = {
     title,
     category,
+    country_code,
     summary,
     content,
     image_url,

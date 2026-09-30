@@ -1994,6 +1994,41 @@ body {
     gap: 10px;
 }
 
+.pia-relationship-actions {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.pia-relationship-actions .pia-primary-btn,
+.pia-relationship-actions .pia-secondary-btn {
+    width: auto;
+    min-width: 0;
+    padding: 9px 13px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.pia-relationship-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+}
+
+.pia-relationship-form #piaRelationshipVerification:disabled,
+.pia-relationship-form #piaRelationshipIsPublic:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+}
+
+@media (max-width: 720px) {
+    .pia-relationship-actions {
+        justify-content: flex-start;
+    }
+
+    .pia-relationship-actions button {
+        flex: 1 1 auto;
+    }
+}
+
 .pia-relationship-table td {
     white-space: nowrap;
 }
@@ -2676,4 +2711,88 @@ body.pia-modal-open {
         padding-left: 16px;
         padding-right: 16px;
     }
+}
+
+
+/* =========================================================
+   RELATIONSHIP MANAGEMENT - LIST / CREATE MODAL / EDITOR
+========================================================= */
+.pia-relationship-editor-card[hidden] {
+    display: none !important;
+}
+
+.pia-relationship-create-dialog {
+    width: min(1180px, 97vw);
+}
+
+.pia-create-relationship-core-grid {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(130px, .8fr) 28px minmax(210px, 1.35fr) 28px minmax(150px, 1fr) minmax(130px, .8fr);
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid #e1e8f1;
+    border-radius: 8px;
+    background: #f8fafd;
+}
+
+.pia-create-relationship-meta-grid {
+    margin-top: 0;
+}
+
+.pia-create-relationship-checks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.pia-create-relationship-checks .pia-relationship-checkbox {
+    min-height: 40px;
+}
+
+@media (max-width: 1100px) {
+    .pia-create-relationship-core-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pia-create-relationship-core-grid .pia-relationship-arrow {
+        display: none;
+    }
+}
+
+@media (max-width: 620px) {
+
+    .pia-create-relationship-core-grid,
+    .pia-create-relationship-checks {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   EVIDENCE CREATE MODAL
+   Reuses the same modal system as People / Organization
+========================================================= */
+
+.pia-create-evidence-checkbox {
+    margin-top: 15px;
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px !important;
+    color: #5f6f84;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pia-create-evidence-checkbox input {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0;
+    padding: 0;
+}
+
+.pia-create-evidence-checkbox span {
+    font-size: 12px !important;
 }

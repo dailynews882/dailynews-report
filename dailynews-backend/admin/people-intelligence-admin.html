@@ -1448,10 +1448,26 @@
                             </label>
 
                             <div class="pia-relationship-actions">
-                                <button type="button" class="pia-secondary-btn" id="piaRelationshipResetButton">取消 /
-                                    清空</button>
-                                <button type="submit" class="pia-primary-btn"
-                                    id="piaRelationshipSaveButton">保存关系</button>
+
+                                <button type="button" class="pia-secondary-btn" id="piaRelationshipResetButton">
+                                    取消修改
+                                </button>
+
+                                <button type="submit" class="pia-secondary-btn" id="piaRelationshipSaveButton">
+                                    保存草稿
+                                </button>
+
+                                <button type="button" class="pia-primary-btn" id="piaRelationshipSubmitButton">
+                                    提交审核
+                                </button>
+
+                                <button type="button" class="pia-primary-btn" id="piaRelationshipApproveButton">
+                                    审核通过
+                                </button>
+
+                                <button type="button" class="pia-primary-btn" id="piaRelationshipPublishButton">
+                                    发布
+                                </button>
                             </div>
                         </form>
                     </section>
@@ -1547,8 +1563,13 @@
                                 </label>
 
                                 <label>
-                                    <span>目标 ID *</span>
-                                    <input id="piaEvidenceEntityId" type="number" min="1" placeholder="例如：1" />
+                                    <span id="piaEvidenceEntityLabel">目标 *</span>
+
+                                    <select id="piaEvidenceEntityId" required>
+                                        <option value="">
+                                            请先选择目标
+                                        </option>
+                                    </select>
                                 </label>
 
                                 <label>
