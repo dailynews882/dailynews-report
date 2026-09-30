@@ -1,6 +1,5 @@
 /* =========================================================
-   People Intelligence Admin Console
-   Full Feature Edition (No-Lockup Workflow)
+   People Intelligence Admin Console - Full Edition
    File: admin/people-intelligence-admin.js
 ========================================================= */
 
@@ -8,19 +7,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     initAdminNavigation();
     initTopbarActions();
     initPersonManagement();
-    initOrganizationManagement();
-    initRelationshipManagement();
-    initEvidenceManagement();
-    initReviewQueue();
-    initCorrectionCenter();
-    initVersionHistory();
+    initPersonCreateModal();
+    initPaginationControls();
+    initWikidataPipeline();
 
     await loadPeopleFromApi();
-
     hidePersonEditor();
-    hideOrganizationEditor();
-    hideRelationshipEditor();
-    hideEvidenceEditor();
 });
 
 const PEOPLE_INTELLIGENCE_API = "/api/admin/people-intelligence";
@@ -39,7 +31,7 @@ function escapeHtml(val) {
 }
 
 /* =========================================================
-   1. 侧边栏与顶部导航
+   1. 侧边栏与导航
 ========================================================= */
 
 function initAdminNavigation() {
@@ -64,21 +56,8 @@ function initAdminNavigation() {
             targetPanel.classList.add("active");
 
             if (target === "people") hidePersonEditor();
-            if (target === "organizations") {
-                hideOrganizationEditor();
-                ensureOrganizationDataLoaded();
-            }
-            if (target === "relationships") {
-                hideRelationshipEditor();
-                ensureRelationshipDataLoaded();
-            }
-            if (target === "evidence") {
-                hideEvidenceEditor();
-                ensureEvidenceDataLoaded();
-            }
-            if (target === "ai-review") loadReviewQueue();
-            if (target === "corrections") loadCorrections();
-            if (target === "versions") loadVersions();
+            if (target === "organizations") ensureOrganizationDataLoaded();
+            if (target === "relationships") ensureRelationshipDataLoaded();
 
             window.scrollTo({ top: 0, behavior: "smooth" });
         });
@@ -86,17 +65,12 @@ function initAdminNavigation() {
 }
 
 function initTopbarActions() {
-    const topbarButtons = document.querySelectorAll(".pia-topbar-actions button");
-    topbarButtons.forEach((button) => {
-        const text = button.textContent.trim();
-        if (text === "查看前台") {
+    document.querySelectorAll(".pia-topbar-actions button").forEach((button) => {
+        if (button.textContent.trim() === "查看前台") {
             button.addEventListener("click", () => {
                 const q = document.getElementById("piaPersonNameZh")?.value || "";
                 window.open(`/people-intelligence.html?q=${encodeURIComponent(q)}`, "_blank");
             });
-        }
-        if (text.includes("新增人物")) {
-            button.addEventListener("click", openCreatePersonModal);
         }
     });
 }
@@ -112,7 +86,7 @@ function openPrototypeNotice(title, message) {
         <div class="pia-prototype-dialog">
             <div class="pia-prototype-header">
                 <h3>${escapeHtml(title)}</h3>
-                <button type="button" id="piaPrototypeClose" aria-label="关闭">×</button>
+                <button type="button" id="piaPrototypeClose">×</button>
             </div>
             <div class="pia-prototype-body">
                 <p style="white-space: pre-line;">${escapeHtml(message)}</p>
@@ -130,33 +104,25 @@ function openPrototypeNotice(title, message) {
 }
 
 /* =========================================================
-   2. 人物管理（无死锁流通）
+   2. 人物管理 + 自由分页控制器
 ========================================================= */
 
-const peopleManagementDemoData = {};
+let allPeopleCache = [];
+let filteredPeople = [];
+let currentPage = 1;
+let pageSize = 20; // 默认每页 20 条
 let currentEditingPersonId = null;
 
 function initPersonManagement() {
-    initPersonActionButtons();
-    initPersonRows();
-    document.getElementById("piaPersonSearch")?.addEventListener("input", applyPersonFilters);
-    document.getElementById("piaPersonStatusFilter")?.addEventListener("change", applyPersonFilters);
-}
-
-function initPersonActionButtons() {
-    document.querySelectorAll("[data-person-action]").forEach((button) => {
-        button.addEventListener("click", async (event) => {
-            event.stopPropagation();
-            const action = button.dataset.personAction;
-            const personId = button.dataset.personId || null;
-
+    document.querySelectorAll("[data-person-action]").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const action = btn.dataset.personAction;
             if (action === "frontend") {
                 const q = document.getElementById("piaPersonNameZh")?.value || "";
                 window.open(`/people-intelligence.html?q=${encodeURIComponent(q)}`, "_blank");
                 return;
             }
-            if (action === "new") { openCreatePersonModal(); return; }
-            if (action === "edit") { if (personId) enterPersonEditMode(personId); return; }
             if (action === "cancel") { hidePersonEditor(); return; }
             if (action === "draft") { await savePersonDraft(); return; }
             if (action === "submit") { await submitPersonForReview(); return; }
@@ -165,42 +131,43 @@ function initPersonActionButtons() {
             if (action === "trash") { await moveCurrentPersonToTrash(); return; }
         });
     });
+
+    document.getElementById("piaPersonSearch")?.addEventListener("input", applyPersonFilters);
+    document.getElementById("piaPersonStatusFilter")?.addEventListener("change", applyPersonFilters);
 }
 
-function initPersonRows() {
-    document.querySelectorAll(".pia-person-row").forEach((row) => {
-        row.addEventListener("click", (event) => {
-            if (event.target.closest("[data-person-action]")) return;
-            const personId = row.dataset.personId;
-            if (personId) enterPersonEditMode(personId);
-        });
+function initPaginationControls() {
+    document.getElementById("piaPageSizeSelect")?.addEventListener("change", (e) => {
+        pageSize = parseInt(e.target.value, 10) || 20;
+        currentPage = 1;
+        renderPeopleTablePage();
     });
-}
 
-function mapApiPersonToFrontend(person) {
-    return {
-        id: String(person.id),
-        databaseId: person.id,
-        slug: person.slug || "",
-        initials: createPersonInitials(person.name_en || "", person.name_zh || ""),
-        nameZh: person.name_zh || "",
-        nameEn: person.name_en || "",
-        aliases: person.aliases || "",
-        birthDate: person.birth_date || "",
-        deathDate: person.death_date || "",
-        nationality: person.nationality || "",
-        country: person.country_region || "",
-        role: person.primary_role || "",
-        organization: "",
-        verificationStatus: person.verification_status || "draft",
-        confidence: person.confidence_level || "medium",
-        biography: person.biography || "",
-        tags: person.tags || "",
-        profileImageUrl: person.profile_image_url || "",
-        isPublic: Number(person.is_public) === 1,
-        updatedAt: person.updated_at ? String(person.updated_at).slice(0, 10) : "",
-        evidenceCount: 0
-    };
+    document.getElementById("piaPrevPageBtn")?.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderPeopleTablePage();
+        }
+    });
+
+    document.getElementById("piaNextPageBtn")?.addEventListener("click", () => {
+        const totalPages = Math.ceil(filteredPeople.length / pageSize) || 1;
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderPeopleTablePage();
+        }
+    });
+
+    document.getElementById("piaJumpPageBtn")?.addEventListener("click", () => {
+        const inputVal = parseInt(document.getElementById("piaJumpPageInput")?.value, 10);
+        const totalPages = Math.ceil(filteredPeople.length / pageSize) || 1;
+        if (inputVal >= 1 && inputVal <= totalPages) {
+            currentPage = inputVal;
+            renderPeopleTablePage();
+        } else {
+            alert(`请输入有效页码 (1 ~ ${totalPages})`);
+        }
+    });
 }
 
 async function loadPeopleFromApi() {
@@ -213,85 +180,191 @@ async function loadPeopleFromApi() {
         });
         const data = await response.json();
         if (data.success && Array.isArray(data.people)) {
-            Object.keys(peopleManagementDemoData).forEach((k) => delete peopleManagementDemoData[k]);
-            const tbody = document.querySelector(".pia-people-table tbody");
-            if (tbody) tbody.innerHTML = "";
-
-            data.people.forEach((p) => {
-                const item = mapApiPersonToFrontend(p);
-                peopleManagementDemoData[item.id] = item;
-                appendPrototypePersonRow(item);
-            });
+            allPeopleCache = data.people.map(p => ({
+                id: String(p.id),
+                nameZh: p.name_zh || "",
+                nameEn: p.name_en || "",
+                aliases: p.aliases || "",
+                birthDate: p.birth_date || "",
+                country: p.country_region || "",
+                role: p.primary_role || "",
+                verificationStatus: p.verification_status || "draft",
+                isPublic: Number(p.is_public) === 1,
+                evidenceCount: 0,
+                updatedAt: p.updated_at ? String(p.updated_at).slice(0, 10) : "",
+                biography: p.biography || "",
+                tags: p.tags || "",
+                confidence: p.confidence_level || "medium"
+            }));
             applyPersonFilters();
-            updateVisiblePersonCount();
         }
     } catch (e) {
         console.error("Load people error:", e);
     }
 }
 
-function collectPersonFormData() {
-    return {
-        nameZh: document.getElementById("piaPersonNameZh")?.value.trim() || "",
-        nameEn: document.getElementById("piaPersonNameEn")?.value.trim() || "",
-        aliases: document.getElementById("piaPersonAliases")?.value.trim() || "",
-        birthDate: document.getElementById("piaPersonBirthDate")?.value || "",
-        country: document.getElementById("piaPersonCountry")?.value.trim() || "",
-        role: document.getElementById("piaPersonRole")?.value.trim() || "",
-        organization: document.getElementById("piaPersonOrganization")?.value.trim() || "",
-        verificationStatus: document.getElementById("piaPersonVerificationStatus")?.value || "draft",
-        confidence: document.getElementById("piaPersonConfidence")?.value || "medium",
-        updatedAt: document.getElementById("piaPersonUpdatedAt")?.value || "",
-        biography: document.getElementById("piaPersonBiography")?.value.trim() || "",
-        tags: document.getElementById("piaPersonTags")?.value.trim() || ""
+function applyPersonFilters() {
+    const q = (document.getElementById("piaPersonSearch")?.value || "").trim().toLowerCase();
+    const st = document.getElementById("piaPersonStatusFilter")?.value || "all";
+
+    filteredPeople = allPeopleCache.filter(p => {
+        const matchesQ = !q || [p.nameZh, p.nameEn, p.role, p.country].join(" ").toLowerCase().includes(q);
+        const matchesSt = st === "all" || p.verificationStatus === st;
+        return matchesQ && matchesSt;
+    });
+
+    currentPage = 1;
+    renderPeopleTablePage();
+}
+
+function renderPeopleTablePage() {
+    const tbody = document.getElementById("piaPeopleTableBody");
+    if (!tbody) return;
+
+    const total = filteredPeople.length;
+    const totalPages = Math.ceil(total / pageSize) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, total);
+    const pageItems = filteredPeople.slice(startIndex, endIndex);
+
+    document.getElementById("piaPeopleTotalCount").textContent = `共 ${total} 条数据`;
+    document.getElementById("piaPaginationInfo").textContent = total > 0
+        ? `显示第 ${startIndex + 1} 到 ${endIndex} 条，共 ${total} 条`
+        : "暂无数据";
+
+    document.getElementById("piaPrevPageBtn").disabled = currentPage <= 1;
+    document.getElementById("piaNextPageBtn").disabled = currentPage >= totalPages;
+
+    // 渲染页码按钮
+    const pageBtnsBox = document.getElementById("piaPageNumberBtns");
+    if (pageBtnsBox) {
+        pageBtnsBox.innerHTML = "";
+        for (let i = 1; i <= Math.min(totalPages, 7); i++) {
+            const btn = document.createElement("button");
+            btn.className = `pia-page-btn ${i === currentPage ? "active" : ""}`;
+            btn.textContent = i;
+            btn.onclick = () => { currentPage = i; renderPeopleTablePage(); };
+            pageBtnsBox.appendChild(btn);
+        }
+    }
+
+    if (!pageItems.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;">暂无符合条件的人物数据</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = pageItems.map(p => `
+        <tr class="pia-person-row ${currentEditingPersonId === p.id ? "active" : ""}">
+            <td>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="pia-person-avatar" style="width:34px;height:34px;font-size:12px;">${escapeHtml(p.nameEn.slice(0, 2).toUpperCase() || "PT")}</div>
+                    <div>
+                        <strong>${escapeHtml(p.nameZh || p.nameEn)}</strong>
+                        <div style="font-size:11px;color:#64748b;">${escapeHtml(p.nameEn)}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${escapeHtml(p.role || "-")}</td>
+            <td>${escapeHtml(p.country || "-")}</td>
+            <td><span class="pia-status ${p.verificationStatus}">${p.verificationStatus === "verified" ? "已核验" : (p.verificationStatus === "pending" ? "待审核" : "草稿")}</span></td>
+            <td><span class="pia-publication-status ${p.isPublic ? "published" : "unpublished"}">${p.isPublic ? "已发布" : "未发布"}</span></td>
+            <td>${p.evidenceCount}</td>
+            <td>${escapeHtml(p.updatedAt || "-")}</td>
+            <td>
+                <button type="button" class="pia-primary-btn" style="min-height:30px;padding:0 12px;font-size:12px;" onclick="enterPersonEditMode('${escapeHtml(p.id)}')">编辑</button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+/* =========================================================
+   3. 人物编辑表单逻辑（仅在点击“编辑”时从顶部展开）
+========================================================= */
+
+window.enterPersonEditMode = function (personId) {
+    const person = allPeopleCache.find(p => p.id === personId);
+    if (!person) return;
+
+    currentEditingPersonId = personId;
+    const editor = document.querySelector(".pia-person-editor");
+    if (editor) editor.hidden = false;
+
+    const setValue = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || "";
     };
+
+    setValue("piaPersonNameZh", person.nameZh);
+    setValue("piaPersonNameEn", person.nameEn);
+    setValue("piaPersonAliases", person.aliases);
+    setValue("piaPersonBirthDate", person.birthDate);
+    setValue("piaPersonCountry", person.country);
+    setValue("piaPersonRole", person.role);
+    setValue("piaPersonVerificationStatus", person.verificationStatus);
+    setValue("piaPersonConfidence", person.confidence);
+    setValue("piaPersonUpdatedAt", person.updatedAt);
+    setValue("piaPersonBiography", person.biography);
+    setValue("piaPersonTags", person.tags);
+
+    document.getElementById("piaEditorDisplayName").textContent = person.nameZh || person.nameEn;
+    document.getElementById("piaEditorDisplayEnglishName").textContent = person.nameEn;
+
+    updateWorkflowButtonStates(person);
+    editor.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+function hidePersonEditor() {
+    const editor = document.querySelector(".pia-person-editor");
+    if (editor) editor.hidden = true;
+    currentEditingPersonId = null;
+}
+
+function updateWorkflowButtonStates(person) {
+    const submitBtn = document.querySelector('[data-person-action="submit"]');
+    const approveBtn = document.querySelector('[data-person-action="approve"]');
+    const publishBtn = document.querySelector('[data-person-action="publish"]');
+
+    if (!person) return;
+    const status = person.verificationStatus || "draft";
+    const isPublic = person.isPublic;
+
+    if (submitBtn) submitBtn.disabled = status !== "draft";
+    if (approveBtn) approveBtn.disabled = status !== "pending";
+    if (publishBtn) {
+        publishBtn.textContent = isPublic ? "取消发布" : "发布";
+        publishBtn.disabled = !isPublic && status !== "verified";
+    }
 }
 
 async function savePersonDraft() {
-    const data = collectPersonFormData();
-    if (!data.nameZh && !data.nameEn) {
-        openPrototypeNotice("资料不完整", "请填写姓名。");
-        return;
-    }
-    data.verificationStatus = "draft";
+    if (!currentEditingPersonId) return;
+    const token = getAdminToken();
+
+    const payload = {
+        name_zh: document.getElementById("piaPersonNameZh")?.value.trim(),
+        name_en: document.getElementById("piaPersonNameEn")?.value.trim(),
+        primary_role: document.getElementById("piaPersonRole")?.value.trim(),
+        country_region: document.getElementById("piaPersonCountry")?.value.trim(),
+        biography: document.getElementById("piaPersonBiography")?.value.trim(),
+        verification_status: "draft",
+        is_public: false
+    };
 
     try {
-        const token = getAdminToken();
-        const payload = {
-            name_zh: data.nameZh,
-            name_en: data.nameEn,
-            aliases: data.aliases,
-            birth_date: data.birthDate,
-            country_region: data.country,
-            primary_role: data.role,
-            biography: data.biography,
-            tags: data.tags,
-            verification_status: "draft",
-            confidence_level: data.confidence,
-            is_public: false
-        };
-
-        const isExisting = currentEditingPersonId && /^\d+$/.test(String(currentEditingPersonId));
-        const url = isExisting
-            ? `${PEOPLE_INTELLIGENCE_API}/people/${currentEditingPersonId}`
-            : `${PEOPLE_INTELLIGENCE_API}/people`;
-
-        const res = await fetch(url, {
-            method: isExisting ? "PUT" : "POST",
+        const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/people/${currentEditingPersonId}`, {
+            method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify(payload)
         });
         const result = await res.json();
-        if (!res.ok || !result.success) throw new Error(result.message || "保存失败");
-
-        if (result.person) {
-            const frontendPerson = mapApiPersonToFrontend(result.person);
-            peopleManagementDemoData[frontendPerson.id] = frontendPerson;
-            currentEditingPersonId = frontendPerson.id;
-            loadPersonIntoEditor(frontendPerson);
+        if (result.success) {
+            await loadPeopleFromApi();
+            const updated = allPeopleCache.find(p => p.id === currentEditingPersonId);
+            if (updated) updateWorkflowButtonStates(updated);
+            openPrototypeNotice("保存成功", "修改已保存至数据库！现在您可以点击【提交审核】推进流程。");
         }
-        await loadPeopleFromApi();
-        openPrototypeNotice("草稿已保存", "人物资料已永久保存至数据库。您现在可以直接点击【提交审核】推进流程。");
     } catch (e) {
         openPrototypeNotice("保存失败", e.message);
     }
@@ -306,19 +379,14 @@ async function submitPersonForReview() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ verification_status: "pending" })
         });
-        const result = await res.json();
-        if (!res.ok || !result.success) throw new Error(result.message || "提交失败");
-
-        if (result.person) {
-            const frontendPerson = mapApiPersonToFrontend(result.person);
-            peopleManagementDemoData[frontendPerson.id] = frontendPerson;
-            loadPersonIntoEditor(frontendPerson);
+        const d = await res.json();
+        if (d.success) {
+            await loadPeopleFromApi();
+            const updated = allPeopleCache.find(p => p.id === currentEditingPersonId);
+            if (updated) updateWorkflowButtonStates(updated);
+            openPrototypeNotice("已提交审核", "状态已变为【待审核】。请点击【审核通过】。");
         }
-        await loadPeopleFromApi();
-        openPrototypeNotice("已提交审核", "状态已变为【待审核】。您现在可以点击【审核通过】。");
-    } catch (e) {
-        openPrototypeNotice("提交失败", e.message);
-    }
+    } catch (e) { }
 }
 
 async function approvePerson() {
@@ -330,24 +398,19 @@ async function approvePerson() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ verification_status: "verified" })
         });
-        const result = await res.json();
-        if (!res.ok || !result.success) throw new Error(result.message || "审核失败");
-
-        if (result.person) {
-            const frontendPerson = mapApiPersonToFrontend(result.person);
-            peopleManagementDemoData[frontendPerson.id] = frontendPerson;
-            loadPersonIntoEditor(frontendPerson);
+        const d = await res.json();
+        if (d.success) {
+            await loadPeopleFromApi();
+            const updated = allPeopleCache.find(p => p.id === currentEditingPersonId);
+            if (updated) updateWorkflowButtonStates(updated);
+            openPrototypeNotice("审核通过", "状态已更新为【已核验】！您可以直接点击【发布】。");
         }
-        await loadPeopleFromApi();
-        openPrototypeNotice("审核通过", "状态已更新为【已核验】！您可以直接点击【发布】推送到前台展示。");
-    } catch (e) {
-        openPrototypeNotice("审核失败", e.message);
-    }
+    } catch (e) { }
 }
 
 async function togglePersonPublication() {
     if (!currentEditingPersonId) return;
-    const person = peopleManagementDemoData[String(currentEditingPersonId)];
+    const person = allPeopleCache.find(p => p.id === currentEditingPersonId);
     const shouldPublish = !person?.isPublic;
     const token = getAdminToken();
 
@@ -357,22 +420,14 @@ async function togglePersonPublication() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ is_public: shouldPublish })
         });
-        const result = await res.json();
-        if (!res.ok || !result.success) throw new Error(result.message || "操作发布失败");
-
-        if (result.person) {
-            const frontendPerson = mapApiPersonToFrontend(result.person);
-            peopleManagementDemoData[frontendPerson.id] = frontendPerson;
-            loadPersonIntoEditor(frontendPerson);
+        const d = await res.json();
+        if (d.success) {
+            await loadPeopleFromApi();
+            const updated = allPeopleCache.find(p => p.id === currentEditingPersonId);
+            if (updated) updateWorkflowButtonStates(updated);
+            openPrototypeNotice(shouldPublish ? "发布成功 🎉" : "已取消发布", shouldPublish ? "前台可直接搜索浏览。" : "已转为非公开。");
         }
-        await loadPeopleFromApi();
-        openPrototypeNotice(
-            shouldPublish ? "发布成功 🎉" : "已取消发布",
-            shouldPublish ? "人物已正式发布！您现在可以点击右上角【查看前台】在图谱系统中直接浏览。" : "该资料已转为内部非公开状态。"
-        );
-    } catch (e) {
-        openPrototypeNotice("发布状态变更失败", e.message);
-    }
+    } catch (e) { }
 }
 
 async function moveCurrentPersonToTrash() {
@@ -385,293 +440,177 @@ async function moveCurrentPersonToTrash() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ record_status: "trashed" })
         });
-        currentEditingPersonId = null;
-        await loadPeopleFromApi();
         hidePersonEditor();
-        openPrototypeNotice("已移入垃圾箱", "数据已归档至垃圾箱。");
-    } catch (e) {
-        openPrototypeNotice("操作失败", e.message);
-    }
+        await loadPeopleFromApi();
+        openPrototypeNotice("已移入垃圾箱", "数据已归档。");
+    } catch (e) { }
 }
 
-function updatePersonWorkflowButtons(person) {
-    const submitBtn = document.querySelector('[data-person-action="submit"]');
-    const approveBtn = document.querySelector('[data-person-action="approve"]');
-    const publishBtn = document.querySelector('[data-person-action="publish"]');
+/* =========================================================
+   4. 【核心改进】新增人物独立模态弹窗逻辑
+========================================================= */
 
-    if (!person) {
-        if (submitBtn) submitBtn.disabled = true;
-        if (approveBtn) approveBtn.disabled = true;
-        if (publishBtn) publishBtn.disabled = true;
-        return;
-    }
+function initPersonCreateModal() {
+    const modal = document.getElementById("piaCreatePersonModal");
+    const openBtn = document.getElementById("piaOpenCreatePersonModalBtn");
+    const closeBtn = document.getElementById("piaCloseCreatePersonBtn");
+    const cancelBtn = document.getElementById("piaCancelCreatePersonBtn");
+    const backdrop = document.getElementById("piaCloseCreatePersonBackdrop");
+    const form = document.getElementById("piaCreatePersonModalForm");
 
-    const status = person.verificationStatus || "draft";
-    const isPublic = Boolean(person.isPublic);
-
-    if (submitBtn) submitBtn.disabled = status !== "draft";
-    if (approveBtn) approveBtn.disabled = status !== "pending";
-    if (publishBtn) {
-        publishBtn.textContent = isPublic ? "取消发布" : "发布";
-        publishBtn.disabled = !isPublic && status !== "verified";
-    }
-}
-
-function enterPersonEditMode(personId) {
-    const person = peopleManagementDemoData[personId];
-    if (!person) return;
-    activatePeopleManagementPage();
-    showPersonEditor();
-    setActivePersonRow(personId);
-    loadPersonIntoEditor(person);
-    currentEditingPersonId = personId;
-
-    const fields = [
-        "piaPersonNameZh", "piaPersonNameEn", "piaPersonAliases", "piaPersonBirthDate",
-        "piaPersonCountry", "piaPersonRole", "piaPersonOrganization", "piaPersonVerificationStatus",
-        "piaPersonConfidence", "piaPersonBiography", "piaPersonTags"
-    ];
-    fields.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = false;
-    });
-    updatePersonWorkflowButtons(person);
-}
-
-function showPersonEditor() {
-    const editor = document.querySelector(".pia-person-editor");
-    if (editor) editor.hidden = false;
-}
-
-function hidePersonEditor() {
-    const editor = document.querySelector(".pia-person-editor");
-    if (editor) editor.hidden = true;
-    currentEditingPersonId = null;
-    setActivePersonRow(null);
-}
-
-function activatePeopleManagementPage() {
-    const peopleNav = document.querySelector('[data-admin-page="people"]');
-    const peoplePanel = document.querySelector('[data-admin-panel="people"]');
-    document.querySelectorAll("[data-admin-page]").forEach((i) => i.classList.remove("active"));
-    document.querySelectorAll("[data-admin-panel]").forEach((p) => {
-        p.classList.remove("active");
-        p.hidden = true;
-    });
-    if (peopleNav) peopleNav.classList.add("active");
-    if (peoplePanel) {
-        peoplePanel.hidden = false;
-        peoplePanel.classList.add("active");
-    }
-}
-
-function setActivePersonRow(personId) {
-    document.querySelectorAll(".pia-person-row").forEach((row) => {
-        row.classList.toggle("active", row.dataset.personId === personId);
-    });
-}
-
-function loadPersonIntoEditor(person) {
-    const setValue = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val == null ? "" : val;
+    const closeModal = () => {
+        if (modal) modal.hidden = true;
+        form?.reset();
     };
 
-    setValue("piaPersonNameZh", person.nameZh);
-    setValue("piaPersonNameEn", person.nameEn);
-    setValue("piaPersonAliases", person.aliases);
-    setValue("piaPersonBirthDate", person.birthDate);
-    setValue("piaPersonCountry", person.country);
-    setValue("piaPersonRole", person.role);
-    setValue("piaPersonOrganization", person.organization);
-    setValue("piaPersonVerificationStatus", person.verificationStatus);
-    setValue("piaPersonConfidence", person.confidence);
-    setValue("piaPersonUpdatedAt", person.updatedAt);
-    setValue("piaPersonBiography", person.biography);
-    setValue("piaPersonTags", person.tags);
-
-    const displayName = document.getElementById("piaEditorDisplayName");
-    if (displayName) displayName.textContent = person.nameZh || person.nameEn || "未命名";
-
-    const displayEn = document.getElementById("piaEditorDisplayEnglishName");
-    if (displayEn) displayEn.textContent = person.nameEn || "";
-
-    const avatar = document.querySelector(".pia-person-editor-avatar");
-    if (avatar) avatar.textContent = person.initials || "PT";
-
-    const statusBadge = document.querySelector(".pia-person-editor .pia-card-heading .pia-status");
-    if (statusBadge) {
-        statusBadge.className = `pia-status ${person.verificationStatus || "draft"}`;
-        const labels = { draft: "草稿", pending: "待审核", verified: "已核验", disputed: "存在争议" };
-        statusBadge.textContent = labels[person.verificationStatus] || person.verificationStatus || "草稿";
-    }
-
-    updatePersonWorkflowButtons(person);
-}
-
-function applyPersonFilters() {
-    const q = (document.getElementById("piaPersonSearch")?.value || "").trim().toLowerCase();
-    const st = document.getElementById("piaPersonStatusFilter")?.value || "all";
-
-    document.querySelectorAll(".pia-person-row").forEach((row) => {
-        const p = peopleManagementDemoData[row.dataset.personId];
-        if (!p) { row.style.display = "none"; return; }
-
-        const matchesQ = !q || [p.nameZh, p.nameEn, p.role, p.country].join(" ").toLowerCase().includes(q);
-        const matchesSt = st === "all" || p.verificationStatus === st;
-        row.style.display = matchesQ && matchesSt ? "" : "none";
-    });
-    updateVisiblePersonCount();
-}
-
-function updateVisiblePersonCount() {
-    const visible = Array.from(document.querySelectorAll(".pia-person-row")).filter((r) => r.style.display !== "none").length;
-    const counter = document.querySelector(".pia-record-count");
-    if (counter) counter.textContent = `共 ${visible} 条数据`;
-}
-
-function appendPrototypePersonRow(person) {
-    const tbody = document.querySelector(".pia-people-table tbody");
-    if (!tbody) return;
-
-    const row = document.createElement("tr");
-    row.className = "pia-person-row";
-    row.dataset.personId = person.id;
-
-    row.innerHTML = `
-        <td>
-            <div class="pia-person-cell">
-                <div class="pia-person-avatar">${escapeHtml(person.initials)}</div>
-                <div>
-                    <strong>${escapeHtml(person.nameZh || person.nameEn)}</strong>
-                    <span>${escapeHtml(person.nameEn)}</span>
-                </div>
-            </div>
-        </td>
-        <td>${escapeHtml(person.role || "-")}</td>
-        <td>${escapeHtml(person.country || "-")}</td>
-        <td><span class="pia-status ${person.verificationStatus}">${person.verificationStatus === "verified" ? "已核验" : (person.verificationStatus === "pending" ? "待审核" : "草稿")}</span></td>
-        <td><span class="pia-publication-status ${person.isPublic ? "published" : "unpublished"}">${person.isPublic ? "已发布" : "未发布"}</span></td>
-        <td>${person.evidenceCount || 0}</td>
-        <td>${escapeHtml(person.updatedAt || "-")}</td>
-        <td>
-            <button type="button" class="pia-table-action" data-person-action="edit" data-person-id="${escapeHtml(person.id)}">编辑</button>
-        </td>
-    `;
-    tbody.appendChild(row);
-
-    row.querySelector('[data-person-action="edit"]')?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        enterPersonEditMode(person.id);
-    });
-}
-
-function createPersonInitials(en, zh) {
-    if (en) {
-        const parts = en.trim().split(/\s+/).filter(Boolean);
-        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-        return en.slice(0, 2).toUpperCase();
-    }
-    return String(zh || "PT").slice(0, 2);
-}
-
-function openCreatePersonModal() {
-    closePeopleCreateModal();
-
-    const modal = document.createElement("div");
-    modal.id = "piaCreateEntityModal";
-    modal.className = "pia-create-modal";
-    modal.innerHTML = `
-        <div class="pia-create-modal-backdrop" data-create-modal-close></div>
-        <section class="pia-create-modal-dialog" role="dialog">
-            <header class="pia-create-modal-header">
-                <div>
-                    <span class="pia-eyebrow">CREATE PERSON</span>
-                    <h3>新增人物</h3>
-                    <p>创建一条新的人物资料，初始状态为草稿。</p>
-                </div>
-                <button type="button" class="pia-create-modal-close" data-create-modal-close>×</button>
-            </header>
-            <div class="pia-create-modal-body">
-                <form id="piaCreatePersonForm" class="pia-create-form">
-                    <div class="pia-create-form-grid">
-                        <label><span>中文姓名 *</span><input id="piaCreatePersonNameZh" required placeholder="例如：潘铁战"></label>
-                        <label><span>英文姓名 *</span><input id="piaCreatePersonNameEn" required placeholder="例如：Andrew Pan"></label>
-                        <label><span>主要身份</span><input id="piaCreatePersonRole" placeholder="例如：公司创始人 / CEO"></label>
-                        <label><span>国家 / 地区</span><input id="piaCreatePersonCountry" placeholder="例如：新加坡"></label>
-                    </div>
-                    <div class="pia-create-modal-actions">
-                        <button type="button" class="pia-secondary-btn" data-create-modal-close>取消</button>
-                        <button type="submit" class="pia-primary-btn" id="piaCreatePersonSave">保存草稿</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-    `;
-
-    document.body.appendChild(modal);
-    document.body.classList.add("pia-modal-open");
-
-    modal.querySelectorAll("[data-create-modal-close]").forEach((btn) => {
-        btn.addEventListener("click", closePeopleCreateModal);
+    openBtn?.addEventListener("click", () => {
+        if (modal) {
+            modal.hidden = false;
+            document.getElementById("modalPersonNameZh")?.focus();
+        }
     });
 
-    document.getElementById("piaCreatePersonForm")?.addEventListener("submit", async (e) => {
+    closeBtn?.addEventListener("click", closeModal);
+    cancelBtn?.addEventListener("click", closeModal);
+    backdrop?.addEventListener("click", closeModal);
+
+    form?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const zh = document.getElementById("piaCreatePersonNameZh")?.value.trim();
-        const en = document.getElementById("piaCreatePersonNameEn")?.value.trim();
-        const role = document.getElementById("piaCreatePersonRole")?.value.trim();
-        const country = document.getElementById("piaCreatePersonCountry")?.value.trim();
+        const zh = document.getElementById("modalPersonNameZh")?.value.trim();
+        const en = document.getElementById("modalPersonNameEn")?.value.trim();
+        const role = document.getElementById("modalPersonRole")?.value.trim();
+        const country = document.getElementById("modalPersonCountry")?.value.trim();
+        const bio = document.getElementById("modalPersonBiography")?.value.trim();
 
         const token = getAdminToken();
-        const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/people`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ name_zh: zh, name_en: en, primary_role: role, country_region: country })
-        });
-        const d = await res.json();
-        if (d.success) {
-            closePeopleCreateModal();
-            await loadPeopleFromApi();
-            openPrototypeNotice("成功", "人物已创建为草稿。");
+        const saveBtn = document.getElementById("piaSaveCreatePersonBtn");
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "创建中..."; }
+
+        try {
+            const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/people`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    name_zh: zh,
+                    name_en: en,
+                    primary_role: role,
+                    country_region: country,
+                    biography: bio,
+                    verification_status: "draft",
+                    is_public: false
+                })
+            });
+            const d = await res.json();
+            if (d.success) {
+                closeModal();
+                await loadPeopleFromApi();
+                openPrototypeNotice("创建成功 🎉", `人物【${zh || en}】已作为草稿创建入库！`);
+            } else {
+                alert(d.message || "创建失败");
+            }
+        } catch (err) {
+            alert("请求错误: " + err.message);
+        } finally {
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "保存入库"; }
         }
     });
 }
 
-function closePeopleCreateModal() {
-    document.getElementById("piaCreateEntityModal")?.remove();
-    document.body.classList.remove("pia-modal-open");
-}
-
 /* =========================================================
-   3. 机构管理 (Organizations) - 完整后端交互
+   5. 维基数据常驻卡片抓取
 ========================================================= */
 
-let organizationsCache = [];
-let organizationDataLoaded = false;
-let currentEditingOrganizationId = null;
+function initWikidataPipeline() {
+    const searchBtn = document.getElementById("piaWikiSearchBtn");
+    const searchInput = document.getElementById("piaWikiSearchInput");
 
-function initOrganizationManagement() {
-    document.getElementById("piaNewOrganizationButton")?.addEventListener("click", openCreateOrganizationModal);
-    document.getElementById("piaOrganizationResetButton")?.addEventListener("click", resetOrganizationForm);
-    document.getElementById("piaOrganizationSearch")?.addEventListener("input", renderOrganizationTable);
-    document.getElementById("piaOrganizationTypeFilter")?.addEventListener("change", renderOrganizationTable);
-    document.getElementById("piaOrganizationStatusFilter")?.addEventListener("change", renderOrganizationTable);
+    searchBtn?.addEventListener("click", async () => {
+        const query = searchInput?.value.trim();
+        if (!query) return;
 
-    document.querySelectorAll("[data-organization-action]").forEach((button) => {
-        button.addEventListener("click", async () => {
-            const action = button.dataset.organizationAction;
-            if (action === "draft") await saveOrganizationWithStatus("draft");
-            if (action === "submit") await saveOrganizationWithStatus("pending");
-            if (action === "approve") await approveOrganization();
-            if (action === "publish") await toggleOrganizationPublication();
-            if (action === "trash") await trashOrganization();
-        });
+        const listContainer = document.getElementById("piaWikiResultList");
+        const statusBox = document.getElementById("piaWikiLoadingStatus");
+        if (listContainer) listContainer.innerHTML = "";
+        if (statusBox) {
+            statusBox.style.display = "block";
+            statusBox.textContent = `⏳ 正在连接维基百科数据库，检索【${query}】候选条目...`;
+        }
+
+        try {
+            const token = getAdminToken();
+            const res = await fetch(`/api/admin/people-intelligence/sources/wikidata/search?q=${encodeURIComponent(query)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (statusBox) statusBox.style.display = "none";
+
+            if (!data.success || !data.items?.length) {
+                listContainer.innerHTML = `<div style="color: #ef4444; font-size: 13px; padding: 10px 0;">未在维基百科检索到相关人物条目。</div>`;
+                return;
+            }
+
+            listContainer.innerHTML = data.items.map(item => `
+                <div style="border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                    <div style="max-width: 75%;">
+                        <div style="font-weight: 700; font-size: 14px; color: #1e293b;">
+                            ${escapeHtml(item.label)} 
+                            <span style="color: #64748b; font-weight: normal; font-size: 12px;">(${escapeHtml(item.qid)})</span>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.5;">${escapeHtml(item.description)}</div>
+                    </div>
+                    <button type="button" class="pia-primary-btn" style="min-height: 36px; padding: 0 16px; font-size: 13px; background: #10b981; border-color: #10b981;" onclick="executeWikidataIngest('${escapeHtml(item.qid)}')">
+                        一键抓取并建档入库
+                    </button>
+                </div>
+            `).join("");
+        } catch (e) {
+            if (statusBox) statusBox.style.display = "none";
+            listContainer.innerHTML = `<div style="color: #ef4444; font-size: 13px; padding: 10px 0;">检索请求失败: ${escapeHtml(e.message)}</div>`;
+        }
+    });
+
+    searchInput?.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") searchBtn?.click();
     });
 }
 
+window.executeWikidataIngest = async function (qid) {
+    const statusBox = document.getElementById("piaWikiLoadingStatus");
+    if (statusBox) {
+        statusBox.style.display = "block";
+        statusBox.textContent = `⏳ 正在深度解析维基关系链 (${qid})，正在自动创建人物主档案、配偶、子嗣以及旗下关联机构...`;
+    }
+
+    try {
+        const token = getAdminToken();
+        const res = await fetch("/api/admin/people-intelligence/sources/wikidata/ingest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ qid })
+        });
+        const result = await res.json();
+        if (statusBox) statusBox.style.display = "none";
+
+        if (!result.success) {
+            openPrototypeNotice("抓取失败", result.message || "未知错误");
+            return;
+        }
+
+        document.getElementById("piaWikiResultList").innerHTML = "";
+        document.getElementById("piaWikiSearchInput").value = "";
+        await loadPeopleFromApi();
+        openPrototypeNotice("智能抓取成功 🎉", `${result.message}\n\n已成功自动提取并关联：\n${result.details.join("\n")}`);
+    } catch (e) {
+        if (statusBox) statusBox.style.display = "none";
+        openPrototypeNotice("执行抓取错误", e.message);
+    }
+};
+
+/* =========================================================
+   6. 机构与关系数据只读展示
+========================================================= */
+
 async function ensureOrganizationDataLoaded() {
-    if (organizationDataLoaded) return;
     try {
         const token = getAdminToken();
         const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/organizations`, {
@@ -679,69 +618,26 @@ async function ensureOrganizationDataLoaded() {
         });
         const data = await res.json();
         if (data.success && Array.isArray(data.organizations)) {
-            organizationsCache = data.organizations;
-            organizationDataLoaded = true;
-            renderOrganizationTable();
+            const tbody = document.getElementById("piaOrganizationTableBody");
+            if (!tbody) return;
+            tbody.innerHTML = data.organizations.map(org => `
+                <tr>
+                    <td><strong>${escapeHtml(org.name_zh || org.name_en)}</strong></td>
+                    <td>${escapeHtml(org.organization_type || "公司")}</td>
+                    <td>${escapeHtml(org.country_region || "-")}</td>
+                    <td>${escapeHtml(org.industry_primary || org.industry || "-")}</td>
+                    <td>${escapeHtml(org.ticker_symbol || "-")}</td>
+                    <td><span class="pia-status ${org.verification_status}">${org.verification_status}</span></td>
+                    <td>${Number(org.is_public) === 1 ? "已发布" : "未发布"}</td>
+                    <td>${escapeHtml(String(org.updated_at || "").slice(0, 10))}</td>
+                    <td><button type="button" class="pia-primary-btn" style="min-height:28px;padding:0 10px;font-size:11px;">查看</button></td>
+                </tr>
+            `).join("");
         }
-    } catch (e) {
-        console.error("Load org error:", e);
-    }
-}
-
-function renderOrganizationTable() {
-    const tbody = document.getElementById("piaOrganizationTableBody");
-    if (!tbody) return;
-
-    if (!organizationsCache.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="pia-organization-empty">暂无机构数据</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = organizationsCache.map((org) => `
-        <tr>
-            <td><strong>${escapeHtml(org.name_zh || org.name_en)}</strong><br><small>${escapeHtml(org.name_en)}</small></td>
-            <td>${escapeHtml(org.organization_type || "公司")}</td>
-            <td>${escapeHtml(org.country_region || "-")}</td>
-            <td>${escapeHtml(org.industry_primary || org.industry || "-")}</td>
-            <td>${escapeHtml(org.ticker_symbol || "-")}</td>
-            <td><span class="pia-status ${org.verification_status}">${org.verification_status}</span></td>
-            <td>${Number(org.is_public) === 1 ? "已发布" : "未发布"}</td>
-            <td>${escapeHtml(String(org.updated_at || "").slice(0, 10))}</td>
-            <td><button type="button" class="pia-table-action" onclick="editOrganization(${org.id})">编辑</button></td>
-        </tr>
-    `).join("");
-}
-
-function showOrganizationEditor() { document.querySelector(".pia-organization-editor-card")?.removeAttribute("hidden"); }
-function hideOrganizationEditor() {
-    const el = document.querySelector(".pia-organization-editor-card");
-    if (el) el.hidden = true;
-    currentEditingOrganizationId = null;
-}
-function resetOrganizationForm() {
-    document.getElementById("piaOrganizationForm")?.reset();
-    hideOrganizationEditor();
-}
-function openCreateOrganizationModal() {
-    showOrganizationEditor();
-    resetOrganizationForm();
-}
-
-/* =========================================================
-   4. 关系管理 (Relationships) - 完整后端交互
-========================================================= */
-
-let relationshipsCache = [];
-let relationshipTypesCache = [];
-let relationshipDataLoaded = false;
-
-function initRelationshipManagement() {
-    document.getElementById("piaRelationshipSearch")?.addEventListener("input", renderRelationshipTable);
-    document.getElementById("piaRelationshipStatusFilter")?.addEventListener("change", renderRelationshipTable);
+    } catch (e) { }
 }
 
 async function ensureRelationshipDataLoaded() {
-    if (relationshipDataLoaded) return;
     try {
         const token = getAdminToken();
         const res = await fetch(`${PEOPLE_INTELLIGENCE_API}/relationships`, {
@@ -749,60 +645,21 @@ async function ensureRelationshipDataLoaded() {
         });
         const data = await res.json();
         if (data.success && Array.isArray(data.relationships)) {
-            relationshipsCache = data.relationships;
-            relationshipDataLoaded = true;
-            renderRelationshipTable();
+            const tbody = document.getElementById("piaRelationshipTableBody");
+            if (!tbody) return;
+            tbody.innerHTML = data.relationships.map(rel => `
+                <tr>
+                    <td><strong>${escapeHtml(rel.source_entity_name || `ID ${rel.source_entity_id}`)}</strong></td>
+                    <td>${escapeHtml(rel.relationship_name_zh || rel.relationship_type)}</td>
+                    <td><strong>${escapeHtml(rel.target_entity_name || `ID ${rel.target_entity_id}`)}</strong></td>
+                    <td>${escapeHtml(rel.role_title || "-")}</td>
+                    <td><span class="pia-status ${rel.verification_status}">${rel.verification_status}</span></td>
+                    <td>${Number(rel.verified_evidence_count || 0)} / ${Number(rel.evidence_count || 0)}</td>
+                    <td>${Number(rel.is_public) === 1 ? "已公开" : "未公开"}</td>
+                    <td>${escapeHtml(String(rel.updated_at || "").slice(0, 10))}</td>
+                    <td><button type="button" class="pia-primary-btn" style="min-height:28px;padding:0 10px;font-size:11px;">查看</button></td>
+                </tr>
+            `).join("");
         }
-    } catch (e) {
-        console.error("Load relationships error:", e);
-    }
+    } catch (e) { }
 }
-
-function renderRelationshipTable() {
-    const tbody = document.getElementById("piaRelationshipTableBody");
-    if (!tbody) return;
-
-    if (!relationshipsCache.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="pia-relationship-empty">暂无关系数据</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = relationshipsCache.map((rel) => `
-        <tr>
-            <td><strong>${escapeHtml(rel.source_entity_name || `ID ${rel.source_entity_id}`)}</strong></td>
-            <td>${escapeHtml(rel.relationship_name_zh || rel.relationship_type)}</td>
-            <td><strong>${escapeHtml(rel.target_entity_name || `ID ${rel.target_entity_id}`)}</strong></td>
-            <td>${escapeHtml(rel.role_title || (rel.ownership_percentage ? `持股 ${rel.ownership_percentage}%` : "-"))}</td>
-            <td><span class="pia-status ${rel.verification_status}">${rel.verification_status}</span></td>
-            <td>${Number(rel.verified_evidence_count || 0)} / ${Number(rel.evidence_count || 0)}</td>
-            <td>${Number(rel.is_public) === 1 ? "已公开" : "未公开"}</td>
-            <td>${escapeHtml(String(rel.updated_at || "").slice(0, 10))}</td>
-            <td><button type="button" class="pia-table-action">编辑</button></td>
-        </tr>
-    `).join("");
-}
-
-function showRelationshipEditor() { document.querySelector(".pia-relationship-editor-card")?.removeAttribute("hidden"); }
-function hideRelationshipEditor() {
-    const el = document.querySelector(".pia-relationship-editor-card");
-    if (el) el.hidden = true;
-}
-
-/* =========================================================
-   5. 证据、审核队列、纠错中心与版本历史
-========================================================= */
-
-function ensureEvidenceDataLoaded() { }
-function initEvidenceManagement() { }
-function showEvidenceEditor() { document.querySelector(".pia-evidence-editor-card")?.removeAttribute("hidden"); }
-function hideEvidenceEditor() {
-    const el = document.querySelector(".pia-evidence-editor-card");
-    if (el) el.hidden = true;
-}
-
-function initReviewQueue() { }
-function loadReviewQueue() { }
-function initCorrectionCenter() { }
-function loadCorrections() { }
-function initVersionHistory() { }
-function loadVersions() { }

@@ -203,51 +203,11 @@ app.listen(
       "/api/payment/webhook"
     );
 
-    startGNewsAutoFetchScheduler()
-      .then((result) => {
-        console.log(
-          "[GNews Scheduler] Startup result:",
-          {
-            reason: result.reason,
-            nextRunAt: result.nextRunAt,
-          }
-        );
-      })
-      .catch((error) => {
-        console.error(
-          "[GNews Scheduler] Startup error:",
-          error
-        );
-      });
-
-    try {
-      const totoSchedulerResult =
-        startSingaporeTotoAutoSyncScheduler();
-
-      console.log(
-        "[Singapore TOTO Scheduler] Startup result:",
-        totoSchedulerResult
-      );
-    } catch (error) {
-      console.error(
-        "[Singapore TOTO Scheduler] Startup error:",
-        error
-      );
-    }
-
-    try {
-      const sg4dSchedulerResult =
-        startSingapore4dAutoSyncScheduler();
-
-      console.log(
-        "[Singapore 4D Scheduler] Startup result:",
-        sg4dSchedulerResult
-      );
-    } catch (error) {
-      console.error(
-        "[Singapore 4D Scheduler] Startup error:",
-        error
-      );
+    // 彩票与新闻定时调度器：仅在生产服务器运行，本地开发保持静默
+    if (process.env.NODE_ENV === "production") {
+      startGNewsAutoFetchScheduler().catch(() => { });
+      try { startSingaporeTotoAutoSyncScheduler(); } catch (e) { }
+      try { startSingapore4dAutoSyncScheduler(); } catch (e) { }
     }
   }
 );

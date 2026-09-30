@@ -3,11 +3,8 @@
 
 <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>人谱情报后台管理 | Daily News Admin</title>
-
     <link rel="stylesheet" href="/admin/people-intelligence-admin.css" />
 </head>
 
@@ -15,2137 +12,453 @@
 
     <div class="pia-app">
 
-        <!-- =====================================================
-         左侧后台导航
-    ====================================================== -->
+        <!-- 左侧后台导航 -->
         <aside class="pia-sidebar">
-
             <div class="pia-sidebar-brand">
                 <strong>Daily News</strong>
                 <span>People Intelligence Admin</span>
             </div>
 
             <nav class="pia-sidebar-nav">
-
                 <button type="button" class="pia-nav-item active" data-admin-page="dashboard">
                     <span class="pia-nav-icon">⌂</span>
                     <span>控制台</span>
                 </button>
-
                 <button type="button" class="pia-nav-item" data-admin-page="people">
                     <span class="pia-nav-icon">人</span>
                     <span>人物管理</span>
                 </button>
-
                 <button type="button" class="pia-nav-item" data-admin-page="organizations">
                     <span class="pia-nav-icon">企</span>
                     <span>机构管理</span>
                 </button>
-
                 <button type="button" class="pia-nav-item" data-admin-page="relationships">
                     <span class="pia-nav-icon">关</span>
                     <span>关系管理</span>
                 </button>
-
                 <button type="button" class="pia-nav-item" data-admin-page="evidence">
                     <span class="pia-nav-icon">证</span>
                     <span>证据与来源</span>
                 </button>
-
                 <button type="button" class="pia-nav-item" data-admin-page="ai-review">
                     <span class="pia-nav-icon">AI</span>
                     <span>AI 审核队列</span>
                 </button>
-
                 <button type="button" class="pia-nav-item" data-admin-page="corrections">
                     <span class="pia-nav-icon">纠</span>
                     <span>纠错中心</span>
                 </button>
-
                 <button type="button" class="pia-nav-item" data-admin-page="versions">
                     <span class="pia-nav-icon">史</span>
                     <span>版本历史</span>
                 </button>
-
             </nav>
-
         </aside>
 
-
-        <!-- =====================================================
-         右侧主体
-    ====================================================== -->
+        <!-- 右侧主体 -->
         <div class="pia-main">
             <main class="pia-content">
 
-                <!-- =================================================
-             Dashboard
-        ================================================== -->
+                <!-- 1. 控制台 -->
                 <section class="pia-admin-page active" data-admin-panel="dashboard">
-
                     <div class="pia-page-heading">
                         <div>
-                            <span class="pia-eyebrow">
-                                DATA GOVERNANCE
-                            </span>
-
+                            <span class="pia-eyebrow">DATA GOVERNANCE</span>
                             <h2>人谱数据治理控制台</h2>
-
-                            <p>
-                                查看人物、关系、证据、纠错和审核状态。
-                            </p>
+                            <p>查看人物、关系、证据、纠错和审核状态。</p>
                         </div>
                     </div>
 
-
-                    <!-- 指标卡 -->
                     <section class="pia-metrics">
-
-                        <article class="pia-metric-card">
-                            <span>人物</span>
-                            <strong>128</strong>
-                            <small>演示数据</small>
+                        <article class="pia-metric-card"><span>人物档案</span><strong
+                                id="dashPeopleCount">--</strong><small>已入库记录</small></article>
+                        <article class="pia-metric-card"><span>机构企业</span><strong>214</strong><small>上市公司/实体</small>
                         </article>
-
-                        <article class="pia-metric-card">
-                            <span>机构</span>
-                            <strong>214</strong>
-                            <small>企业 / 基金 / 信托</small>
+                        <article class="pia-metric-card"><span>拓扑关系</span><strong>486</strong><small>交叉持股与家族</small>
                         </article>
-
-                        <article class="pia-metric-card">
-                            <span>关系</span>
-                            <strong>486</strong>
-                            <small>人物与实体关系</small>
+                        <article class="pia-metric-card"><span>待审核池</span><strong>0</strong><small>待核验</small></article>
+                        <article class="pia-metric-card"><span>纠错申请</span><strong>8</strong><small>公众建议</small>
                         </article>
-
-                        <article class="pia-metric-card">
-                            <span>待审核</span>
-                            <strong>23</strong>
-                            <small>AI / 人工录入</small>
-                        </article>
-
-                        <article class="pia-metric-card pia-metric-warning">
-                            <span>纠错申请</span>
-                            <strong>8</strong>
-                            <small>等待处理</small>
-                        </article>
-
-                        <article class="pia-metric-card pia-metric-risk">
-                            <span>数据冲突</span>
-                            <strong>5</strong>
-                            <small>需要复核</small>
-                        </article>
-
+                        <article class="pia-metric-card"><span>系统状态</span><strong
+                                style="color:#10b981;">运行中</strong><small>SQLite 全量接入</small></article>
                     </section>
-
-
-                    <section class="pia-dashboard-grid">
-
-                        <!-- 待审核 -->
-                        <article class="pia-card">
-
-                            <div class="pia-card-heading">
-                                <div>
-                                    <span class="pia-eyebrow">
-                                        REVIEW QUEUE
-                                    </span>
-
-                                    <h3>待审核数据</h3>
-                                </div>
-
-                                <button type="button">
-                                    查看全部
-                                </button>
-                            </div>
-
-
-                            <div class="pia-review-list">
-
-                                <div class="pia-review-item">
-
-                                    <div>
-                                        <strong>
-                                            伊万卡·特朗普
-                                        </strong>
-
-                                        <p>
-                                            新增人物关系：配偶
-                                        </p>
-                                    </div>
-
-                                    <span class="pia-status pending">
-                                        待审核
-                                    </span>
-
-                                </div>
-
-
-                                <div class="pia-review-item">
-
-                                    <div>
-                                        <strong>
-                                            特朗普媒体与科技集团
-                                        </strong>
-
-                                        <p>
-                                            新增商业关联信息
-                                        </p>
-                                    </div>
-
-                                    <span class="pia-status ai">
-                                        AI 抽取
-                                    </span>
-
-                                </div>
-
-
-                                <div class="pia-review-item">
-
-                                    <div>
-                                        <strong>
-                                            唐纳德·特朗普
-                                        </strong>
-
-                                        <p>
-                                            人物资料更新时间待确认
-                                        </p>
-                                    </div>
-
-                                    <span class="pia-status pending">
-                                        待审核
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                        </article>
-
-
-                        <!-- 纠错中心 -->
-                        <article class="pia-card">
-
-                            <div class="pia-card-heading">
-                                <div>
-                                    <span class="pia-eyebrow">
-                                        CORRECTION CENTER
-                                    </span>
-
-                                    <h3>最新纠错申请</h3>
-                                </div>
-
-                                <button type="button">
-                                    查看全部
-                                </button>
-                            </div>
-
-
-                            <div class="pia-correction-list">
-
-                                <div class="pia-correction-item">
-
-                                    <div class="pia-correction-top">
-
-                                        <strong>
-                                            #C-2026-0018
-                                        </strong>
-
-                                        <span class="pia-status pending">
-                                            待处理
-                                        </span>
-
-                                    </div>
-
-                                    <h4>
-                                        人物出生日期可能有误
-                                    </h4>
-
-                                    <p>
-                                        用户提交新的公开来源，请求管理员复核。
-                                    </p>
-
-                                </div>
-
-
-                                <div class="pia-correction-item">
-
-                                    <div class="pia-correction-top">
-
-                                        <strong>
-                                            #C-2026-0017
-                                        </strong>
-
-                                        <span class="pia-status review">
-                                            审核中
-                                        </span>
-
-                                    </div>
-
-                                    <h4>
-                                        企业持股比例需要更新
-                                    </h4>
-
-                                    <p>
-                                        当事方提交最新公司披露文件。
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        </article>
-
-                    </section>
-
-
-                    <!-- 最近修改 -->
-                    <section class="pia-card pia-history-card">
-
-                        <div class="pia-card-heading">
-
-                            <div>
-                                <span class="pia-eyebrow">
-                                    VERSION HISTORY
-                                </span>
-
-                                <h3>最近数据修改</h3>
-                            </div>
-
-                            <button type="button">
-                                查看版本历史
-                            </button>
-
-                        </div>
-
-
-                        <div class="pia-table-wrap">
-
-                            <table class="pia-table">
-
-                                <thead>
-                                    <tr>
-                                        <th>对象</th>
-                                        <th>修改内容</th>
-                                        <th>修改人</th>
-                                        <th>时间</th>
-                                        <th>状态</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-
-                                    <tr>
-                                        <td>
-                                            伊万卡·特朗普
-                                        </td>
-
-                                        <td>
-                                            修改人物关系
-                                        </td>
-
-                                        <td>
-                                            admin
-                                        </td>
-
-                                        <td>
-                                            2026-09-10
-                                        </td>
-
-                                        <td>
-                                            <span class="pia-status verified">
-                                                已核验
-                                            </span>
-                                        </td>
-                                    </tr>
-
-
-                                    <tr>
-                                        <td>
-                                            特朗普集团
-                                        </td>
-
-                                        <td>
-                                            更新企业信息
-                                        </td>
-
-                                        <td>
-                                            editor01
-                                        </td>
-
-                                        <td>
-                                            2026-09-09
-                                        </td>
-
-                                        <td>
-                                            <span class="pia-status verified">
-                                                已核验
-                                            </span>
-                                        </td>
-                                    </tr>
-
-
-                                    <tr>
-                                        <td>
-                                            唐纳德·特朗普
-                                        </td>
-
-                                        <td>
-                                            新增证据来源
-                                        </td>
-
-                                        <td>
-                                            ai-reviewer
-                                        </td>
-
-                                        <td>
-                                            2026-09-08
-                                        </td>
-
-                                        <td>
-                                            <span class="pia-status pending">
-                                                待审核
-                                            </span>
-                                        </td>
-                                    </tr>
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </section>
-
                 </section>
 
-
-                <!-- =================================================
-                                People Management
-                           ================================================== -->
+                <!-- 2. 人物管理 -->
                 <section class="pia-admin-page" data-admin-panel="people" hidden>
-
                     <div class="pia-page-heading">
                         <div>
-                            <span class="pia-eyebrow">
-                                PEOPLE MANAGEMENT
-                            </span>
-
+                            <span class="pia-eyebrow">PEOPLE MANAGEMENT</span>
                             <h2>人物管理</h2>
-
-                            <p>
-                                管理人物资料、审核状态、发布状态以及人物基础信息。
-                            </p>
+                            <p>管理人物深度商业档案、家族关系、财富估值以及审核发布状态。</p>
                         </div>
-
-                        <button type="button" class="pia-primary-btn" data-person-action="new">
-                            + 新增人物
-                        </button>
+                        <button type="button" class="pia-primary-btn" id="piaOpenCreatePersonModalBtn">+
+                            新增深度人物档案</button>
                     </div>
-                    <!-- =============================================
-                                        上方：人物资料编辑工作台
-                                   ============================================== -->
-                    <aside class="pia-card pia-person-editor">
 
-                        <div class="pia-card-heading">
-
+                    <!-- 顶部常驻：维基数据一键智能抓取卡片 -->
+                    <section class="pia-card" style="border-left: 4px solid #10b981;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <div>
-                                <span class="pia-eyebrow">
-                                    PERSON PROFILE
-                                </span>
-
-                                <h3 id="piaPersonEditorTitle">
-                                    编辑人物资料
-                                </h3>
+                                <span class="pia-eyebrow" style="color: #10b981;">WIKIDATA INTELLIGENCE PIPELINE</span>
+                                <h3 style="margin: 4px 0 0; font-size: 16px; color: #1e293b;">⚡ 维基数据一键智能抓取与自动建档</h3>
                             </div>
-
-                            <div class="pia-person-editor-heading-actions">
-                                <button type="button" class="pia-secondary-btn" data-person-action="frontend">
-                                    查看前台
-                                </button>
-
-                                <span class="pia-status verified">
-                                    已核验
-                                </span>
-                            </div>
-
+                            <span style="font-size: 12px; color: #64748b;">自动抽取配偶、子嗣、产业与股权关系网络</span>
                         </div>
 
+                        <div style="display: flex; gap: 10px;">
+                            <input type="search" id="piaWikiSearchInput" placeholder="输入要抓取的人物名字（例如：何鸿燊、李嘉诚、马斯克、特朗普）..."
+                                style="flex: 1; height: 42px; padding: 0 14px; border: 1px solid #d8e0eb; border-radius: 6px; font-size: 13px; outline: none;" />
+                            <button type="button" id="piaWikiSearchBtn" class="pia-primary-btn"
+                                style="min-height: 42px; padding: 0 24px; background: #10b981; border-color: #10b981; font-weight: 700;">
+                                检索维基数据
+                            </button>
+                        </div>
+
+                        <div id="piaWikiLoadingStatus"
+                            style="display: none; margin-top: 12px; padding: 10px 14px; font-size: 13px; color: #1769df; background: #f0f7ff; border-radius: 6px;">
+                            ⏳ 正在连接维基百科，深度解析关系拓扑...
+                        </div>
+
+                        <div id="piaWikiResultList"
+                            style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;"></div>
+                    </section>
+
+                    <!-- 人物详细资料编辑工作台（点击列表“编辑”时平滑展开） -->
+                    <aside class="pia-card pia-person-editor" hidden>
+                        <div class="pia-card-heading">
+                            <div><span class="pia-eyebrow">PERSON PROFILE</span>
+                                <h3 id="piaPersonEditorTitle">编辑人物深度档案</h3>
+                            </div>
+                            <div class="pia-person-editor-heading-actions">
+                                <button type="button" class="pia-secondary-btn"
+                                    data-person-action="frontend">查看前台图谱</button>
+                                <span class="pia-status verified">已核验</span>
+                            </div>
+                        </div>
 
                         <div class="pia-person-editor-header">
-
-                            <div class="pia-person-editor-avatar">
-                                DT
-                            </div>
-
+                            <div class="pia-person-editor-avatar">PT</div>
                             <div>
-
-                                <strong id="piaEditorDisplayName">
-                                    唐纳德·特朗普
-                                </strong>
-
-                                <span id="piaEditorDisplayEnglishName">
-                                    Donald Trump
-                                </span>
-
-                                <button type="button" class="pia-link-btn">
-                                    更换人物照片
-                                </button>
-
+                                <strong id="piaEditorDisplayName">未选择</strong>
+                                <span id="piaEditorDisplayEnglishName">None</span>
                             </div>
-
                         </div>
-
 
                         <form id="piaPersonForm" class="pia-person-form">
-
                             <div class="pia-form-grid">
-
+                                <label><span>中文姓名 *</span><input id="piaPersonNameZh" type="text" /></label>
+                                <label><span>英文姓名 *</span><input id="piaPersonNameEn" type="text" /></label>
+                                <label><span>别名 / 曾用名</span><input id="piaPersonAliases" type="text" /></label>
                                 <label>
-                                    <span>中文姓名 *</span>
-
-                                    <input id="piaPersonNameZh" type="text" value="唐纳德·特朗普" />
-                                </label>
-
-
-                                <label>
-                                    <span>英文姓名 *</span>
-
-                                    <input id="piaPersonNameEn" type="text" value="Donald Trump" />
-                                </label>
-
-
-                                <label>
-                                    <span>其他姓名 / 别名</span>
-
-                                    <input id="piaPersonAliases" type="text" value="" placeholder="多个别名可用逗号分隔" />
-                                </label>
-
-
-                                <label>
-                                    <span>出生日期</span>
-
-                                    <input id="piaPersonBirthDate" type="date" value="1946-06-14" />
-                                </label>
-
-
-                                <label>
-                                    <span>国家 / 地区</span>
-
-                                    <input id="piaPersonCountry" type="text" value="美国" />
-                                </label>
-
-
-                                <label>
-                                    <span>主要身份</span>
-
-                                    <input id="piaPersonRole" type="text" value="商人 / 政治人物" />
-                                </label>
-
-
-                                <label>
-                                    <span>核心机构</span>
-
-                                    <input id="piaPersonOrganization" type="text" value="特朗普集团" />
-                                </label>
-
-
-                                <label>
-                                    <span>数据状态</span>
-
-                                    <select id="piaPersonVerificationStatus">
-
-                                        <option value="verified" selected>
-                                            已核验
-                                        </option>
-
-                                        <option value="draft">
-                                            草稿
-                                        </option>
-
-                                        <option value="pending">
-                                            待审核
-                                        </option>
-
-                                        <option value="disputed">
-                                            存在争议
-                                        </option>
-
-                                        <option value="hidden">
-                                            已隐藏
-                                        </option>
-
+                                    <span>性别</span>
+                                    <select id="piaPersonGender">
+                                        <option value="">未指定</option>
+                                        <option value="男">男</option>
+                                        <option value="女">女</option>
                                     </select>
                                 </label>
 
-
                                 <label>
-                                    <span>可信度</span>
+                                    <span>婚姻状况</span>
+                                    <select id="piaPersonMaritalStatus">
+                                        <option value="">未指定</option>
+                                        <option value="未婚">未婚</option>
+                                        <option value="已婚">已婚</option>
+                                        <option value="离异">离异</option>
+                                        <option value="丧偶">丧偶</option>
+                                        <option value="多段婚姻/家族联姻">多段婚姻 / 家族联姻</option>
+                                    </select>
+                                </label>
+                                <label><span>出生日期</span><input id="piaPersonBirthDate" type="date" /></label>
+                                <label><span>国籍 / 居住地</span><input id="piaPersonCountry" type="text" /></label>
+                                <label>
+                                    <span>主要身份类型</span>
+                                    <select id="piaPersonProfessionType">
+                                        <option value="企业家 / 创始人">企业家 / 创始人</option>
+                                        <option value="企业高管 (CEO/COO/CFO)">企业高管 (CEO / COO / CFO)</option>
+                                        <option value="职业经理人">职业经理人</option>
+                                        <option value="政治家 / 议员 / 内阁成员">政治家 / 议员 / 内阁成员</option>
+                                        <option value="投资家 / 家族办公室操盘手">投资家 / 家族办公室操盘手</option>
+                                        <option value="家族信托受益人">家族信托受益人</option>
+                                        <option value="社会名流 / 慈善家">社会名流 / 慈善家</option>
+                                    </select>
+                                </label>
 
+                                <label><span>公司最高头衔 (如: 董事局主席/CEO)</span><input id="piaPersonTitleHonor"
+                                        type="text" /></label>
+                                <label><span>核心企业 / 旗舰机构</span><input id="piaPersonCoreOrganization"
+                                        type="text" /></label>
+                                <label><span>毕业院校与最高学历</span><input id="piaPersonEducation" type="text" /></label>
+                                <label><span>预估净资产 (如: $120亿 USD)</span><input id="piaPersonNetWorth"
+                                        type="text" /></label>
+
+                                <label><span>主要财富来源</span><input id="piaPersonWealthSource" type="text" /></label>
+                                <label><span>关联信托基金</span><input id="piaPersonFamilyTrust" type="text" /></label>
+                                <label><span>人物标签 (英文逗号隔开)</span><input id="piaPersonTags" type="text" /></label>
+                                <label>
+                                    <span>数据可信度</span>
                                     <select id="piaPersonConfidence">
-
-                                        <option value="high" selected>
-                                            高
-                                        </option>
-
-                                        <option value="medium">
-                                            中
-                                        </option>
-
-                                        <option value="low">
-                                            低
-                                        </option>
-
+                                        <option value="high" selected>高 (官方披露/权威媒体)</option>
+                                        <option value="medium">中 (公开新闻/二次转述)</option>
+                                        <option value="low">低 (未经审计传闻)</option>
                                     </select>
                                 </label>
-
-
-                                <label>
-                                    <span>资料更新时间</span>
-
-                                    <input id="piaPersonUpdatedAt" type="date" value="2026-09-10" />
-                                </label>
-
-
-                                <label class="pia-form-tags">
-                                    <span>人物标签</span>
-
-                                    <input id="piaPersonTags" type="text" value="政治, 房地产, 媒体, 家族企业" />
-                                </label>
-
                             </div>
-
 
                             <label class="pia-form-full pia-form-biography">
-                                <span>人物简介</span>
-
-                                <textarea id="piaPersonBiography"
-                                    rows="5">唐纳德·特朗普是美国商人和政治人物。本字段目前仅用于测试人谱后台人物资料编辑流程。</textarea>
+                                <span>详细人物生平 / 商业背景</span>
+                                <textarea id="piaPersonBiography" rows="4"></textarea>
                             </label>
-
-
-
-
-
-                            <div class="pia-editor-section pia-editor-evidence">
-
-                                <div class="pia-editor-section-title">
-
-                                    <div>
-                                        <strong>
-                                            证据与来源
-                                        </strong>
-
-                                        <span>
-                                            当前人物资料关联 12 条证据
-                                        </span>
-                                    </div>
-
-                                    <button type="button" class="pia-secondary-btn">
-                                        管理证据
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="pia-editor-section pia-editor-relations">
-
-                                <div class="pia-editor-section-title">
-
-                                    <div>
-                                        <strong>
-                                            关系数据
-                                        </strong>
-
-                                        <span>
-                                            家族、企业、股权等关系在“关系管理”模块中维护
-                                        </span>
-                                    </div>
-
-                                    <button type="button" class="pia-secondary-btn">
-                                        查看关系
-                                    </button>
-
-                                </div>
-
-                            </div>
-
 
                             <div class="pia-person-form-actions">
-                                <div>
-
-                                    <button type="button" class="pia-secondary-btn" data-person-action="cancel">
-                                        取消修改
-                                    </button>
-
-                                    <button type="button" class="pia-secondary-btn" data-person-action="draft">
-                                        保存草稿
-                                    </button>
-
-                                    <button type="button" class="pia-primary-btn" data-person-action="submit">
-                                        提交审核
-                                    </button>
-
-                                    <button type="button" class="pia-primary-btn" data-person-action="approve">
-                                        审核通过
-                                    </button>
-
-                                    <button type="button" class="pia-primary-btn" data-person-action="publish"
-                                        id="personPublishButton">
-                                        发布
-                                    </button>
-
-                                    <button type="button" class="pia-danger-btn" data-person-action="trash"
-                                        id="personTrashButton">
-                                        移入垃圾箱
-                                    </button>
-
-                                </div>
-
+                                <button type="button" class="pia-secondary-btn"
+                                    data-person-action="cancel">收起编辑</button>
+                                <button type="button" class="pia-secondary-btn" data-person-action="draft">保存修改</button>
+                                <button type="button" class="pia-primary-btn" data-person-action="submit">提交审核</button>
+                                <button type="button" class="pia-primary-btn" data-person-action="approve">审核通过</button>
+                                <button type="button" class="pia-primary-btn" data-person-action="publish"
+                                    id="personPublishButton">发布</button>
+                                <button type="button" class="pia-danger-btn" data-person-action="trash"
+                                    id="personTrashButton">移入垃圾箱</button>
                             </div>
-
                         </form>
-
                     </aside>
 
-                    <div class="pia-people-workspace">
-
-                        <!-- =============================================
-                                    下方：人物列表
-                               ============================================== -->
-                        <section class="pia-card pia-people-list-card">
-
-                            <div class="pia-card-heading">
-
-                                <div>
-                                    <span class="pia-eyebrow">
-                                        PEOPLE DIRECTORY
-                                    </span>
-
-                                    <h3>人物列表</h3>
-                                </div>
-
-                                <span class="pia-record-count">
-                                    共 4 条演示数据
-                                </span>
-
+                    <!-- 下方人物目录列表 -->
+                    <section class="pia-card pia-people-list-card">
+                        <div class="pia-card-heading">
+                            <div><span class="pia-eyebrow">PEOPLE DIRECTORY</span>
+                                <h3>人物目录列表</h3>
                             </div>
+                            <span class="pia-record-count" id="piaPeopleTotalCount">读取中...</span>
+                        </div>
 
+                        <div class="pia-toolbar">
+                            <input id="piaPersonSearch" type="search" placeholder="搜索姓名、英文名、身份、企业、头衔..."
+                                style="min-width: 280px;" />
+                            <select id="piaPersonStatusFilter">
+                                <option value="all">全部审核状态</option>
+                                <option value="draft">草稿</option>
+                                <option value="pending">待审核</option>
+                                <option value="verified">已核验</option>
+                            </select>
 
-                            <div class="pia-toolbar">
-
-                                <input id="piaPersonSearch" type="search" placeholder="搜索中文名、英文名、人物 ID..." />
-
-                                <select id="piaPersonStatusFilter">
-                                    <option value="all">
-                                        全部状态
-                                    </option>
-
-                                    <option value="draft">
-                                        草稿
-                                    </option>
-
-                                    <option value="verified">
-                                        已核验
-                                    </option>
-
-                                    <option value="pending">
-                                        待审核
-                                    </option>
-
-                                    <option value="disputed">
-                                        存在争议
-                                    </option>
-
-                                    <option value="hidden">
-                                        已隐藏
-                                    </option>
+                            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px; color: #64748b;">每页条数:</span>
+                                <select id="piaPageSizeSelect" style="width: 80px;">
+                                    <option value="10">10 条</option>
+                                    <option value="20" selected>20 条</option>
+                                    <option value="50">50 条</option>
+                                    <option value="100">100 条</option>
                                 </select>
-
                             </div>
+                        </div>
 
+                        <div class="pia-table-wrap">
+                            <table class="pia-table pia-people-table">
+                                <thead>
+                                    <tr>
+                                        <th>人物</th>
+                                        <th>商业身份 / 头衔</th>
+                                        <th>核心机构</th>
+                                        <th>国籍/地区</th>
+                                        <th>审核状态</th>
+                                        <th>发布状态</th>
+                                        <th>更新时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="piaPeopleTableBody"></tbody>
+                            </table>
+                        </div>
 
-                            <div class="pia-table-wrap">
-
-                                <table class="pia-table pia-people-table">
-
-                                    <thead>
-                                        <tr>
-                                            <th>人物</th>
-                                            <th>主要身份</th>
-                                            <th>国家/地区</th>
-                                            <th>审核状态</th>
-                                            <th>发布状态</th>
-                                            <th>证据</th>
-                                            <th>更新时间</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-
-                                        <tr class="pia-person-row active" data-person-id="donald-trump"
-                                            data-person-status="verified">
-
-                                            <td>
-                                                <div class="pia-person-cell">
-
-                                                    <div class="pia-person-avatar">
-                                                        DT
-                                                    </div>
-
-                                                    <div>
-                                                        <strong>
-                                                            唐纳德·特朗普
-                                                        </strong>
-
-                                                        <span>
-                                                            Donald Trump
-                                                        </span>
-                                                    </div>
-
-                                                </div>
-                                            </td>
-
-                                            <td>
-                                                商人 / 政治人物
-                                            </td>
-
-                                            <td>
-                                                美国
-                                            </td>
-
-                                            <td>
-                                                <span class="pia-status verified">
-                                                    已核验
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                12
-                                            </td>
-
-                                            <td>
-                                                2026-09-10
-                                            </td>
-
-                                            <td>
-                                                <button type="button" class="pia-table-action" data-person-action="edit"
-                                                    data-person-id="donald-trump">
-                                                    编辑
-                                                </button>
-                                            </td>
-
-                                        </tr>
-
-
-                                        <tr class="pia-person-row" data-person-id="ivanka-trump"
-                                            data-person-status="verified">
-
-                                            <td>
-                                                <div class="pia-person-cell">
-
-                                                    <div class="pia-person-avatar">
-                                                        IT
-                                                    </div>
-
-                                                    <div>
-                                                        <strong>
-                                                            伊万卡·特朗普
-                                                        </strong>
-
-                                                        <span>
-                                                            Ivanka Trump
-                                                        </span>
-                                                    </div>
-
-                                                </div>
-                                            </td>
-
-                                            <td>
-                                                商业人物
-                                            </td>
-
-                                            <td>
-                                                美国
-                                            </td>
-
-                                            <td>
-                                                <span class="pia-status verified">
-                                                    已核验
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                8
-                                            </td>
-
-                                            <td>
-                                                2026-09-09
-                                            </td>
-
-                                            <td>
-                                                <button type="button" class="pia-table-action" data-person-action="edit"
-                                                    data-person-id="ivanka-trump">
-                                                    编辑
-                                                </button>
-                                            </td>
-
-                                        </tr>
-
-
-                                        <tr class="pia-person-row" data-person-id="jared-kushner"
-                                            data-person-status="pending">
-
-                                            <td>
-                                                <div class="pia-person-cell">
-
-                                                    <div class="pia-person-avatar">
-                                                        JK
-                                                    </div>
-
-                                                    <div>
-                                                        <strong>
-                                                            贾里德·库什纳
-                                                        </strong>
-
-                                                        <span>
-                                                            Jared Kushner
-                                                        </span>
-                                                    </div>
-
-                                                </div>
-                                            </td>
-
-                                            <td>
-                                                商业人物 / 投资人
-                                            </td>
-
-                                            <td>
-                                                美国
-                                            </td>
-
-                                            <td>
-                                                <span class="pia-status pending">
-                                                    待审核
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                4
-                                            </td>
-
-                                            <td>
-                                                2026-09-08
-                                            </td>
-
-                                            <td>
-                                                <button type="button" class="pia-table-action" data-person-action="edit"
-                                                    data-person-id="jared-kushner">
-                                                    编辑
-                                                </button>
-                                            </td>
-
-                                        </tr>
-
-
-                                        <tr class="pia-person-row" data-person-id="fred-trump"
-                                            data-person-status="disputed">
-
-                                            <td>
-                                                <div class="pia-person-cell">
-
-                                                    <div class="pia-person-avatar">
-                                                        FT
-                                                    </div>
-
-                                                    <div>
-                                                        <strong>
-                                                            弗雷德·特朗普
-                                                        </strong>
-
-                                                        <span>
-                                                            Fred Trump
-                                                        </span>
-                                                    </div>
-
-                                                </div>
-                                            </td>
-
-                                            <td>
-                                                房地产商人
-                                            </td>
-
-                                            <td>
-                                                美国
-                                            </td>
-
-                                            <td>
-                                                <span class="pia-status review">
-                                                    存在争议
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                6
-                                            </td>
-
-                                            <td>
-                                                2026-09-06
-                                            </td>
-
-                                            <td>
-                                                <button type="button" class="pia-table-action" data-person-action="edit"
-                                                    data-person-id="fred-trump">
-                                                    编辑
-                                                </button>
-                                            </td>
-
-                                        </tr>
-
-                                    </tbody>
-
-                                </table>
-
+                        <div class="pia-pagination" id="piaPaginationBar">
+                            <div class="pia-pagination-info" id="piaPaginationInfo">显示第 1 到 20 条</div>
+                            <div class="pia-pagination-actions">
+                                <button type="button" class="pia-page-btn" id="piaPrevPageBtn" disabled>上一页</button>
+                                <div id="piaPageNumberBtns" style="display: flex; gap: 4px;"></div>
+                                <button type="button" class="pia-page-btn" id="piaNextPageBtn">下一页</button>
+                                <div style="display: flex; align-items: center; gap: 4px; margin-left: 8px;">
+                                    <span style="font-size: 12px;">跳至</span>
+                                    <input type="number" id="piaJumpPageInput" min="1"
+                                        style="width: 48px; height: 32px; padding: 0 4px; border: 1px solid #d8e0eb; border-radius: 6px; text-align: center; font-size: 12px;" />
+                                    <span style="font-size: 12px;">页</span>
+                                    <button type="button" class="pia-page-btn" id="piaJumpPageBtn"
+                                        style="padding: 0 8px;">确定</button>
+                                </div>
                             </div>
-
-                        </section>
-
-
-
-
-                    </div>
-
+                        </div>
+                    </section>
                 </section>
 
-
-                <!-- =================================================
-             Organization Management
-        ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="organizations" hidden>
-
-                    <div class="pia-page-heading">
-                        <div>
-                            <span class="pia-eyebrow">ORGANIZATION MANAGEMENT</span>
-                            <h2>机构管理</h2>
-                            <p>管理企业、上市公司、基金、信托、Family Office、政府机构及其他组织实体。</p>
-                        </div>
-
-                        <button type="button" class="pia-primary-btn" id="piaNewOrganizationButton">
-                            + 新增机构
-                        </button>
-                    </div>
-
-                    <section class="pia-card pia-organization-editor-card">
-
-                        <div class="pia-card-heading">
-                            <div>
-                                <span class="pia-eyebrow">ORGANIZATION PROFILE</span>
-                                <h3 id="piaOrganizationEditorTitle">新增机构</h3>
-                            </div>
-
-                            <div class="pia-organization-heading-actions">
-                                <span class="pia-status draft" id="piaOrganizationEditorStatus">草稿</span>
-                            </div>
-                        </div>
-
-                        <form id="piaOrganizationForm" class="pia-organization-form">
-                            <input type="hidden" id="piaOrganizationId" />
-
-                            <div class="pia-organization-grid">
-
-                                <label>
-                                    <span>中文名称</span>
-                                    <input id="piaOrganizationNameZh" type="text" placeholder="例如：英伟达公司" />
-                                </label>
-
-                                <label>
-                                    <span>英文名称 *</span>
-                                    <input id="piaOrganizationNameEn" type="text" placeholder="例如：NVIDIA Corporation" />
-                                </label>
-
-                                <label>
-                                    <span>别名 / 简称</span>
-                                    <input id="piaOrganizationAliases" type="text" placeholder="多个别名可用逗号分隔" />
-                                </label>
-
-                                <label>
-                                    <span>机构类型 *</span>
-                                    <select id="piaOrganizationType">
-                                        <option value="company">公司 Company</option>
-                                        <option value="listed_company">上市公司 Listed Company</option>
-                                        <option value="fund">基金 Fund</option>
-                                        <option value="trust">信托 Trust</option>
-                                        <option value="family_office">家族办公室 Family Office</option>
-                                        <option value="government">政府机构 Government</option>
-                                        <option value="nonprofit">非营利组织 Nonprofit</option>
-                                        <option value="other">其他 Other</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>国家 / 地区</span>
-                                    <input id="piaOrganizationCountry" type="text" placeholder="例如：新加坡" />
-                                </label>
-
-                                <label>
-                                    <span>总部所在地</span>
-                                    <input id="piaOrganizationHeadquarters" type="text" placeholder="例如：Singapore" />
-                                </label>
-
-                                <label>
-                                    <span>成立日期</span>
-                                    <input id="piaOrganizationFoundedDate" type="date" />
-                                </label>
-
-                                <label>
-                                    <span>一级行业</span>
-                                    <input id="piaOrganizationIndustryPrimary" type="text" placeholder="例如：科技" />
-                                </label>
-
-                                <label>
-                                    <span>二级行业</span>
-                                    <input id="piaOrganizationIndustrySecondary" type="text" placeholder="例如：半导体" />
-                                </label>
-
-                                <label>
-                                    <span>兼容行业字段</span>
-                                    <input id="piaOrganizationIndustry" type="text" placeholder="外部 API 原始行业名称" />
-                                </label>
-
-                                <label>
-                                    <span>官网</span>
-                                    <input id="piaOrganizationWebsite" type="url" placeholder="https://..." />
-                                </label>
-
-                                <label>
-                                    <span>Logo URL</span>
-                                    <input id="piaOrganizationLogo" type="url" placeholder="https://..." />
-                                </label>
-
-                                <label>
-                                    <span>上市状态</span>
-                                    <select id="piaOrganizationListedStatus">
-                                        <option value="">未设置</option>
-                                        <option value="private">未上市 / Private</option>
-                                        <option value="listed">已上市 / Listed</option>
-                                        <option value="delisted">已退市 / Delisted</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>股票代码</span>
-                                    <input id="piaOrganizationTicker" type="text" placeholder="例如：NVDA" />
-                                </label>
-
-                                <label>
-                                    <span>交易所</span>
-                                    <input id="piaOrganizationExchange" type="text" placeholder="例如：NASDAQ" />
-                                </label>
-
-                                <label>
-                                    <span>ISIN</span>
-                                    <input id="piaOrganizationIsin" type="text" placeholder="国际证券识别码" />
-                                </label>
-
-                                <label>
-                                    <span>LEI</span>
-                                    <input id="piaOrganizationLei" type="text" placeholder="法人实体识别码" />
-                                </label>
-
-                                <label>
-                                    <span>审核状态</span>
-                                    <select id="piaOrganizationVerification">
-                                        <option value="draft">草稿</option>
-                                        <option value="pending">待审核</option>
-                                        <option value="verified">已核验</option>
-                                        <option value="disputed">存在争议</option>
-                                        <option value="hidden">已隐藏</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>可信度</span>
-                                    <select id="piaOrganizationConfidence">
-                                        <option value="high">高</option>
-                                        <option value="medium" selected>中</option>
-                                        <option value="low">低</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>资料更新时间</span>
-                                    <input id="piaOrganizationDataUpdatedAt" type="date" />
-                                </label>
-
-                            </div>
-
-                            <label class="pia-organization-full">
-                                <span>机构简介</span>
-                                <textarea id="piaOrganizationDescription" rows="4"
-                                    placeholder="机构业务、背景、控制关系、资本市场属性等。"></textarea>
-                            </label>
-
-                            <div class="pia-organization-actions">
-                                <button type="button" class="pia-secondary-btn" id="piaOrganizationResetButton">
-                                    取消 / 清空
-                                </button>
-
-                                <button type="button" class="pia-secondary-btn" data-organization-action="draft">
-                                    保存草稿
-                                </button>
-
-                                <button type="button" class="pia-primary-btn" data-organization-action="submit">
-                                    提交审核
-                                </button>
-
-                                <button type="button" class="pia-primary-btn" data-organization-action="approve">
-                                    审核通过
-                                </button>
-
-                                <button type="button" class="pia-primary-btn" id="piaOrganizationPublishButton"
-                                    data-organization-action="publish">
-                                    发布
-                                </button>
-
-                                <button type="button" class="pia-danger-btn" id="piaOrganizationTrashButton"
-                                    data-organization-action="trash">
-                                    移入垃圾箱
-                                </button>
-                            </div>
-
-                        </form>
-                    </section>
-
-                    <section class="pia-card pia-organization-list-card">
-
-                        <div class="pia-card-heading">
-                            <div>
-                                <span class="pia-eyebrow">ORGANIZATION DIRECTORY</span>
-                                <h3>机构列表</h3>
-                            </div>
-
-                            <span class="pia-record-count" id="piaOrganizationCount">
-                                共 0 条
-                            </span>
-                        </div>
-
-                        <div class="pia-toolbar">
-                            <input id="piaOrganizationSearch" type="search" placeholder="搜索机构名称、股票代码、行业、国家..." />
-
-                            <select id="piaOrganizationTypeFilter">
-                                <option value="all">全部类型</option>
-                                <option value="company">公司</option>
-                                <option value="listed_company">上市公司</option>
-                                <option value="fund">基金</option>
-                                <option value="trust">信托</option>
-                                <option value="family_office">家族办公室</option>
-                                <option value="government">政府机构</option>
-                                <option value="nonprofit">非营利组织</option>
-                                <option value="other">其他</option>
-                            </select>
-
-                            <select id="piaOrganizationStatusFilter">
-                                <option value="all">全部审核状态</option>
-                                <option value="draft">草稿</option>
-                                <option value="pending">待审核</option>
-                                <option value="verified">已核验</option>
-                                <option value="disputed">存在争议</option>
-                                <option value="hidden">已隐藏</option>
-                            </select>
-                        </div>
-
-                        <div class="pia-table-wrap">
-                            <table class="pia-table pia-organization-table">
-                                <thead>
-                                    <tr>
-                                        <th>机构</th>
-                                        <th>类型</th>
-                                        <th>国家/地区</th>
-                                        <th>行业</th>
-                                        <th>股票/交易所</th>
-                                        <th>审核状态</th>
-                                        <th>发布状态</th>
-                                        <th>更新时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody id="piaOrganizationTableBody">
-                                    <tr>
-                                        <td colspan="9" class="pia-organization-empty">
-                                            正在读取机构数据...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </section>
-
+                    <div class="pia-card">机构管理模块已挂载</div>
                 </section>
-
-
-                <!-- =================================================
-             Relationship Management
-        ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="relationships" hidden>
-
-                    <div class="pia-page-heading">
-                        <div>
-                            <span class="pia-eyebrow">RELATIONSHIP MANAGEMENT</span>
-                            <h2>关系管理</h2>
-                            <p>建立并维护人物与人物、人物与机构、机构与机构之间的结构化关系。</p>
-                        </div>
-
-                        <button type="button" class="pia-primary-btn" id="piaNewRelationshipButton">
-                            + 新增关系
-                        </button>
-                    </div>
-
-                    <section class="pia-card pia-relationship-editor-card">
-                        <div class="pia-card-heading">
-                            <div>
-                                <span class="pia-eyebrow">RELATIONSHIP EDITOR</span>
-                                <h3 id="piaRelationshipEditorTitle">新增关系</h3>
-                            </div>
-                            <span class="pia-status draft" id="piaRelationshipEditorStatus">草稿</span>
-                        </div>
-
-                        <form id="piaRelationshipForm" class="pia-relationship-form">
-                            <input type="hidden" id="piaRelationshipId" />
-
-                            <div class="pia-relationship-core-grid">
-                                <label>
-                                    <span>来源实体类型 *</span>
-                                    <select id="piaRelationshipSourceType">
-                                        <option value="person">人物 Person</option>
-                                        <option value="organization">机构 Organization</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>来源实体 ID *</span>
-                                    <input id="piaRelationshipSourceId" type="number" min="1" placeholder="例如：1" />
-                                </label>
-
-                                <div class="pia-relationship-arrow">→</div>
-
-                                <label>
-                                    <span>关系类型 *</span>
-                                    <select id="piaRelationshipType">
-                                        <option value="">正在读取关系类型...</option>
-                                    </select>
-                                </label>
-
-                                <div class="pia-relationship-arrow">→</div>
-
-                                <label>
-                                    <span>目标实体类型 *</span>
-                                    <select id="piaRelationshipTargetType">
-                                        <option value="person">人物 Person</option>
-                                        <option value="organization" selected>机构 Organization</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>目标实体 ID *</span>
-                                    <input id="piaRelationshipTargetId" type="number" min="1" placeholder="例如：1" />
-                                </label>
-                            </div>
-
-                            <div class="pia-relationship-meta-grid">
-                                <label>
-                                    <span>职位 / 角色</span>
-                                    <input id="piaRelationshipRoleTitle" type="text" placeholder="例如：Founder / CEO" />
-                                </label>
-
-                                <label>
-                                    <span>持股比例 %</span>
-                                    <input id="piaRelationshipOwnership" type="number" min="0" max="100" step="0.0001"
-                                        placeholder="0 - 100" />
-                                </label>
-
-                                <label>
-                                    <span>投票权比例 %</span>
-                                    <input id="piaRelationshipVoting" type="number" min="0" max="100" step="0.0001"
-                                        placeholder="0 - 100" />
-                                </label>
-
-                                <label>
-                                    <span>投资金额</span>
-                                    <input id="piaRelationshipInvestmentAmount" type="number" min="0" step="0.01"
-                                        placeholder="金额" />
-                                </label>
-
-                                <label>
-                                    <span>币种</span>
-                                    <input id="piaRelationshipCurrency" type="text" maxlength="12"
-                                        placeholder="SGD / USD" />
-                                </label>
-
-                                <label>
-                                    <span>开始日期</span>
-                                    <input id="piaRelationshipStartDate" type="date" />
-                                </label>
-
-                                <label>
-                                    <span>结束日期</span>
-                                    <input id="piaRelationshipEndDate" type="date" />
-                                </label>
-
-                                <label>
-                                    <span>关系状态</span>
-                                    <select id="piaRelationshipStatus">
-                                        <option value="current">当前</option>
-                                        <option value="historical">历史</option>
-                                        <option value="disputed">存在争议</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>审核状态</span>
-                                    <select id="piaRelationshipVerification">
-                                        <option value="draft">草稿</option>
-                                        <option value="pending">待审核</option>
-                                        <option value="verified">已核验</option>
-                                        <option value="disputed">存在争议</option>
-                                        <option value="hidden">已隐藏</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>可信度</span>
-                                    <select id="piaRelationshipConfidence">
-                                        <option value="high">高</option>
-                                        <option value="medium" selected>中</option>
-                                        <option value="low">低</option>
-                                    </select>
-                                </label>
-
-                                <label class="pia-relationship-checkbox">
-                                    <input id="piaRelationshipIsCurrent" type="checkbox" checked />
-                                    <span>当前关系</span>
-                                </label>
-
-                                <label class="pia-relationship-checkbox">
-                                    <input id="piaRelationshipIsPublic" type="checkbox" />
-                                    <span>允许公开</span>
-                                </label>
-                            </div>
-
-                            <label class="pia-relationship-full">
-                                <span>关系说明</span>
-                                <textarea id="piaRelationshipDescription" rows="3"
-                                    placeholder="说明这条关系的背景、范围或定义。"></textarea>
-                            </label>
-
-                            <label class="pia-relationship-full">
-                                <span>内部备注</span>
-                                <textarea id="piaRelationshipNotes" rows="2" placeholder="仅供后台治理与审核使用。"></textarea>
-                            </label>
-
-                            <div class="pia-relationship-actions">
-
-                                <button type="button" class="pia-secondary-btn" id="piaRelationshipResetButton">
-                                    取消修改
-                                </button>
-
-                                <button type="submit" class="pia-secondary-btn" id="piaRelationshipSaveButton">
-                                    保存草稿
-                                </button>
-
-                                <button type="button" class="pia-primary-btn" id="piaRelationshipSubmitButton">
-                                    提交审核
-                                </button>
-
-                                <button type="button" class="pia-primary-btn" id="piaRelationshipApproveButton">
-                                    审核通过
-                                </button>
-
-                                <button type="button" class="pia-primary-btn" id="piaRelationshipPublishButton">
-                                    发布
-                                </button>
-                            </div>
-                        </form>
-                    </section>
-
-                    <section class="pia-card pia-relationship-list-card">
-                        <div class="pia-card-heading">
-                            <div>
-                                <span class="pia-eyebrow">RELATIONSHIP DIRECTORY</span>
-                                <h3>关系列表</h3>
-                            </div>
-                            <span class="pia-record-count" id="piaRelationshipCount">共 0 条</span>
-                        </div>
-
-                        <div class="pia-toolbar">
-                            <input id="piaRelationshipSearch" type="search" placeholder="搜索实体名称、关系类型、职位..." />
-                            <select id="piaRelationshipStatusFilter">
-                                <option value="all">全部审核状态</option>
-                                <option value="draft">草稿</option>
-                                <option value="pending">待审核</option>
-                                <option value="verified">已核验</option>
-                                <option value="disputed">存在争议</option>
-                                <option value="hidden">已隐藏</option>
-                            </select>
-                        </div>
-
-                        <div class="pia-table-wrap">
-                            <table class="pia-table pia-relationship-table">
-                                <thead>
-                                    <tr>
-                                        <th>来源实体</th>
-                                        <th>关系</th>
-                                        <th>目标实体</th>
-                                        <th>职位 / 股权</th>
-                                        <th>审核</th>
-                                        <th>证据</th>
-                                        <th>公开</th>
-                                        <th>更新时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="piaRelationshipTableBody">
-                                    <tr>
-                                        <td colspan="9" class="pia-relationship-empty">正在读取关系数据...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-
+                    <div class="pia-card">关系拓扑管理已挂载</div>
                 </section>
-
-
-                <!-- =================================================
-             Evidence & Sources
-        ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="evidence" hidden>
-
-                    <div class="pia-page-heading">
-                        <div>
-                            <span class="pia-eyebrow">EVIDENCE & SOURCES</span>
-                            <h2>证据与来源</h2>
-                            <p>为人物、机构和关系绑定可核验的数据来源，形成可追溯的情报证据链。</p>
-                        </div>
-
-                        <button type="button" class="pia-primary-btn" id="piaNewEvidenceButton">
-                            + 新增证据
-                        </button>
-                    </div>
-
-                    <section class="pia-card pia-evidence-editor-card">
-
-                        <div class="pia-card-heading">
-                            <div>
-                                <span class="pia-eyebrow">EVIDENCE EDITOR</span>
-                                <h3 id="piaEvidenceEditorTitle">新增证据</h3>
-                            </div>
-
-                            <span class="pia-status pending" id="piaEvidenceEditorStatus">待审核</span>
-                        </div>
-
-                        <form id="piaEvidenceForm" class="pia-evidence-form">
-                            <input type="hidden" id="piaEvidenceId" />
-
-                            <div class="pia-evidence-grid">
-
-                                <label>
-                                    <span>目标类型 *</span>
-                                    <select id="piaEvidenceEntityType">
-                                        <option value="relationship">关系 Relationship</option>
-                                        <option value="person">人物 Person</option>
-                                        <option value="organization">机构 Organization</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span id="piaEvidenceEntityLabel">目标 *</span>
-
-                                    <select id="piaEvidenceEntityId" required>
-                                        <option value="">
-                                            请先选择目标
-                                        </option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>证据类型 *</span>
-                                    <select id="piaEvidenceType">
-                                        <option value="web">网页 Web</option>
-                                        <option value="company_filing">公司文件 Company Filing</option>
-                                        <option value="exchange_filing">交易所披露 Exchange Filing</option>
-                                        <option value="government_record">政府记录 Government Record</option>
-                                        <option value="news">新闻 News</option>
-                                        <option value="api">API 数据</option>
-                                        <option value="document">文档 Document</option>
-                                        <option value="other">其他 Other</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>来源等级 *</span>
-                                    <select id="piaEvidenceSourceTier">
-                                        <option value="primary">一级 / Primary</option>
-                                        <option value="secondary" selected>二级 / Secondary</option>
-                                        <option value="tertiary">三级 / Tertiary</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>审核状态</span>
-                                    <select id="piaEvidenceVerification">
-                                        <option value="pending">待审核</option>
-                                        <option value="verified">已核验</option>
-                                        <option value="disputed">存在争议</option>
-                                        <option value="rejected">已拒绝</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>可信度</span>
-                                    <select id="piaEvidenceConfidence">
-                                        <option value="high">高</option>
-                                        <option value="medium" selected>中</option>
-                                        <option value="low">低</option>
-                                    </select>
-                                </label>
-
-                                <label>
-                                    <span>来源名称</span>
-                                    <input id="piaEvidenceSourceName" type="text" placeholder="例如：公司年报 / SEC / 官方网站" />
-                                </label>
-
-                                <label>
-                                    <span>发布机构</span>
-                                    <input id="piaEvidencePublisher" type="text"
-                                        placeholder="例如：NASDAQ / ACRA / 公司官网" />
-                                </label>
-
-                                <label>
-                                    <span>发布日期</span>
-                                    <input id="piaEvidencePublishedAt" type="date" />
-                                </label>
-
-                                <label class="pia-evidence-checkbox">
-                                    <input id="piaEvidenceIsPrimarySource" type="checkbox" />
-                                    <span>第一手来源</span>
-                                </label>
-
-                            </div>
-
-                            <label class="pia-evidence-full">
-                                <span>来源标题</span>
-                                <input id="piaEvidenceSourceTitle" type="text"
-                                    placeholder="例如：Annual Report 2025 / Corporate Profile / Official Announcement" />
-                            </label>
-
-                            <label class="pia-evidence-full">
-                                <span>原始 URL</span>
-                                <input id="piaEvidenceSourceUrl" type="url" placeholder="https://..." />
-                            </label>
-
-                            <label class="pia-evidence-full">
-                                <span>存档 URL</span>
-                                <input id="piaEvidenceArchivedUrl" type="url" placeholder="https://..." />
-                            </label>
-
-                            <label class="pia-evidence-full">
-                                <span>证据摘要</span>
-                                <textarea id="piaEvidenceSummary" rows="4"
-                                    placeholder="说明该来源具体证明了什么，以及它与目标人物、机构或关系之间的关联。"></textarea>
-                            </label>
-
-                            <div class="pia-evidence-actions">
-                                <button type="button" class="pia-secondary-btn" id="piaEvidenceResetButton">
-                                    取消 / 清空
-                                </button>
-
-                                <button type="submit" class="pia-primary-btn" id="piaEvidenceSaveButton">
-                                    保存证据
-                                </button>
-
-                                <button type="button" class="pia-primary-btn" id="piaEvidenceVerifyButton" disabled>
-                                    审核通过
-                                </button>
-
-                                <button type="button" class="pia-secondary-btn" id="piaEvidenceDisputeButton" disabled>
-                                    标记争议
-                                </button>
-
-                                <button type="button" class="pia-danger-btn" id="piaEvidenceRejectButton" disabled>
-                                    拒绝
-                                </button>
-
-                                <button type="button" class="pia-danger-btn" id="piaEvidenceDeleteButton" disabled>
-                                    删除证据
-                                </button>
-                            </div>
-                        </form>
-                    </section>
-
-                    <section class="pia-card pia-evidence-list-card">
-
-                        <div class="pia-card-heading">
-                            <div>
-                                <span class="pia-eyebrow">EVIDENCE DIRECTORY</span>
-                                <h3>证据列表</h3>
-                            </div>
-
-                            <span class="pia-record-count" id="piaEvidenceCount">共 0 条</span>
-                        </div>
-
-                        <div class="pia-toolbar">
-                            <input id="piaEvidenceSearch" type="search" placeholder="搜索来源名称、标题、URL、摘要..." />
-
-                            <select id="piaEvidenceTypeFilter">
-                                <option value="all">全部证据类型</option>
-                                <option value="web">网页</option>
-                                <option value="company_filing">公司文件</option>
-                                <option value="exchange_filing">交易所披露</option>
-                                <option value="government_record">政府记录</option>
-                                <option value="news">新闻</option>
-                                <option value="api">API</option>
-                                <option value="document">文档</option>
-                                <option value="other">其他</option>
-                            </select>
-
-                            <select id="piaEvidenceStatusFilter">
-                                <option value="all">全部审核状态</option>
-                                <option value="pending">待审核</option>
-                                <option value="verified">已核验</option>
-                                <option value="disputed">存在争议</option>
-                                <option value="rejected">已拒绝</option>
-                            </select>
-                        </div>
-
-                        <div class="pia-table-wrap">
-                            <table class="pia-table pia-evidence-table">
-                                <thead>
-                                    <tr>
-                                        <th>目标</th>
-                                        <th>证据类型</th>
-                                        <th>来源</th>
-                                        <th>来源等级</th>
-                                        <th>审核状态</th>
-                                        <th>可信度</th>
-                                        <th>更新时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody id="piaEvidenceTableBody">
-                                    <tr>
-                                        <td colspan="8" class="pia-evidence-empty">
-                                            正在读取证据数据...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </section>
-
+                    <div class="pia-card">证据链模块已挂载</div>
                 </section>
-
-
-                <!-- =================================================
-             AI Review
-        ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="ai-review" hidden>
-
-                    <div class="pia-page-heading">
-                        <div>
-                            <span class="pia-eyebrow">AI / DATA REVIEW QUEUE</span>
-                            <h2>AI 审核队列</h2>
-                            <p>
-                                统一审核待处理的人物、机构、关系和证据数据。V1 先接现有 SQLite 数据，后续 AI 自动抽取结果也进入同一队列。
-                            </p>
-                        </div>
-
-                        <button type="button" class="pia-secondary-btn" id="piaReviewRefreshButton">
-                            刷新队列
-                        </button>
-                    </div>
-
-                    <div class="pia-review-summary">
-                        <div class="pia-review-summary-card">
-                            <span>当前队列</span>
-                            <strong id="piaReviewTotal">0</strong>
-                        </div>
-
-                        <div class="pia-review-summary-card">
-                            <span>草稿</span>
-                            <strong id="piaReviewDraftCount">0</strong>
-                        </div>
-
-                        <div class="pia-review-summary-card">
-                            <span>待审核</span>
-                            <strong id="piaReviewPendingCount">0</strong>
-                        </div>
-
-                        <div class="pia-review-summary-card">
-                            <span>存在争议</span>
-                            <strong id="piaReviewDisputedCount">0</strong>
-                        </div>
-                    </div>
-
-                    <section class="pia-card">
-
-                        <div class="pia-card-heading">
-                            <div>
-                                <span class="pia-eyebrow">UNIFIED REVIEW WORKBENCH</span>
-                                <h3>待处理数据</h3>
-                            </div>
-
-                            <span class="pia-record-count" id="piaReviewCount">共 0 条</span>
-                        </div>
-
-                        <div class="pia-toolbar">
-                            <input id="piaReviewSearch" type="search" placeholder="搜索人物、机构、关系、来源..." />
-
-                            <select id="piaReviewTypeFilter">
-                                <option value="all">全部对象类型</option>
-                                <option value="person">人物</option>
-                                <option value="organization">机构</option>
-                                <option value="relationship">关系</option>
-                                <option value="evidence">证据</option>
-                            </select>
-
-                            <select id="piaReviewStatusFilter">
-                                <option value="reviewable">待处理数据</option>
-                                <option value="draft">草稿</option>
-                                <option value="pending">待审核</option>
-                                <option value="disputed">存在争议</option>
-                                <option value="verified">已核验</option>
-                                <option value="hidden">已隐藏</option>
-                                <option value="rejected">已拒绝</option>
-                                <option value="all">全部状态</option>
-                            </select>
-
-                            <select id="piaReviewPublicationFilter">
-                                <option value="all">全部发布状态</option>
-                                <option value="unpublished">未发布</option>
-                                <option value="published">已发布</option>
-                            </select>
-                        </div>
-
-                        <div class="pia-table-wrap">
-                            <table class="pia-table pia-review-table">
-                                <thead>
-                                    <tr>
-                                        <th>对象类型</th>
-                                        <th>对象</th>
-                                        <th>可信度</th>
-                                        <th>证据</th>
-                                        <th>当前状态</th>
-                                        <th>发布状态</th>
-                                        <th>更新时间</th>
-                                        <th>审核 / 发布操作</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody id="piaReviewTableBody">
-                                    <tr>
-                                        <td colspan="8" class="pia-review-empty">
-                                            正在读取审核队列...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </section>
-
+                    <div class="pia-card">AI 审核队列已挂载</div>
                 </section>
-
-
-                <!-- =================================================
-                                Corrections
-                           ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="corrections" hidden>
-
-                    <div class="pia-page-heading">
-
-                        <div>
-                            <span class="pia-eyebrow">
-                                CORRECTION CENTER
-                            </span>
-
-                            <h2>纠错中心</h2>
-
-                            <p>
-                                处理用户、媒体、企业或当事人提交的数据更正申请，并保留完整审核记录。
-                            </p>
-                        </div>
-
-                        <button type="button" class="pia-secondary-btn" id="piaCorrectionRefreshBtn">
-                            刷新数据
-                        </button>
-
-                    </div>
-
-
-                    <div class="pia-correction-summary">
-
-                        <div class="pia-stat-card">
-                            <span>全部申请</span>
-                            <strong id="piaCorrectionTotal">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>待处理</span>
-                            <strong id="piaCorrectionPending">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>审核中</span>
-                            <strong id="piaCorrectionReviewing">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>已批准</span>
-                            <strong id="piaCorrectionApproved">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>已驳回</span>
-                            <strong id="piaCorrectionRejected">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>已应用</span>
-                            <strong id="piaCorrectionApplied">0</strong>
-                        </div>
-
-                    </div>
-
-
-                    <div class="pia-card">
-
-                        <div class="pia-card-heading">
-
-                            <div>
-                                <span class="pia-eyebrow">
-                                    CORRECTION REQUESTS
-                                </span>
-
-                                <h3>纠错申请</h3>
-                            </div>
-
-                            <span id="piaCorrectionCount">
-                                共 0 条
-                            </span>
-
-                        </div>
-
-
-                        <div class="pia-correction-toolbar">
-
-                            <input type="search" id="piaCorrectionSearch" placeholder="搜索字段、原始值、建议值、原因、来源、提交人...">
-
-                            <select id="piaCorrectionEntityType">
-                                <option value="all">全部对象类型</option>
-                                <option value="person">人物</option>
-                                <option value="organization">机构</option>
-                                <option value="relationship">关系</option>
-                                <option value="evidence">证据</option>
-                            </select>
-
-                            <select id="piaCorrectionStatus">
-                                <option value="all">全部状态</option>
-                                <option value="pending">待处理</option>
-                                <option value="reviewing">审核中</option>
-                                <option value="approved">已批准</option>
-                                <option value="rejected">已驳回</option>
-                                <option value="applied">已应用</option>
-                            </select>
-
-                        </div>
-
-
-                        <div class="pia-table-wrap">
-
-                            <table class="pia-correction-table">
-
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>对象</th>
-                                        <th>字段</th>
-                                        <th>原始值</th>
-                                        <th>建议值</th>
-                                        <th>提交原因</th>
-                                        <th>提交人</th>
-                                        <th>状态</th>
-                                        <th>提交时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody id="piaCorrectionTableBody">
-
-                                    <tr>
-                                        <td colspan="10" class="pia-correction-empty">
-                                            正在读取纠错申请...
-                                        </td>
-                                    </tr>
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
+                    <div class="pia-card">纠错中心已挂载</div>
                 </section>
-
-                <!-- =================================================
-                                Versions
-                           ================================================== -->
                 <section class="pia-admin-page" data-admin-panel="versions" hidden>
-
-                    <div class="pia-page-heading">
-
-                        <div>
-                            <span class="pia-eyebrow">
-                                VERSION HISTORY
-                            </span>
-
-                            <h2>版本历史</h2>
-
-                            <p>
-                                查看人物、机构、关系和证据的数据修改记录、前后差异、修改原因及历史版本。
-                            </p>
-                        </div>
-
-                        <button type="button" class="pia-secondary-btn" id="piaVersionRefreshBtn">
-                            刷新历史
-                        </button>
-
-                    </div>
-
-
-                    <div class="pia-stat-grid">
-
-                        <div class="pia-stat-card">
-                            <span>历史版本</span>
-                            <strong id="piaVersionTotal">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>人物</span>
-                            <strong id="piaVersionPeople">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>机构</span>
-                            <strong id="piaVersionOrganizations">0</strong>
-                        </div>
-
-                        <div class="pia-stat-card">
-                            <span>关系</span>
-                            <strong id="piaVersionRelationships">0</strong>
-                        </div>
-
-                    </div>
-
-
-                    <div class="pia-card">
-
-                        <div class="pia-card-heading">
-
-                            <div>
-                                <span class="pia-eyebrow">
-                                    VERSION DIRECTORY
-                                </span>
-
-                                <h3>版本记录</h3>
-                            </div>
-
-                            <span id="piaVersionCount">
-                                共 0 条
-                            </span>
-
-                        </div>
-
-
-                        <div class="pia-filter-row">
-
-                            <input type="search" id="piaVersionSearch" placeholder="搜索实体、版本号、操作类型、修改原因...">
-
-                            <select id="piaVersionEntityTypeFilter">
-                                <option value="all">全部对象类型</option>
-                                <option value="person">人物 Person</option>
-                                <option value="organization">机构 Organization</option>
-                                <option value="relationship">关系 Relationship</option>
-                                <option value="evidence">证据 Evidence</option>
-                            </select>
-
-                            <select id="piaVersionActionFilter">
-                                <option value="all">全部操作类型</option>
-                                <option value="create">新增 Create</option>
-                                <option value="update">修改 Update</option>
-                                <option value="approve">审核 Approve</option>
-                                <option value="publish">发布 Publish</option>
-                                <option value="unpublish">取消发布</option>
-                                <option value="trash">移入垃圾箱</option>
-                                <option value="restore">恢复 Restore</option>
-                                <option value="correction">纠错 Correction</option>
-                            </select>
-
-                        </div>
-
-
-                        <div class="pia-table-wrap">
-
-                            <table class="pia-data-table">
-
-                                <thead>
-                                    <tr>
-                                        <th>对象类型</th>
-                                        <th>对象 ID</th>
-                                        <th>版本</th>
-                                        <th>操作</th>
-                                        <th>修改字段</th>
-                                        <th>修改原因</th>
-                                        <th>操作人</th>
-                                        <th>时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody id="piaVersionTableBody">
-
-                                    <tr>
-                                        <td colspan="9" class="pia-review-empty">
-                                            正在读取版本历史...
-                                        </td>
-                                    </tr>
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
+                    <div class="pia-card">版本审计历史已挂载</div>
                 </section>
 
             </main>
-
         </div>
-
     </div>
 
+    <!-- =====================================================
+         【深度要素】新增人物信息独立弹窗
+    ====================================================== -->
+    <div class="pia-create-modal" id="piaCreatePersonModal" hidden>
+        <div class="pia-create-modal-backdrop" id="piaCloseCreatePersonBackdrop"></div>
+        <section class="pia-create-modal-dialog" style="width: min(840px, 96vw);" role="dialog">
+            <header class="pia-create-modal-header">
+                <div>
+                    <span class="pia-eyebrow" style="color: #1769df;">COMPREHENSIVE INTELLIGENCE PROFILE</span>
+                    <h3>新增深度人物商业档案</h3>
+                    <p style="margin: 4px 0 0; color: #64748b; font-size: 12px;">录入人物身份、公司头衔、财富规模与家族信托全要素档案。</p>
+                </div>
+                <button type="button" class="pia-create-modal-close" id="piaCloseCreatePersonBtn">×</button>
+            </header>
+            <div class="pia-create-modal-body">
+                <form id="piaCreatePersonModalForm" style="display: flex; flex-direction: column; gap: 14px;">
+
+                    <!-- 第一组：姓名与身份 -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>中文姓名 *</span>
+                            <input id="modalPersonNameZh" required placeholder="例如：何鸿燊"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>英文姓名 *</span>
+                            <input id="modalPersonNameEn" required placeholder="例如：Stanley Ho"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>别名 / 曾用名</span>
+                            <input id="modalPersonAliases" placeholder="例如：赌王、何九哥"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                    </div>
+
+                    <!-- 第二组：社会属性与婚姻 -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>性别</span>
+                            <select id="modalPersonGender"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 8px; font-size: 13px;">
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>婚姻状况</span>
+                            <select id="modalPersonMaritalStatus"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 8px; font-size: 13px;">
+                                <option value="未婚">未婚</option>
+                                <option value="已婚">已婚</option>
+                                <option value="离异">离异</option>
+                                <option value="多段婚姻/家族联姻">多段婚姻 / 家族联姻</option>
+                            </select>
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>出生日期</span>
+                            <input type="date" id="modalPersonBirthDate"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 8px; font-size: 13px;" />
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>国籍 / 居住地</span>
+                            <input id="modalPersonCountry" placeholder="例如：中国澳门 / 新加坡"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                    </div>
+
+                    <!-- 第三组：头衔、核心企业与身份定位 -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>身份定位类型</span>
+                            <select id="modalPersonProfessionType"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 8px; font-size: 13px;">
+                                <option value="企业家 / 创始人">企业家 / 创始人</option>
+                                <option value="企业高管 (CEO/COO/CFO)">企业高管 (CEO / COO / CFO)</option>
+                                <option value="职业经理人">职业经理人</option>
+                                <option value="政治家 / 议员 / 内阁成员">政治家 / 议员 / 内阁成员</option>
+                                <option value="投资家 / 家族操盘手">投资家 / 家族操盘手</option>
+                                <option value="家族信托受益人">家族信托受益人</option>
+                            </select>
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>公司最高头衔</span>
+                            <input id="modalPersonTitleHonor" placeholder="例如：董事局主席 / 荣誉董事长"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>核心企业 / 旗舰机构</span>
+                            <input id="modalPersonCoreOrganization" placeholder="例如：信德集团 / 澳博控股"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                    </div>
+
+                    <!-- 第四组：资本、信托与教育 -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>预估净资产规模</span>
+                            <input id="modalPersonNetWorth" placeholder="例如：$100亿美元 / 500亿港元"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>家族信托实体</span>
+                            <input id="modalPersonFamilyTrust" placeholder="例如：何鸿燊家族信托基金 (Cayman)"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                            <span>毕业院校 / 学历</span>
+                            <input id="modalPersonEducation" placeholder="例如：香港大学 理学荣誉博士"
+                                style="height: 38px; border: 1px solid #d8e0eb; border-radius: 6px; padding: 0 10px; font-size: 13px;" />
+                        </label>
+                    </div>
+
+                    <label
+                        style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #334155;">
+                        <span>人物详细生平 / 资本商业帝国简介</span>
+                        <textarea id="modalPersonBiography" rows="3" placeholder="请输入人物生平背景、核心资产分布与控股格局介绍..."
+                            style="border: 1px solid #d8e0eb; border-radius: 6px; padding: 8px 10px; font-size: 13px;"></textarea>
+                    </label>
+
+                    <div class="pia-create-modal-actions">
+                        <button type="button" class="pia-secondary-btn" id="piaCancelCreatePersonBtn">取消</button>
+                        <button type="submit" class="pia-primary-btn" id="piaSaveCreatePersonBtn">保存完整档案入库</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
 
     <script src="/admin/people-intelligence-admin.js"></script>
-
 </body>
 
 </html>
