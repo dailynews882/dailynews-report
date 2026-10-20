@@ -567,86 +567,76 @@ function initPersonCreateModal() {
 
 function initWikidataPipeline() {
     const searchBtn = document.getElementById("piaWikiSearchBtn");
-    const searchInput = document.getElementById("piaWikiSearchInput");
+    const input = document.getElementById("piaWikiSearchInput");
+    const list = document.getElementById("piaWikiResultList");
+    const status = document.getElementById("piaWikiLoadingStatus");
+    const historyBtn = document.getElementById("piaWikiHistoryBtn");
+    const historyList = document.getElementById("piaWikiHistoryList");
+    let searchSequence = 0;
 
     searchBtn?.addEventListener("click", async () => {
-        const query = searchInput?.value.trim();
+        const query = String(input?.value || "").trim();
         if (!query) return;
-
-        const listContainer = document.getElementById("piaWikiResultList");
-        const statusBox = document.getElementById("piaWikiLoadingStatus");
-        if (listContainer) listContainer.innerHTML = "";
-        if (statusBox) {
-            statusBox.style.display = "block";
-            statusBox.textContent = `⏳ 正在连接维基百科，检索【${query}】候选条目...`;
-        }
-
+        const sequence = ++searchSequence;
+        if (list) list.replaceChildren();
+        if (status) { status.style.display = "block"; status.textContent = `正在实时查询 Wikidata：${query}…`; }
+        fetch("/api/people-intelligence/search-history", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query, source: "Wikidata" })
+        }).catch(() => { });
         try {
-            const token = getAdminToken();
-            const res = await fetch(`/api/admin/people-intelligence/sources/wikidata/search?q=${encodeURIComponent(query)}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await fetch(`/api/people-intelligence/external/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
             const data = await res.json();
-            if (statusBox) statusBox.style.display = "none";
-
-            if (!data.success || !data.items?.length) {
-                listContainer.innerHTML = `<div style="color: #ef4444; font-size: 13px; padding: 10px 0;">未在维基百科检索到相关人物条目。</div>`;
-                return;
+            if (sequence !== searchSequence) return;
+            if (!res.ok || !data.success) throw new Error(data.message || "搜索失败");
+            if (!list) return;
+            const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+            if (!candidates.length) { list.textContent = "没有找到符合条件的人物。"; return; }
+            for (const item of candidates) {
+                const row = document.createElement("div");
+                row.className = "pia-wikidata-result";
+                const label = document.createElement("span");
+                label.textContent = `${item.name || item.wikidata_id} (${item.wikidata_id}) · ${item.description || "无简介"}`;
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "pia-primary-btn";
+                button.textContent = "查看实时图谱（不入库）";
+                button.addEventListener("click", () => {
+                    window.open(`/people-intelligence.html?q=${encodeURIComponent(item.wikidata_id)}`, "_blank", "noopener,noreferrer");
+                });
+                row.append(label, button);
+                list.appendChild(row);
             }
-
-            listContainer.innerHTML = data.items.map(item => `
-                <div style="border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                    <div style="max-width: 75%;">
-                        <div style="font-weight: 700; font-size: 14px; color: #1e293b;">
-                            ${escapeHtml(item.label)} 
-                            <span style="color: #64748b; font-weight: normal; font-size: 12px;">(${escapeHtml(item.qid)})</span>
-                        </div>
-                        <div style="font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.5;">${escapeHtml(item.description)}</div>
-                    </div>
-                    <button type="button" class="pia-primary-btn" style="min-height: 36px; padding: 0 16px; font-size: 13px; background: #10b981; border-color: #10b981; white-space: nowrap;" onclick="executeWikidataIngest('${escapeHtml(item.qid)}')">
-                        一键抓取并建档入库
-                    </button>
-                </div>
-            `).join("");
         } catch (e) {
-            if (statusBox) statusBox.style.display = "none";
-            listContainer.innerHTML = `<div style="color: #ef4444; font-size: 13px; padding: 10px 0;">检索请求失败: ${escapeHtml(e.message)}</div>`;
+            if (sequence === searchSequence && list) list.textContent = `搜索失败：${e.message}`;
+        } finally {
+            if (sequence === searchSequence && status) status.style.display = "none";
         }
     });
-
-    searchInput?.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") searchBtn?.click();
+    input?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); searchBtn?.click(); } });
+    historyBtn?.addEventListener("click", async () => {
+        if (!historyList) return;
+        historyList.hidden = !historyList.hidden;
+        if (historyList.hidden) return;
+        historyList.textContent = "正在读取搜索记录…";
+        try {
+            const res = await fetch("/api/admin/people-intelligence/sources/search-history", {
+                headers: { Authorization: `Bearer ${getAdminToken()}` }, cache: "no-store"
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || "读取失败");
+            historyList.replaceChildren();
+            for (const item of data.records || []) {
+                const line = document.createElement("div");
+                line.textContent = `${item.searched_at || ""}  ${item.query || ""}`;
+                historyList.appendChild(line);
+            }
+            if (!data.records?.length) historyList.textContent = "暂无搜索记录";
+        } catch (e) { historyList.textContent = `搜索记录读取失败：${e.message}`; }
     });
 }
 
-window.executeWikidataIngest = async function (qid) {
-    const statusBox = document.getElementById("piaWikiLoadingStatus");
-    if (statusBox) {
-        statusBox.style.display = "block";
-        statusBox.textContent = `⏳ 正在深度解析维基关系链 (${qid})，正在自动创建人物主档案、配偶、子嗣以及旗下关联机构...`;
-    }
-
-    try {
-        const token = getAdminToken();
-        const res = await fetch("/api/admin/people-intelligence/sources/wikidata/ingest", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ qid })
-        });
-        const result = await res.json();
-        if (statusBox) statusBox.style.display = "none";
-
-        if (!result.success) {
-            openPrototypeNotice("抓取失败", result.message || "未知错误");
-            return;
-        }
-
-        document.getElementById("piaWikiResultList").innerHTML = "";
-        document.getElementById("piaWikiSearchInput").value = "";
-        await loadPeopleFromApi();
-        openPrototypeNotice("智能抓取成功 🎉", `${result.message}\n\n已成功自动提取并关联：\n${result.details.join("\n")}`);
-    } catch (e) {
-        if (statusBox) statusBox.style.display = "none";
-        openPrototypeNotice("执行抓取错误", e.message);
-    }
+// Legacy ingestion is intentionally disabled. Existing records are never deleted.
+window.executeWikidataIngest = function () {
+    openPrototypeNotice("已停用自动入库", "统一搜索仅实时查询 Wikidata。人物详情不再自动保存到本站数据库。");
 };

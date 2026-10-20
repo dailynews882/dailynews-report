@@ -355,11 +355,12 @@
         <aside class="g-info-pane">
             <div class="g-info-header">
                 <h3>INTELLIGENCE & CAPITAL INFOBOX</h3>
-                <span style="font-size: 11px; color: #059669; font-weight: 700;">● 权威核验</span>
+                <span style="font-size: 11px; color: #059669; font-weight: 700;">● 来源可追溯</span>
             </div>
 
             <div class="g-info-body">
                 <div class="wiki-infobox">
+                    <div class="ci-profile-label"><span class="ci-number">01</span> 人物基础档案 <small>PROFILE</small></div>
                     <div class="wiki-infobox-header">
                         <h2 id="infoNameZh">--</h2>
                         <span id="infoNameEn">--</span>
@@ -403,15 +404,27 @@
                     </table>
                 </div>
 
-                <!-- 商业版图 (天眼查风格) -->
-                <div class="biz-card">
-                    <div class="biz-card-title">
-                        <span>旗下商业帝国与参控股机构 (商业穿透)</span>
-                        <span
-                            style="font-size: 10px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;">核心版图</span>
-                    </div>
-                    <div id="infoBizList"></div>
-                </div>
+                <!-- V8.3-A：六大情报区块；所有空值均明确标记，禁止推测填充 -->
+                <section class="ci-section" aria-label="商业身份">
+                    <h4><span class="ci-number">02</span> 商业身份 <small>POSITIONS</small></h4>
+                    <div id="ciPositions" class="ci-content ci-empty">暂无已核验商业任职数据</div>
+                </section>
+                <section class="ci-section" aria-label="核心企业">
+                    <h4><span class="ci-number">03</span> 核心企业 <small>ORGANIZATIONS</small></h4>
+                    <div id="infoBizList" class="ci-content ci-empty">暂无已核验企业关系数据</div>
+                </section>
+                <section class="ci-section" aria-label="持股与控制权">
+                    <h4><span class="ci-number">04</span> 持股与控制权 <small>OWNERSHIP</small></h4>
+                    <div id="ciOwnership" class="ci-content ci-empty">暂无已核验持股与控制权数据</div>
+                </section>
+                <section class="ci-section" aria-label="产业版图与资本事件">
+                    <h4><span class="ci-number">05</span> 产业版图与资本事件 <small>CAPITAL</small></h4>
+                    <div id="ciIndustries" class="ci-content ci-empty">暂无已核验产业或资本事件数据</div>
+                </section>
+                <section class="ci-section" aria-label="最新商业情报与风险">
+                    <h4><span class="ci-number">06</span> 最新商业情报与风险 <small>INTELLIGENCE</small></h4>
+                    <div id="ciNews" class="ci-content ci-empty">暂无已核验新闻与风险事件数据</div>
+                </section>
 
                 <!-- 维基百科生平长文 -->
                 <div class="biz-card" style="background: #fff;">
@@ -430,6 +443,159 @@
             </div>
         </aside>
     </div>
+
+    <!-- V8.3-G1: organization detail overlay, independent of family-tree canvas -->
+    <div id="ciOrgOverlay" class="ci-org-overlay" hidden>
+        <section class="ci-org-dialog" role="dialog" aria-modal="true" aria-labelledby="ciOrgTitle" tabindex="-1">
+            <header class="ci-org-dialog-header">
+                <div><small>VERIFIED ORGANIZATION PROFILE</small>
+                    <h2 id="ciOrgTitle">企业详情</h2>
+                </div>
+                <button id="ciOrgClose" type="button" aria-label="关闭企业详情">✕</button>
+            </header>
+            <div id="ciOrgDetailBody" class="ci-org-detail-body">正在读取企业资料…</div>
+        </section>
+    </div>
+    <style>
+        .ci-org-overlay[hidden] {
+            display: none !important
+        }
+
+        .ci-org-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(15, 23, 42, .55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px
+        }
+
+        .ci-org-dialog {
+            background: #fff;
+            border-radius: 12px;
+            width: min(680px, 100%);
+            max-height: 85vh;
+            overflow: auto;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, .25);
+            outline: none
+        }
+
+        .ci-org-dialog-header {
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 22px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            z-index: 1
+        }
+
+        .ci-org-dialog-header small {
+            color: #64748b;
+            font-weight: 700;
+            font-size: 10px;
+            letter-spacing: .7px
+        }
+
+        .ci-org-dialog-header h2 {
+            font-size: 19px;
+            margin: 5px 0 0
+        }
+
+        #ciOrgClose {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: white;
+            padding: 7px 11px;
+            cursor: pointer
+        }
+
+        .ci-org-detail-body {
+            padding: 20px 22px;
+            font-size: 13px;
+            line-height: 1.65
+        }
+
+        .ci-org-detail-body dl {
+            display: grid;
+            grid-template-columns: 125px 1fr;
+            margin: 0 0 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden
+        }
+
+        .ci-org-detail-body dt,
+        .ci-org-detail-body dd {
+            padding: 9px 11px;
+            margin: 0;
+            border-bottom: 1px solid #e2e8f0;
+            overflow-wrap: anywhere
+        }
+
+        .ci-org-detail-body dt {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 600
+        }
+
+        .ci-org-detail-body h3 {
+            font-size: 15px;
+            margin: 20px 0 10px
+        }
+
+        .ci-org-person {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0
+        }
+
+        .ci-org-person a,
+        .ci-org-detail-body a {
+            color: #1d4ed8
+        }
+
+        .ci-org-trigger {
+            background: none;
+            border: 0;
+            padding: 0;
+            color: #1d4ed8;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            text-align: left
+        }
+
+        .ci-org-person-link {
+            background: none;
+            border: 0;
+            color: #1d4ed8;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline
+        }
+
+        @media(max-width:600px) {
+            .ci-org-detail-body dl {
+                grid-template-columns: 100px 1fr
+            }
+
+            .ci-org-dialog {
+                max-height: 92vh
+            }
+        }
+    </style>
+    <script src="/pi-field-buckets.js"></script>
+    <script src="/pi-external-graph.js"></script>
 
     <script src="/people-intelligence.js"></script>
 </body>

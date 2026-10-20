@@ -30,6 +30,8 @@ const marketTickerRoute = require("./routes/marketTickerRoute");
 const adminPeopleIntelligenceRoute = require("./routes/adminPeopleIntelligenceRoute");
 const adminPeopleIntelligenceSourceRoute = require("./routes/adminPeopleIntelligenceSourceRoute");
 const peopleIntelligencePublicRoute = require("./routes/peopleIntelligencePublicRoute");
+const { searchWikidataCandidates } = require("./services/piWikidataSearchService");
+const { getWikidataProfile } = require("./services/piWikidataProfileService");
 
 const {
   startGNewsAutoFetchScheduler,
@@ -158,6 +160,19 @@ app.use(
   "/api/admin/people-intelligence/sources",
   adminPeopleIntelligenceSourceRoute
 );
+
+
+app.get(
+  "/api/people-intelligence/external/search",
+  searchWikidataCandidates
+);
+
+
+app.get(
+  "/api/people-intelligence/external/profile/:qid",
+  getWikidataProfile
+);
+
 
 app.use(
   "/api/people-intelligence",

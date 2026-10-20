@@ -1881,3 +1881,114 @@ a {
     }
 
 }
+
+/* V8.3-A 商业情报 Infobox：仅作用于右侧，不改变家谱画布 */
+.ci-profile-label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 13px;
+    background: #f8faff;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 12px;
+    font-weight: 800;
+    color: #183b6c
+}
+
+.ci-profile-label small,
+.ci-section h4 small {
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 9px;
+    letter-spacing: .6px
+}
+
+.ci-number {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    background: #e8f0ff;
+    color: #1d4ed8;
+    border-radius: 7px;
+    font-size: 10px;
+    font-weight: 800
+}
+
+.ci-section {
+    margin: 0 0 13px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .025)
+}
+
+.ci-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    padding: 12px 13px;
+    border-bottom: 1px solid #edf2f7;
+    font-size: 12px;
+    color: #1e293b
+}
+
+.ci-content {
+    padding: 12px 13px;
+    font-size: 12px;
+    color: #334155;
+    line-height: 1.65
+}
+
+.ci-empty {
+    color: #94a3b8;
+    background: #fafcff
+}
+
+.ci-entry {
+    padding: 10px 0;
+    border-bottom: 1px solid #edf2f7;
+    overflow-wrap: anywhere
+}
+
+.ci-entry:last-child {
+    border-bottom: 0;
+    padding-bottom: 0
+}
+
+.ci-entry:first-child {
+    padding-top: 0
+}
+
+.ci-entry strong {
+    display: block;
+    font-size: 12px;
+    color: #172554
+}
+
+.ci-entry span {
+    display: block;
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 3px
+}
+
+.ci-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    margin: 3px 5px 3px 0;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 5px;
+    font-size: 11px
+}
+
+.g-info-body .wiki-infobox {
+    margin-bottom: 13px
+}
+
+.g-info-body .biz-card {
+    margin-bottom: 13px
+}
