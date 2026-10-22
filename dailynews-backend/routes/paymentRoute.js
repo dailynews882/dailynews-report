@@ -1,5 +1,5 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
+const { verifyUserToken } = require("../middleware/userAuth");
 const Stripe = require("stripe");
 const db = require("../db");
 
@@ -73,46 +73,7 @@ function dbRun(sql, params = []) {
 * =====================================
   */
 
-function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({
-      success: false,
-      message: "未登录，请先登录"
-    });
-  }
-
-  const [scheme, token] =
-    String(authHeader).split(" ");
-
-  if (
-    scheme !== "Bearer" ||
-    !token
-  ) {
-    return res.status(401).json({
-      success: false,
-      message: "Token格式无效"
-    });
-  }
-
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET ||
-      "dailynews_default_secret"
-    );
-
-    req.user = decoded;
-    next();
-
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "登录已过期，请重新登录"
-    });
-  }
-}
 
 /*
 
@@ -627,7 +588,7 @@ async function retrieveSubscription(
 
 router.post(
   "/create-subscription-session",
-  verifyToken,
+  verifyUserToken,
   async (req, res) => {
     try {
       const configError =
@@ -939,7 +900,7 @@ router.post(
 
 router.post(
   "/create-customer-portal-session",
-  verifyToken,
+  verifyUserToken,
   async (req, res) => {
     try {
       if (!stripe) {
@@ -1017,7 +978,7 @@ router.post(
 
 router.get(
   "/subscription-status",
-  verifyToken,
+  verifyUserToken,
   async (req, res) => {
     try {
       const userId = Number(req.user.id);

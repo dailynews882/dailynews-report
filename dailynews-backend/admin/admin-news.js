@@ -88,6 +88,7 @@ async function loadAdminNewsRecords() {
         const response = await fetch(ADMIN_NEWS_API, {
             method: "GET",
             headers: {
+                ...getAdminAuthorizationHeaders(),
                 Accept: "application/json"
             },
             cache: "no-store"

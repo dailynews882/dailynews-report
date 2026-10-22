@@ -27,7 +27,7 @@ async function loadNewsList() {
   messageBox.innerText = "正在请求新闻数据...";
 
   try {
-    const response = await fetch(API_NEWS);
+    const response = await fetch(API_NEWS, { headers: { Authorization: "Bearer " + (localStorage.getItem("adminToken") || "") } });
     console.log("接口响应状态:", response.status);
 
     const result = await response.json();
@@ -90,6 +90,7 @@ async function deleteNews(id) {
 
   try {
     const response = await fetch(API_NEWS + "/" + id, {
+      headers: { Authorization: "Bearer " + (localStorage.getItem("adminToken") || "") },
       method: "DELETE"
     });
 

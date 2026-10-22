@@ -574,6 +574,7 @@
         </div>
 
         <div id="newsList" class="home-news-list"></div>
+        <nav id="newsPagination" class="news-pagination" aria-label="新闻分页" hidden></nav>
       </section>
     </main>
 
@@ -800,6 +801,7 @@
         </button>
 
         <p id="loginMessage" class="auth-message"></p>
+        <p class="auth-switch-text"><button type="button" id="forgotPasswordBtn">忘记密码？</button></p>
 
       </form>
 
@@ -930,6 +932,39 @@
        JavaScript
   ============================== -->
 
+
+  <div id="passwordResetModal" class="auth-modal" aria-hidden="true">
+    <div class="auth-modal-content" role="dialog" aria-modal="true" aria-labelledby="passwordResetTitle">
+      <button type="button" class="auth-close" id="closePasswordReset" aria-label="关闭密码重置窗口">&times;</button>
+      <h2 id="passwordResetTitle">重置密码</h2>
+      <form id="passwordResetForm">
+        <div class="auth-form-group">
+          <label for="resetEmail">注册邮箱</label>
+          <input id="resetEmail" type="email" autocomplete="email" maxlength="254" required />
+        </div>
+        <div class="auth-form-group">
+          <label for="resetCode">邮箱验证码</label>
+          <div class="auth-code-row">
+            <input id="resetCode" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required />
+            <button id="sendResetCode" type="button" class="auth-code-btn">发送验证码</button>
+          </div>
+        </div>
+        <div class="auth-form-group">
+          <label for="resetPassword">新密码</label>
+          <input id="resetPassword" type="password" autocomplete="new-password" minlength="8" maxlength="32" required />
+          <small>8至32位，包含字母和数字，可使用键盘符号。</small>
+        </div>
+        <div class="auth-form-group">
+          <label for="resetConfirmPassword">确认新密码</label>
+          <input id="resetConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="32" required />
+        </div>
+        <button id="confirmPasswordReset" type="submit" class="auth-submit-btn">重置密码</button>
+        <p id="passwordResetMessage" class="auth-message" role="status" aria-live="polite"></p>
+      </form>
+      <p class="auth-switch-text"><button id="resetBackToLogin" type="button">返回登录</button></p>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script src="/script.js"></script>
@@ -951,6 +986,7 @@
   <script src="/site-settings.js"></script>
 
   <script src="/auth-modal.js"></script>
+  <script src="/password-reset.js"></script>
 
 </body>
 

@@ -4,7 +4,9 @@ const db = require("../db");
 const {
   verifyAdminToken,
 } = require("../middleware/adminAuth");
-const jwt = require("jsonwebtoken");
+const { checkUserToken } = require("../middleware/userAuth");
+const { hasNewsAdminAccess } = require("../middleware/newsReadAccess");
+router.use("/public-page", require("./publicNewsPageRoute")(db));
 const NEWS_COUNTRY_METADATA = Object.freeze({
   sg: {
     name: "Singapore",
@@ -75,7 +77,9 @@ router.get("/", (req, res) => {
     });
   }
 
-  const conditions = [];
+  res.set("Cache-Control", "private, no-store");
+  res.vary("Authorization");
+  const conditions = hasNewsAdminAccess(req) ? [] : ["status = 'published'"];
   const parameters = [];
 
   if (country && country !== "all") {
@@ -138,36 +142,6 @@ router.get("/", (req, res) => {
 });
 
 // 获取单条新闻详情
-function getTokenFromRequest(req) {
-  const authHeader = req.headers.authorization || "";
-  if (!authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-  return authHeader.replace("Bearer ", "").trim();
-}
-
-function decodeOptionalUser(req) {
-  const token = getTokenFromRequest(req);
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "dailynews_default_secret"
-    );
-
-    return {
-      id: decoded.id || decoded.userId || decoded.user_id,
-      username: decoded.username || decoded.name || "",
-      email: decoded.email || ""
-    };
-  } catch (error) {
-    return null;
-  }
-}
-
 function isVipUser(user) {
   if (!user) {
     return false;
@@ -194,165 +168,44 @@ function isVipUser(user) {
 }
 
 // 前台新闻详情接口：普通新闻公开，VIP新闻需要VIP会员
-router.get("/public/:id", (req, res) => {
-  const { id } = req.params;
-
-  const updateViewsSql = `
-    UPDATE news
-    SET views = views + 1
-    WHERE id = ?
-  `;
-
-  db.run(updateViewsSql, [id], (updateErr) => {
-    if (updateErr) {
-      console.error("Update news views error:", updateErr.message);
-    }
-
-    const sql = `
-      SELECT *
-      FROM news
-      WHERE id = ?
-    `;
-
-    db.get(sql, [id], (err, news) => {
-      if (err) {
-        console.error("Get public news detail error:", err.message);
-        return res.status(500).json({
-          success: false,
-          message: "新闻详情获取失败"
+function readNewsDetail(req, res, allowAdmin = false) {
+  res.set("Cache-Control", "private, no-store");
+  res.vary("Authorization");
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ success: false, message: "新闻 ID 无效" });
+  db.get("SELECT * FROM news WHERE id=?", [id], (err, news) => {
+    if (err) return res.status(500).json({ success: false, message: "新闻详情获取失败" });
+    if (!news) return res.status(404).json({ success: false, message: "新闻不存在" });
+    // Admin editing retains full access and does not inflate public view counts.
+    if (allowAdmin && hasNewsAdminAccess(req)) return res.json({ success: true, data: news });
+    if (news.status !== "published") return res.status(403).json({ success: false, code: "NEWS_NOT_PUBLISHED", message: "该新闻暂未发布" });
+    const deliver = () => {
+      db.run("UPDATE news SET views=COALESCE(views,0)+1 WHERE id=? AND status='published'", [id], error => {
+        if (error) console.error("Update news views error:", error.code);
+        else news.views = Number(news.views || 0) + 1;
+        return res.json({ success: true, data: news });
+      });
+    };
+    if (Number(news.is_vip) !== 1) return deliver();
+    return checkUserToken(req, (authError, tokenUser) => {
+      if (authError) return res.status(authError.status).json({ success: false, code: authError.code, message: authError.message });
+      db.get("SELECT id,member_level,subscription_status,vip_expire_at FROM users WHERE id=?", [tokenUser.id], (userErr, user) => {
+        if (userErr) return res.status(500).json({ success: false, message: "会员状态检查失败" });
+        if (!isVipUser(user)) return res.status(403).json({
+          success: false, code: "VIP_REQUIRED", message: "这是一篇VIP专享新闻，请升级后阅读完整内容。",
+          data: { id: news.id, title: news.title, category: news.category, summary: news.summary,
+            image_url: news.image_url, source: news.source, author: news.author, created_at: news.created_at, is_vip: news.is_vip }
         });
-      }
-
-      if (!news) {
-        return res.status(404).json({
-          success: false,
-          message: "新闻不存在"
-        });
-      }
-
-      if (news.status !== "published") {
-        return res.status(403).json({
-          success: false,
-          code: "NEWS_NOT_PUBLISHED",
-          message: "该新闻暂未发布"
-        });
-      }
-
-      if (Number(news.is_vip) !== 1) {
-        return res.json({
-          success: true,
-          data: news
-        });
-      }
-
-      const tokenUser = decodeOptionalUser(req);
-
-      if (!tokenUser || !tokenUser.id) {
-        return res.status(401).json({
-          success: false,
-          code: "LOGIN_REQUIRED",
-          message: "这是一篇VIP专享新闻，请先登录或开通VIP会员。",
-          data: {
-            id: news.id,
-            title: news.title,
-            category: news.category,
-            summary: news.summary,
-            image_url: news.image_url,
-            source: news.source,
-            author: news.author,
-            created_at: news.created_at,
-            is_vip: news.is_vip
-          }
-        });
-      }
-
-      const userSql = `
-        SELECT id, username, email, member_level, subscription_status, vip_expire_at
-        FROM users
-        WHERE id = ?
-      `;
-
-      db.get(userSql, [tokenUser.id], (userErr, user) => {
-        if (userErr) {
-          console.error("Check VIP user error:", userErr.message);
-          return res.status(500).json({
-            success: false,
-            message: "会员状态检查失败"
-          });
-        }
-
-        if (!isVipUser(user)) {
-          return res.status(403).json({
-            success: false,
-            code: "VIP_REQUIRED",
-            message: "这是一篇VIP专享新闻，你当前还不是VIP会员，请升级后阅读完整内容。",
-            data: {
-              id: news.id,
-              title: news.title,
-              category: news.category,
-              summary: news.summary,
-              image_url: news.image_url,
-              source: news.source,
-              author: news.author,
-              created_at: news.created_at,
-              is_vip: news.is_vip
-            }
-          });
-        }
-
-        return res.json({
-          success: true,
-          data: news
-        });
+        return deliver();
       });
     });
   });
-});
-router.get("/:id", (req, res) => {
-  const { id } = req.params;
+}
 
-  const updateViewsSql = `
-    UPDATE news 
-    SET views = views + 1 
-    WHERE id = ?
-  `;
+router.get("/public/:id", (req, res) => readNewsDetail(req, res));
+router.get("/:id", (req, res) => readNewsDetail(req, res, true));
 
-  db.run(updateViewsSql, [id], (updateErr) => {
-    if (updateErr) {
-      console.error("Update news views error:", updateErr.message);
-    }
-
-    const sql = `
-      SELECT *
-      FROM news
-      WHERE id = ?
-    `;
-
-    db.get(sql, [id], (err, row) => {
-      if (err) {
-        console.error("Get news detail error:", err.message);
-        return res.status(500).json({
-          success: false,
-          message: "Failed to get news detail",
-        });
-      }
-
-      if (!row) {
-        return res.status(404).json({
-          success: false,
-          message: "News not found",
-        });
-      }
-
-      res.json({
-        success: true,
-        data: row,
-      });
-    });
-  });
-});
-
-// 新增新闻
+// Existing admin write routes remain unchanged.
 router.post("/", verifyAdminToken, (req, res) => {
   const {
     title,
@@ -580,7 +433,7 @@ router.patch(
 );
 
 // 删除新闻
-router.delete("/:id", (req, res) => {
+router.delete("/:id", verifyAdminToken, (req, res) => {
   const { id } = req.params;
 
   const sql = `

@@ -728,6 +728,11 @@
           }
         );
 
+        if (response.status === 401 || response.status === 403) {
+          clearLoginData();
+          window.location.href = "/";
+          return;
+        }
         const data = await response.json();
 
         if (
@@ -765,14 +770,9 @@
           error
         );
 
-        clearLoginData();
-
-        alert(
-          error.message ||
-          "登录状态已经失效"
-        );
-
-        window.location.href = "/";
+        document.getElementById("tokenStatus").textContent = "暂时无法验证";
+        document.getElementById("tokenStatus").classList.remove("value-success");
+        showMessage("暂时无法读取账户资料，登录信息已保留，请稍后刷新重试。", "info");
         return;
       }
 

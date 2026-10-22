@@ -1,5 +1,5 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
+const { verifyUserToken } = require("../middleware/userAuth");
 const db = require("../db");
 
 const router = express.Router();
@@ -7,40 +7,7 @@ const router = express.Router();
 /**
  * 验证 Token
  */
-function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({
-      success: false,
-      message: "未登录，请先登录"
-    });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "Token 无效"
-    });
-  }
-
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "dailynews_default_secret"
-    );
-
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "登录已过期，请重新登录"
-    });
-  }
-}
 
 /**
  * 套餐配置
@@ -124,7 +91,7 @@ function calculateVipExpireAt(days) {
  * 钱包购买 VIP
  * POST /api/subscription/buy-with-wallet
  */
-router.post("/buy-with-wallet", verifyToken, (req, res) => {
+router.post("/buy-with-wallet", verifyUserToken, (req, res) => {
   const userId = req.user.id;
   const { planType } = req.body;
 
@@ -267,7 +234,7 @@ router.post("/buy-with-wallet", verifyToken, (req, res) => {
  * 我的订阅订单
  * GET /api/subscription/my-orders
  */
-router.get("/my-orders", verifyToken, (req, res) => {
+router.get("/my-orders", verifyUserToken, (req, res) => {
   const userId = req.user.id;
 
   db.all(

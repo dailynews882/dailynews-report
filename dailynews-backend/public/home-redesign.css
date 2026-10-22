@@ -5522,3 +5522,12 @@ Daily News 新版首页专用样式
         min-height: 44px;
     }
 }
+/* Public news pagination */
+.news-pagination:not([hidden]) { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; padding:20px 8px; }
+.news-pagination form { display:flex; align-items:center; gap:6px; margin:0; }
+.news-pagination button, .news-pagination input { border:1px solid #d4dbe5; border-radius:6px; background:#fff; padding:7px 10px; font:inherit; }
+.news-pagination button { cursor:pointer; }
+.news-pagination button[aria-current="page"] { background:#173b66; color:#fff; }
+.news-pagination button:disabled { cursor:default; opacity:.55; }
+.news-pagination input { width:64px; }
+.news-pagination button:focus-visible, .news-pagination input:focus-visible { outline:2px solid #2463a8; outline-offset:2px; }

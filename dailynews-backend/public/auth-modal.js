@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+.[^\s@]+$/.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
   function saveLoginData(token, user) {
@@ -233,6 +233,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
 
+      if (response.status === 401 || response.status === 403) {
+        clearLoginData();
+        showLoggedOutHeader();
+        return;
+      }
       const data = await response.json();
 
       if (!response.ok || !data.success) {
@@ -253,8 +258,9 @@ document.addEventListener("DOMContentLoaded", function () {
         error.message
       );
 
-      clearLoginData();
-      showLoggedOutHeader();
+      // Network failures, 429/5xx and malformed gateway responses do not revoke a session.
+      // Cached header data is display-only; protected APIs still verify the token.
+      if (savedUser) showLoggedInHeader(savedUser);
     }
 
   }

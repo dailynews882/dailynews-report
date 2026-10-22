@@ -1,10 +1,13 @@
-﻿const API_NEWS = "/api/news";
+﻿const API_NEWS = "/api/news/public-page";
 const NEWS_METADATA_API = "/api/news-metadata";
 const FAVORITES_KEY = "dailynewsFavorites";
 const LIKES_KEY = "dailynewsLikes";
 
 let activeCountryCode = "";
 let activeCategoryCode = "";
+let newsSnapshot = null;
+let newsRequestNumber = 0;
+let newsPagination = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const newsListBox = document.getElementById("newsList");
@@ -405,55 +408,79 @@ function updateCountryMenuActiveState(countryMenu) {
     });
 }
 
-async function loadNewsHome(countryCode = activeCountryCode) {
+function renderNewsPagination(pagination, busy = false) {
+  const nav = document.getElementById("newsPagination");
+  if (!nav) return;
+  nav.replaceChildren();
+  nav.hidden = !pagination || pagination.total === 0;
+  if (!pagination || pagination.total === 0) return;
+  const { page, totalPages } = pagination;
+  const go = target => loadNewsHome(activeCountryCode, target, false);
+  const button = (label, target, disabled = false, current = false) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.textContent = label;
+    item.disabled = busy || disabled;
+    if (current) item.setAttribute("aria-current", "page");
+    item.addEventListener("click", () => go(target));
+    nav.appendChild(item);
+  };
+  button("上一页", page - 1, page <= 1);
+  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+  for (let number = start; number <= Math.min(totalPages, start + 4); number++) {
+    button(String(number), number, number === page, number === page);
+  }
+  button("下一页", page + 1, page >= totalPages);
+  const info = document.createElement("span");
+  info.textContent = "第 " + page + " / " + totalPages + " 页";
+  nav.appendChild(info);
+  const form = document.createElement("form");
+  const label = document.createElement("label");
+  label.textContent = "跳至 ";
+  const input = document.createElement("input");
+  input.type = "number"; input.min = "1"; input.max = String(totalPages);
+  input.value = String(page); input.required = true; input.disabled = busy;
+  input.setAttribute("aria-label", "跳转页码");
+  label.appendChild(input); form.appendChild(label);
+  const jump = document.createElement("button");
+  jump.type = "submit"; jump.textContent = "跳转"; jump.disabled = busy;
+  form.appendChild(jump);
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    const target = Number(input.value);
+    if (Number.isSafeInteger(target) && target >= 1 && target <= totalPages) go(target);
+  });
+  nav.appendChild(form);
+}
+
+async function loadNewsHome(countryCode = activeCountryCode, page = 1, reset = true) {
   const newsListBox = document.getElementById("newsList");
   const messageBox = document.getElementById("newsMessage");
-
-  if (!newsListBox || !messageBox) {
-    return;
-  }
-
+  if (!newsListBox || !messageBox) return;
+  const requestNumber = ++newsRequestNumber;
+  activeCountryCode = String(countryCode || "").trim().toLowerCase();
+  if (reset) { page = 1; newsSnapshot = null; newsPagination = null; }
+  renderNewsPagination(newsPagination, true);
   newsListBox.innerHTML = "";
   messageBox.innerText = "正在加载新闻...";
-  activeCountryCode = String(countryCode || "").trim().toLowerCase();
-
-  const requestUrl = activeCountryCode
-    ? API_NEWS + "?country=" + encodeURIComponent(activeCountryCode)
-    : API_NEWS;
-
+  const query = new URLSearchParams({ page: String(page) });
+  if (activeCountryCode) query.set("country", activeCountryCode);
+  if (activeCategoryCode) query.set("category", activeCategoryCode);
+  if (newsSnapshot !== null) query.set("snapshot", String(newsSnapshot));
   try {
-    const response = await fetch(requestUrl);
+    const response = await fetch(API_NEWS + "?" + query);
     const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      messageBox.innerText = result.message || "新闻加载失败";
-      return;
-    }
-
-    const newsList = result.data || [];
-
-    const publishedNews = newsList.filter((item) => {
-      if (item.status !== "published") {
-        return false;
-      }
-
-      if (!activeCategoryCode) {
-        return true;
-      }
-
-      return (
-        String(item.category || "")
-          .trim()
-          .toLowerCase() === activeCategoryCode
-      );
-    });
-
+    if (requestNumber !== newsRequestNumber) return;
+    if (!response.ok || !result.success) throw new Error(result.message || "新闻加载失败");
+    newsPagination = result.pagination;
+    newsSnapshot = result.pagination.snapshot;
+    renderNewsPagination(newsPagination);
+    const publishedNews = (result.data || []).filter(item => item.status === "published");
     if (publishedNews.length === 0) {
-      messageBox.innerText = "目前还没有已发布的新闻。请先到后台新增新闻。";
+      messageBox.innerText = "目前没有符合筛选条件的新闻。";
       return;
     }
-
-    messageBox.innerText = "共加载 " + publishedNews.length + " 条新闻";
+    messageBox.innerText = "共 " + newsPagination.total + " 条新闻，第 " + newsPagination.page + " / " + newsPagination.totalPages + " 页";
 
     publishedNews.forEach((news) => {
       const detailUrl = "/news-detail.html?id=" + encodeURIComponent(news.id);
@@ -558,8 +585,9 @@ async function loadNewsHome(countryCode = activeCountryCode) {
     });
 
   } catch (error) {
-    console.error("Load news home error:", error);
-    messageBox.innerText = "无法连接后端，请确认 node server.js 正在运行。";
+    if (requestNumber !== newsRequestNumber) return;
+    renderNewsPagination(newsPagination);
+    messageBox.innerText = error.message || "新闻暂时无法加载，请稍后重试。";
   }
 }
 

@@ -99,7 +99,24 @@ async function sendEmailOtp(to, code) {
   return sendVerificationEmail(to, code);
 }
 
+async function sendPasswordResetEmail(to, code) {
+  const email = String(to || "").trim().toLowerCase();
+  if (!isValidEmail(email) || !/^\d{6}$/.test(String(code)) || !process.env.EMAIL_FROM) {
+    throw new Error("Password reset mail configuration or input is invalid");
+  }
+  const result = await getResendClient().emails.send({
+    from: process.env.EMAIL_FROM,
+    to: [email],
+    subject: "Daily News 密码重置验证码",
+    text: `您正在重置 Daily News 密码，验证码为：${code}。验证码五分钟内有效且仅可使用一次。如果不是您的操作，请忽略此邮件。`,
+    html: `<h2>Daily News 密码重置</h2><p>您的验证码为：</p><p style="font-size:32px;letter-spacing:6px">${code}</p><p>验证码五分钟内有效且仅可使用一次。请勿告诉他人。如果不是您的操作，请忽略此邮件。</p>`
+  });
+  if (result.error) throw new Error("Password reset delivery failed");
+  return result.data;
+}
+
 module.exports = {
   sendVerificationEmail,
-  sendEmailOtp
+  sendEmailOtp,
+  sendPasswordResetEmail
 };

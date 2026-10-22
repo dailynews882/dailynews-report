@@ -1,5 +1,5 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
+const { verifyUserToken } = require("../middleware/userAuth");
 const db = require("../db");
 
 const router = express.Router();
@@ -7,40 +7,7 @@ const router = express.Router();
 /**
  * 验证 Token
  */
-function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({
-      success: false,
-      message: "未登录，请先登录"
-    });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "Token 无效"
-    });
-  }
-
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "dailynews_default_secret"
-    );
-
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "登录已过期，请重新登录"
-    });
-  }
-}
 
 /**
  * 如果用户没有钱包，自动创建钱包
@@ -93,7 +60,7 @@ function ensureWallet(userId, callback) {
  * 获取我的钱包信息
  * GET /api/wallet/me
  */
-router.get("/me", verifyToken, (req, res) => {
+router.get("/me", verifyUserToken, (req, res) => {
   const userId = req.user.id;
 
   db.get(
@@ -155,7 +122,7 @@ router.get("/me", verifyToken, (req, res) => {
  * 获取钱包交易记录
  * GET /api/wallet/transactions
  */
-router.get("/transactions", verifyToken, (req, res) => {
+router.get("/transactions", verifyUserToken, (req, res) => {
   const userId = req.user.id;
 
   db.all(
@@ -188,7 +155,7 @@ router.get("/transactions", verifyToken, (req, res) => {
  * 模拟充值，真实写入数据库
  * POST /api/wallet/recharge-demo
  */
-router.post("/recharge-demo", verifyToken, (req, res) => {
+router.post("/recharge-demo", verifyUserToken, (req, res) => {
   const userId = req.user.id;
   const amount = Number(req.body.amount || 10);
 

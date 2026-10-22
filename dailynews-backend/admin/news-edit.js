@@ -37,7 +37,7 @@ async function loadNewsDetail(id) {
   showMessage("正在读取新闻内容...");
 
   try {
-    const response = await fetch(`${API_NEWS}/${id}`);
+    const response = await fetch(`${API_NEWS}/${id}`, { headers: { Authorization: "Bearer " + (localStorage.getItem("adminToken") || "") } });
     const result = await response.json();
 
     if (!response.ok || !result.success) {
@@ -139,6 +139,7 @@ async function updateNews(event) {
     const response = await fetch(`${API_NEWS}/${currentNewsId}`, {
       method: "PUT",
       headers: {
+        Authorization: "Bearer " + (localStorage.getItem("adminToken") || ""),
         "Content-Type": "application/json"
       },
       body: JSON.stringify(newsData)
