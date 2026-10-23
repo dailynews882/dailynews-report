@@ -120,7 +120,7 @@ window.adminLogin = async function () {
     localStorage.removeItem("adminLoggedIn");
 
     passwordInput.value = "";
-    window.location.href = "./admin.html";
+    window.location.href = result.admin?.adminRole === "hr" ? "./admin-users.html" : "./admin.html";
   } catch (error) {
     console.error("Admin login error:", error);
 

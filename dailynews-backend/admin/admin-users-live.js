@@ -6,6 +6,10 @@
     const next = document.getElementById("usersNextPage");
     const search = document.getElementById("userSearchInput");
     const status = document.getElementById("userStatusFilter");
+    const roleFilter = document.getElementById("userRoleFilter");
+    const roleDialog = document.getElementById("userRoleDialog");
+    const roleForm = document.getElementById("userRoleForm");
+    let roleTarget = null;
     let page = 1;
     let requestNumber = 0;
     let debounce;
@@ -29,7 +33,7 @@
             info.textContent = "管理员未登录";
             return;
         }
-        const query = new URLSearchParams({ page: String(page), search: search.value.trim(), status: status.value });
+        const query = new URLSearchParams({ page: String(page), search: search.value.trim(), status: status.value, role: roleFilter.value });
         try {
             const response = await fetch(`/api/admin/users?${query}`, {
                 headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, cache: "no-store"
@@ -37,8 +41,13 @@
             const result = await response.json();
             if (!response.ok || !result.success) throw new Error(result.message || "读取失败");
             if (seq !== requestNumber) return;
-            const permissions = new Set(result.admin?.permissions || []);
-            const owner = result.admin?.adminRole === "superadmin";
+            const roleLabels = result.role_labels || {};
+            document.getElementById("usersPermissionInfo").textContent =
+                "当前角色：" + (roleLabels[result.admin?.adminRole] || result.admin?.adminRole || "未知") +
+                "。管理角色与公司职务分离；HR仅分配普通用户、新闻编辑。高权限授予需独立审批，当前不开放直接授予。";
+            const ownerInfo = result.owner_identity;
+            document.getElementById("usersOwnerInfo").textContent = ownerInfo?.username
+                ? "最高控制身份：" + ownerInfo.username + "（可信后台配置身份，不属于普通用户角色，不接受用户ID封禁、删除或降权）" : "最高控制身份未配置，请联系系统负责人。";
             tbody.replaceChildren();
             for (const user of result.users) {
                 const tr = document.createElement("tr");
@@ -50,8 +59,8 @@
                 cell(tr, money(user.balance));
                 cell(tr, user.created_at);
                 const states = { active: "正常", temporary_ban: "临时封禁", permanent_ban: "永久封禁", deleted: "已软删除" };
-                const roles = { member: "普通用户", editor: "编辑", admin: "管理员" };
-                cell(tr, states[user.account_status] || user.account_status);
+                const roles = roleLabels;
+                cell(tr, states[user.effective_status || user.account_status] || user.account_status);
                 cell(tr, roles[user.admin_role] || user.admin_role);
                 const actions = cell(tr, "");
                 const button = document.createElement("button");
@@ -76,20 +85,31 @@
                     modal.style.display = "flex";
                 });
                 actions.appendChild(button);
-                const allowedTarget = owner || (user.admin_role === "member" && user.id !== result.admin?.id);
                 const addAction = (label, action, permission, extra = {}) => {
-                    if (!allowedTarget || !permissions.has(permission)) return;
+                    if (!Array.isArray(user.allowed_actions) || !user.allowed_actions.includes(action)) return;
                     const control = document.createElement("button");
                     control.type = "button"; control.className = "table-btn"; control.textContent = label;
                     control.addEventListener("click", async () => {
+                        if (action === "role") {
+                            roleTarget = user;
+                            const select = document.getElementById("userRoleSelect");
+                            select.replaceChildren();
+                            for (const value of user.assignable_roles || []) {
+                                const option = document.createElement("option"); option.value = value; option.textContent = roles[value] || value;
+                                select.appendChild(option);
+                            }
+                            if (!select.options.length) return;
+                            if ((user.assignable_roles || []).includes(user.admin_role)) select.value = user.admin_role;
+                            document.getElementById("userRoleCurrent").textContent = (roles[user.admin_role] || user.admin_role) + " · " + user.username;
+                            document.getElementById("userRoleReason").value = "";
+                            roleDialog.showModal();
+                            return;
+                        }
                         let body = { ...extra };
                         if (action === "temporary-ban") {
                             const days = window.prompt("封禁天数：1、3、7 或 30", "7");
                             if (days === null) return; body.days = Number(days);
-                        }
-                        if (action === "role") {
-                            const role = window.prompt("角色：member（普通用户）、editor（编辑）、admin（管理员）。超级管理员由现有配置控制。", user.admin_role);
-                            if (role === null) return; body.role = role.trim();
+                            if (![1, 3, 7, 30].includes(body.days)) { window.alert("请选择1、3、7或30天"); return; }
                         }
                         const reason = window.prompt(`${label}：请输入5至500字原因`);
                         if (reason === null) return; body.reason = reason.trim();
@@ -114,9 +134,9 @@
                         addAction("临时封禁", "temporary-ban", "users.moderate");
                         addAction("永久封禁", "permanent-ban", "users.control");
                     }
-                    if (user.account_status === "temporary_ban" || (owner && user.account_status === "permanent_ban")) addAction("解封", "unban", "users.moderate");
+                    if (["temporary_ban", "permanent_ban"].includes(user.account_status)) addAction("解封", "unban", "users.moderate");
                     addAction("软删除", "soft-delete", "users.control");
-                    if (user.account_status === "active") addAction("设置角色", "role", "roles.manage");
+                    addAction("设置角色", "role", "roles.manage");
                 }
                 tbody.appendChild(tr);
             }
@@ -128,6 +148,7 @@
             }
             const pages = Math.max(1, Math.ceil(result.total / result.limit));
             info.textContent = `真实用户共 ${result.total} 人 · 第 ${result.page} / ${pages} 页`;
+            page = result.page;
             prev.disabled = page <= 1;
             next.disabled = page >= pages;
         } catch (error) {
@@ -142,6 +163,30 @@
             next.disabled = true;
         }
     }
+    roleForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        const target = roleTarget;
+        const role = document.getElementById("userRoleSelect").value;
+        const reason = document.getElementById("userRoleReason").value.trim();
+        const submit = document.getElementById("userRoleSubmit");
+        if (!target || submit.disabled) return;
+        if (!(target.assignable_roles || []).includes(role) || reason.length < 5 || reason.length > 500) { window.alert("请选择允许的角色并填写5至500字原因"); return; }
+        if (role === target.admin_role) { window.alert("请选择不同的角色"); return; }
+        if (!window.confirm("确认调整该用户的管理角色？原有登录令牌将失效。")) return;
+        submit.disabled = true;
+        try {
+            const response = await fetch('/api/admin/users/' + target.id + '/role', {
+                method: "POST", headers: { Authorization: 'Bearer ' + (localStorage.getItem("adminToken") || ""), "Content-Type": "application/json" },
+                body: JSON.stringify({ role, reason })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || "角色操作失败");
+            roleDialog.close(); await load();
+        } catch (error) { window.alert(error.message); }
+        finally { submit.disabled = false; }
+    });
+    document.getElementById("userRoleCancel").addEventListener("click", () => roleDialog.close());
+    roleFilter.addEventListener("change", () => { page = 1; load(); });
     search.addEventListener("input", () => {
         clearTimeout(debounce);
         debounce = setTimeout(() => { page = 1; load(); }, 250);

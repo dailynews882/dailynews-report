@@ -39,7 +39,16 @@
             <option value="deleted">软删除</option>
 
           </select>
+          <select id="userRoleFilter" aria-label="筛选管理角色">
+            <option value="all">全部管理角色</option>
+            <option value="member">普通用户</option>
+            <option value="editor">新闻编辑</option>
+            <option value="hr">HR</option>
+            <option value="admin">管理员</option>
+          </select>
         </div>
+        <p id="usersPermissionInfo" aria-live="polite"></p>
+        <p id="usersOwnerInfo"></p>
 
         <table class="admin-table" id="usersTable">
           <thead>
@@ -80,13 +89,27 @@
         </div>
       </div>
 
+      <dialog id="userRoleDialog" aria-labelledby="userRoleTitle" style="width:min(430px,calc(100% - 32px));box-sizing:border-box;border:0;border-radius:12px;padding:24px;">
+        <form id="userRoleForm">
+          <h2 id="userRoleTitle">设置管理角色</h2>
+          <p>当前角色：<strong id="userRoleCurrent"></strong></p>
+          <label for="userRoleSelect">允许分配的角色</label>
+          <select id="userRoleSelect" required style="display:block;width:100%;margin:8px 0 14px;"></select>
+          <p>管理员、HR及超级管理员不能直接授予。高权限需独立审批；当前未开放此流程。公司职务不决定系统权限。</p>
+          <label for="userRoleReason">操作原因（5至500字）</label>
+          <textarea id="userRoleReason" required minlength="5" maxlength="500" rows="3" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px;"></textarea>
+          <button id="userRoleSubmit" type="submit" class="small-btn">确认设置</button>
+          <button id="userRoleCancel" type="button" class="table-btn">取消</button>
+        </form>
+      </dialog>
+
     </main>
 
   </div>
 
   <script src="admin-menu.js"></script>
   <script src="admin.js"></script>
-  <script src="admin-users-live.js"></script>
+  <script src="admin-users-live.js?v=roles-20261023"></script>
 </body>
 
 </html>

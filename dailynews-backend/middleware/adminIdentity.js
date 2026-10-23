@@ -2,11 +2,38 @@
 const jwt = require("jsonwebtoken");
 const { accountDecision } = require("../utils/accountState");
 const RIGHTS = Object.freeze({
+    member: [],
     editor: ["news.manage"],
+    hr: ["users.read", "roles.standard"],
     admin: ["news.manage", "site.manage", "users.read", "users.moderate"],
     superadmin: ["news.manage", "site.manage", "users.read", "users.moderate", "users.control", "roles.manage"]
 });
 const permits = (admin, permission) => Boolean(admin && RIGHTS[admin.adminRole]?.includes(permission));
+const STAFF_ROLES = Object.freeze(["editor", "admin", "hr"]);
+const ROLE_LABELS = Object.freeze({ member: "普通用户", editor: "新闻编辑", hr: "HR", admin: "管理员", superadmin: "超级管理员" });
+function assignableRoles(actor, user) {
+    if (actor.id === user.id || user.admin_role === "superadmin" || accountDecision(user)) return [];
+    if (permits(actor, "roles.manage")) return ["member", "editor"];
+    if (permits(actor, "roles.standard") && ["member", "editor"].includes(user.admin_role)) return ["member", "editor"];
+    return [];
+}
+function accountActions(actor, user) {
+    if (actor.id === user.id || user.admin_role === "superadmin") return [];
+    const actions = [];
+    if (assignableRoles(actor, user).length) actions.push("role");
+    if (user.admin_role !== "member" && actor.adminRole !== "superadmin") return actions;
+    if (user.account_status === "deleted") {
+        if (permits(actor, "users.control") && user.restorable) actions.push("restore");
+        return actions;
+    }
+    if (user.account_status !== "permanent_ban") {
+        if (permits(actor, "users.moderate")) actions.push("temporary-ban");
+        if (permits(actor, "users.control")) actions.push("permanent-ban");
+    }
+    if ((user.account_status === "temporary_ban" || (user.account_status === "permanent_ban" && actor.adminRole === "superadmin")) && permits(actor, "users.moderate")) actions.push("unban");
+    if (permits(actor, "users.control")) actions.push("soft-delete");
+    return actions;
+}
 function createAdminIdentity(database = () => require("../db")) {
     const source = () => typeof database === "function" ? database() : database;
     function resolveAdmin(req, callback) {
@@ -17,7 +44,7 @@ function createAdminIdentity(database = () => require("../db")) {
         try { claims = jwt.verify(match[1], process.env.ADMIN_JWT_SECRET, { algorithms: ["HS256"] }); }
         catch (_) { return callback({ status: 401, message: "管理员登录已失效" }); }
         if (claims.role !== "admin" || claims.type !== "admin_access") return callback({ status: 403, message: "没有管理员权限" });
-        if (claims.principal !== "user" && process.env.ADMIN_USERNAME && claims.username === process.env.ADMIN_USERNAME) {
+        if ([undefined, "environment"].includes(claims.principal) && process.env.ADMIN_USERNAME && claims.username === process.env.ADMIN_USERNAME) {
             return callback(null, { username: claims.username, role: "admin", type: "admin_access", principal: "environment", adminRole: "superadmin" });
         }
         if (claims.principal !== "user" || !Number.isSafeInteger(claims.id) || !Number.isInteger(claims.auth_version)) return callback({ status: 401, message: "请重新登录管理员账户" });
@@ -26,7 +53,7 @@ function createAdminIdentity(database = () => require("../db")) {
             if (error) return callback({ status: 503, message: "管理员权限读取失败，请确认数据库迁移" });
             const denied = accountDecision(user);
             if (denied) return callback(denied);
-            if (!["editor", "admin"].includes(user.role) || user.auth_version !== claims.auth_version) return callback({ status: 401, message: "管理员权限已变更，请重新登录" });
+            if (!STAFF_ROLES.includes(user.role) || user.auth_version !== claims.auth_version) return callback({ status: 401, message: "管理员权限已变更，请重新登录" });
             callback(null, { id: user.id, username: user.username, role: "admin", type: "admin_access", principal: "user", adminRole: user.role, auth_version: user.auth_version });
         });
     }
@@ -48,4 +75,4 @@ function createAdminIdentity(database = () => require("../db")) {
 function requirePermission(permission) {
     return (req, res, next) => permits(req.admin, permission) ? next() : res.status(403).json({ success: false, message: "当前角色无此操作权限" });
 }
-module.exports = { ...createAdminIdentity(), createAdminIdentity, requirePermission, permits, RIGHTS };
+module.exports = { ...createAdminIdentity(), createAdminIdentity, requirePermission, permits, RIGHTS, STAFF_ROLES, ROLE_LABELS, assignableRoles, accountActions };

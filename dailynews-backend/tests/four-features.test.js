@@ -82,13 +82,15 @@ test("four features: production account permissions with existing reset and news
             const legacy=jwt.sign({username:'ConfiguredOwner',role:'admin',type:'admin_access'},process.env.ADMIN_JWT_SECRET);
             assert.equal((await request('/api/admin/auth/verify',undefined,legacy)).status,200);
         });
-        await t.test('superadmin assigns editor/admin roles and staff can login with existing bcrypt passwords',async()=>{
-            assert.equal((await action(1,'role',owner,{role:'admin'})).status,200);
+        await t.test('existing admin retains access; owner assigns standard editor and direct high-risk grants stay closed',async()=>{
+            assert.equal((await action(1,'role',owner,{role:'admin'})).status,403);
+            // Existing approved admin fixture, not an online role grant.
+            await run("INSERT INTO admin_user_roles(user_id,role) VALUES(1,'admin')");
             assert.equal((await action(2,'role',owner,{role:'editor'})).status,200);
             moderator=(await login('FixtureUser1')).body.token; editor=(await login('FixtureUser2')).body.token;
             assert(moderator && editor);
             assert.equal((await request('/api/admin/users',undefined,moderator)).status,200);
-            assert.equal((await action(3,'role',owner,{role:'superadmin'})).status,400);
+            assert.equal((await action(3,'role',owner,{role:'superadmin'})).status,403);
         });
         await t.test('editor and ordinary member cannot bypass user/role administration by direct HTTP requests',async()=>{
             assert.equal((await request('/api/admin/users',undefined,editor)).status,403);
@@ -180,7 +182,7 @@ test("four features: production account permissions with existing reset and news
             assert.equal((await login('ConfiguredOwner')).status,401);
             assert.equal((await action(7,'temporary-ban',owner,{days:1})).status,200);
             assert.equal((await action(7,'unban')).status,200);
-            assert.equal((await action(7,'role',owner,{role:'admin'})).status,409);
+            assert.equal((await action(7,'role',owner,{role:'admin'})).status,403);
             assert.equal((await action(7,'soft-delete')).status,200);
             assert.equal((await login('ConfiguredOwner','OwnerFixture123!')).status,200);
         });
