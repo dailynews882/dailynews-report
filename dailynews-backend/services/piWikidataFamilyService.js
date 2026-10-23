@@ -184,6 +184,14 @@ async function family(root, person, ctx) {
     let edges = direct;
     for (const id of incomingIds) if (human(related[id]))
         edges.push(...statements(id, related[id]).filter(e => e.to === root).map(e => inverse(e, root)));
+    // A parent's explicit P40 claims are a sourced two-edge path to siblings.
+    // Do not invent a P3373 assertion, shared second parent, or spouse relationship.
+    const parentIds = [...new Set(edges.filter(e => ["father", "mother", "parent"].includes(e.type)).map(e => e.to))];
+    const parentChildren = parentIds.flatMap(id => human(all[id]) ? statements(id, all[id]).filter(e => e.type === "child") : []);
+    const siblingIds = [...new Set(parentChildren.map(e => e.to).filter(id => !all[id]))];
+    const siblingRoom = Math.max(0, LIMITS.nodes - Object.keys(all).length);
+    if (siblingIds.length > siblingRoom) warn(ctx, "siblings", "NODE_LIMIT");
+    Object.assign(all, await entities(siblingIds.slice(0, siblingRoom), ctx, "siblings"));
     // Reuse already fetched children for explicit parent statements; never infer a co-parent or spouse.
     const children = [...new Set(edges.filter(e => e.type === "child").map(e => e.to))];
     const childEdges = children.flatMap(id => human(all[id]) ? statements(id, all[id]).filter(e => ["father", "mother"].includes(e.type)) : []);
@@ -194,7 +202,7 @@ async function family(root, person, ctx) {
     const valid = edge => human(all[edge.from]) && human(all[edge.to]);
     if ([...edges, ...childEdges].some(e => !valid(e))) warn(ctx, "family", "UNVERIFIED_PERSON_OMITTED");
     edges = dedupe(edges.filter(valid));
-    return { entities: all, relations: edges, childRelations: dedupe(childEdges.filter(valid)),
+    return { entities: all, relations: edges, childRelations: dedupe([...childEdges, ...parentChildren].filter(valid)),
         summaries: children.filter(id => human(all[id])).map(id => ({ child_id: id, father_ids: ids(all[id], "P22").filter(p => human(all[p])), mother_ids: ids(all[id], "P25").filter(p => human(all[p])),
             father_status: ids(all[id], "P22").length ? "wikidata_declared" : "not_declared", mother_status: ids(all[id], "P25").length ? "wikidata_declared" : "not_declared", verification_status: "external_candidate" })) };
 }

@@ -146,6 +146,29 @@ test("reverse-query failure preserves root and direct relatives with explicit pa
     assert.equal(result.statusCode, 200); assert.equal(result.body.family_relations.length, 1); assert(result.body.partial_results);
     assert(result.body.warnings.some(w => w.section === "reverse" && w.code === "TIMEOUT"));
 });
+
+test("explicit parent P40 siblings survive reverse failure, without inventing a sibling assertion or second parent", async () => {
+    upstream({ Q10: person("Q10", { P22: [claim("Q10", "P22", "Q20")] }),
+        Q20: person("Q20", { P40: [claim("Q20", "P40", "Q10"), claim("Q20", "P40", "Q30")] }), Q30: person("Q30") }, { reverseFailure: true });
+    const result = await profile("Q10");
+    assert.equal(result.statusCode, 200); assert(result.body.nodes.some(n => n.id === "Q30"));
+    const path = result.body.child_parent_relations.find(e => e.from === "Q20" && e.to === "Q30");
+    assert.equal(path.property, "P40"); assert(path.statement_id); assert(path.source_url.includes("Q20"));
+    assert(!result.body.family_relations.some(e => e.from === "Q10" && e.to === "Q30"));
+    assert(result.body.partial_results);
+});
+
+test("sibling reuse never accepts an unverified human or invents that sibling's spouse/children", async () => {
+    const records = { Q10: person("Q10", { P25: [claim("Q10", "P25", "Q20")] }),
+        Q20: person("Q20", { P40: [claim("Q20", "P40", "Q30"), claim("Q20", "P40", "Q40")] }),
+        Q30: person("Q30", { P26: [claim("Q30", "P26", "Q50")] }), Q40: { id: "Q40", claims: {} } };
+    const calls = upstream(records);
+    const result = await live.family("Q10", records.Q10, live.context());
+    assert(result.childRelations.some(e => e.to === "Q30")); assert(!result.childRelations.some(e => e.to === "Q40"));
+    assert(!result.entities.Q50); assert(!result.relations.some(e => e.type === "spouse"));
+    assert(calls.length <= live.LIMITS.requests);
+    assert.equal(calls.filter(u => u.host === "query.wikidata.org").length, 1);
+});
 test("reverse queries have frequency control and reject injected IDs before network", async () => {
     const root = person("Q10"), calls = upstream({ Q10: root });
     await live.family("Q10", root, live.context()); const ctx = live.context(); await live.family("Q10", root, ctx);
@@ -210,7 +233,7 @@ function browser() {
         call(fn, ...args) { fn(this, ...args); return this; } transition() { return this; } duration() { return this; }
         each(fn) { this.items.forEach((item, i) => fn.call(new Element(), item, i)); return this; }
     }
-    const behavior = () => { const fn = () => {}; for (const method of ["scaleExtent", "on", "subject"]) fn[method] = () => fn; fn.transform = () => {}; fn.scaleBy = () => {}; return fn; };
+    const behavior = () => { const fn = () => {}; for (const method of ["scaleExtent", "on", "subject", "clickDistance"]) fn[method] = () => fn; fn.transform = () => {}; fn.scaleBy = () => {}; return fn; };
     const identity = { translate() { return this; }, scale() { return this; } };
     const window = { addEventListener(name, fn) { if (!listeners.has(name)) listeners.set(name, []); listeners.get(name).push(fn); }, dispatchEvent(event) { for (const fn of listeners.get(event.type) || []) fn(event); } };
     const sandbox = { window, document, console, URL, AbortController, AbortSignal, setTimeout, clearTimeout, getComputedStyle: () => ({ position: "relative" }),
@@ -229,11 +252,11 @@ test("two-hop grandparent and grandchild paths carry both statements and never b
     assert(model.paths.every(p => p.derived && !p.direct_statement && p.steps.length === 2));
     assert.equal(model.edges.length, 4); assert(!model.edges.some(e => e.from === "Q10" && e.to === "Q30"));
 });
-test("graph removes duplicate identities, duplicate statements, self-links and third-hop nodes", () => {
+test("graph removes duplicate identities, duplicate statements, self-links and fourth-hop nodes", () => {
     const graph = browser().window.PIExternalGraph, relation = edge("Q10", "Q20", "child", "P40");
-    const data = fixture("Q10", [relation, relation, edge("Q10", "Q10", "child", "P40"), edge("Q20", "Q30", "child", "P40"), edge("Q30", "Q40", "child", "P40"), edge("Q20", "Q10", "child", "P40")], ["Q10", "Q10", "Q20", "Q30", "Q40"]);
+    const data = fixture("Q10", [relation, relation, edge("Q10", "Q10", "child", "P40"), edge("Q20", "Q30", "child", "P40"), edge("Q30", "Q40", "child", "P40"), edge("Q40", "Q50", "child", "P40"), edge("Q20", "Q10", "child", "P40")], ["Q10", "Q10", "Q20", "Q30", "Q40", "Q50"]);
     const model = graph.buildModel(data);
-    assert.equal(model.nodes.length, 3); assert(!model.nodes.some(n => n.id === "Q40"));
+    assert.equal(model.nodes.length, 4); assert(!model.nodes.some(n => n.id === "Q50"));
     assert(!model.edges.some(e => e.from === e.to)); assert(!model.paths.some(p => p.to === "Q10"));
 });
 test("actual SVG render and incremental expansion keep root fixed, retain zoom/drag/selection and stop repeated expansion", () => {
@@ -242,7 +265,7 @@ test("actual SVG render and incremental expansion keep root fixed, retain zoom/d
     assert(graph.render(first).rendered); assert(graph.canExpand("Q20"));
     assert(b.selections.some(s => s.attrs.transform?.includes?.("translate(0,0)")));
     assert(graph.merge(fixture("Q20", [edge("Q20", "Q30", "child", "P40")], ["Q20", "Q30"])).rendered);
-    assert(!graph.canExpand("Q20")); assert(!graph.canExpand("Q30"));
+    assert(!graph.canExpand("Q20")); assert(graph.canExpand("Q30"));
     assert.equal(graph.merge(first).rendered, false);
     const nodes = b.selections.find(s => s.events.dblclick);
     assert(nodes.events.click && nodes.events.keydown); assert.equal(typeof graph.zoomIn, "function");

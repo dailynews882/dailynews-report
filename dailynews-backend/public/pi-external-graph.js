@@ -111,7 +111,7 @@
         }
     }
 
-    function fit() {
+    function fit(readable = false) {
         if (!active || !externalZoom || !externalBounds) {
             return;
         }
@@ -142,17 +142,22 @@
         );
 
         const safeScale = Math.max(
-            0.12,
+            readable === true ? 0.85 : 0.12,
             Math.min(4, scale)
         );
 
-        const x =
+        let x =
             rect.width / 2 -
             externalBounds.centerX * safeScale;
 
-        const y =
+        let y =
             topPadding + availableHeight / 2 -
             externalBounds.centerY * safeScale;
+        if (readable === true && scale < 0.85 && lastLayout) {
+            const root = lastLayout.positions.get(lastLayout.model.root);
+            x = rect.width / 2 - root.x * safeScale;
+            y = topPadding + availableHeight / 2 - root.y * safeScale;
+        }
 
         d3.select(externalSvg)
             .transition()
@@ -199,6 +204,9 @@
     }
 
     const FAMILY = { P22: "father", P25: "mother", P26: "spouse", P40: "child", P3373: "sibling" };
+    // Includes a sibling reached via a parent, plus that sibling's own family.
+    const MAX_DEPTH = 3;
+    const relationLines = value => wrapName(value, 140);
     let graphData = null;
     let expanded = new Set();
     function edgeKey(edge) {
@@ -292,6 +300,12 @@
             } else labels.add("孙辈／外孙辈（两段路径）");
         }
         if (!labels.size) {
+            const rootParents = new Set(model.edges.map(parentPair).filter(p => p?.child === model.root).map(p => p.parent));
+            if (model.edges.map(parentPair).some(p => p?.child === id && rootParents.has(p.parent))) labels.add("兄弟姐妹（共同父／母有记载）");
+            const siblings = new Set(model.edges.filter(e => e.type === "sibling" && [e.from, e.to].includes(model.root)).map(e => e.from === model.root ? e.to : e.from));
+            model.edges.map(parentPair).filter(p => p && p.child !== model.root && rootParents.has(p.parent)).forEach(p => siblings.add(p.child));
+            if (model.edges.map(parentPair).some(p => p?.child === id && siblings.has(p.parent))) labels.add("兄弟姐妹的子女（关系路径）");
+            if (model.edges.some(e => e.type === "spouse" && ((siblings.has(e.from) && e.to === id) || (siblings.has(e.to) && e.from === id)))) labels.add("兄弟姐妹的配偶（关系路径）");
             const rootChildren = new Set(model.edges.map(parentPair).filter(p => p?.parent === model.root).map(p => p.child));
             const coParent = model.edges.map(parentPair).find(p => p?.parent === id && rootChildren.has(p.child));
             if (coParent) labels.add(coParent.role === "mother" ? "子女的母亲（婚姻未声明）" : coParent.role === "father" ? "子女的父亲（婚姻未声明）" : "子女的另一位家长（婚姻未声明）");
@@ -325,7 +339,7 @@
             const ordered = blocks.flatMap(b => b.ids);
             if (level === 0 && ordered.includes(model.root)) { ordered.splice(ordered.indexOf(model.root), 1); ordered.splice(Math.floor(ordered.length / 2), 0, model.root); }
             rows.set(level, ordered);
-            ordered.forEach((id, index) => positions.set(id, { x: (index - (ordered.length - 1) / 2) * 218, y: 0, level, bottom: 59 + labels.get(id).length * 18 + wrapName(relationshipLabel(model, id)).length * 15 + 24, width: 190 }));
+            ordered.forEach((id, index) => positions.set(id, { x: (index - (ordered.length - 1) / 2) * 218, y: 0, level, bottom: 63 + labels.get(id).length * 18 + relationLines(relationshipLabel(model, id)).length * 22 + 28, width: 190 }));
         }
         // Root remains the coordinate origin. Every generation has exactly one horizontal row.
         const rootX = positions.get(model.root).x;
@@ -363,12 +377,15 @@
             rows.set(level, order);
         }
         const relatedLinks = model.edges.filter(e => ["spouse", "sibling"].includes(e.type)).sort((a, b) => edgeKey(a).localeCompare(edgeKey(b), "en"));
-        const rowBottom = new Map(levels.map(l => [l, Math.max(...rows.get(l).map(id => positions.get(id).bottom))]));
+        // Stagger explicit co-parents within the generation band, never into a child generation.
+        const offsets = new Map();
+        if (rootUnits.length > 1) rootUnits.forEach((unit, index) => unit.parents.filter(id => id !== model.root).forEach(id => offsets.set(id, 65 + (index % 3) * 55)));
+        const rowBottom = new Map(levels.map(l => [l, Math.max(...rows.get(l).map(id => positions.get(id).bottom + (offsets.get(id) || 0)))]));
         const band = level => (units.filter(u => u.level === level).length * 2 + relatedLinks.filter(e => model.levels.get(e.from) === level).length + 5) * 18 + 30;
         const rowY = new Map([[0, 0]]), min = Math.min(...levels), max = Math.max(...levels);
         for (let l = 1; l <= max; l++) rowY.set(l, rowY.get(l - 1) + (rowBottom.get(l - 1) || 100) + band(l - 1) + 40);
         for (let l = -1; l >= min; l--) rowY.set(l, rowY.get(l + 1) - (rowBottom.get(l) || 100) - band(l) - 40);
-        for (const point of positions.values()) point.y = rowY.get(point.level);
+        for (const [id, point] of positions) point.y = rowY.get(point.level) + (offsets.get(id) || 0);
         for (const row of rows.values()) row.forEach((id, index) => {
             if (id === model.root || !overrides.has(id)) return;
             const minX = index ? positions.get(row[index - 1]).x + 200 : -Infinity;
@@ -403,6 +420,7 @@
                     const a = port(parent), child = positions.get(childId);
                     routes.push({ key: "candidate|" + parent + "|" + childId, kind: "conflict", conflict: true,
                         edges: unit.edges.filter(e => parentPair(e)?.parent === parent), label: "父母归属冲突候选 · 未组成家庭",
+                        ...(parent === unit.parents[0] ? { caption: "父母归属冲突 · 待核实", captionPoint: { x: positions.get(childId).x, y: positions.get(childId).y - 48 } } : {}),
                         d: pathThrough([a, { x: a.x, y: junctionY }, { x: child.x, y: junctionY }, { x: child.x, y: child.y - 34 }]) });
                 }
                 continue;
@@ -412,7 +430,7 @@
             for (const id of children) { const child = positions.get(id); pieces.push(pathThrough([{ x, y: busY }, { x: child.x, y: busY }, { x: child.x, y: child.y - 34 }])); }
             routes.push({ key: "family|" + unit.key, kind: "family", unit, edges: unit.edges, uncertain: unit.uncertain || unit.parents.length === 1 || unit.edges.some(e => e.derived),
                 pending: unit.edges.some(e => e.verification_status !== "verified"), d: pieces.join(" "), junction: { x, y: junctionY },
-                caption: `家庭 ${index} · ${unit.parents.length === 1 ? "另一方未知" : "双亲有记载"}`,
+                caption: `家庭 ${index} · ${unit.parents.map(id => model.nodes.find(n => n.id === id)?.name || id).join(" + ")} · ${unit.parents.length === 1 ? "另一方未知／待核实" : "双亲有记载"}`,
                 captionPoint: { x, y: busY - 10 }, label: unit.parents.length === 1 ? "单亲资料 · 另一方未知" : "双亲声明 · 婚姻另行核验" });
         }
         // Keep contradictory constraints visible as outside evidence paths, never as a false family unit.
@@ -450,7 +468,7 @@
         }
         const depths = new Map([[root, 0]]), levels = new Map([[root, 0]]), queue = [root];
         for (const id of queue) {
-            if (depths.get(id) >= 2) continue;
+            if (depths.get(id) >= MAX_DEPTH) continue;
             for (const item of adjacency.get(id) || []) {
                 if (depths.has(item.id)) continue;
                 depths.set(item.id, depths.get(id) + 1); levels.set(item.id, levels.get(id) + item.step); queue.push(item.id);
@@ -481,7 +499,7 @@
     function merge(data) {
         if (!graphData) return reset(data);
         const before = buildModel(graphData), id = String(data.qid);
-        if (!before.depths.has(id) || before.depths.get(id) >= 2 || expanded.has(id)) return { rendered: false, reason: "DEPTH_OR_DUPLICATE" };
+        if (!before.depths.has(id) || before.depths.get(id) >= MAX_DEPTH || expanded.has(id)) return { rendered: false, reason: "DEPTH_OR_DUPLICATE" };
         if (expanded.size >= 20) return { rendered: false, reason: "EXPANSION_LIMIT" };
         const nodes = new Map((graphData.nodes || []).map(n => [n.id, n]));
         const familyIds = new Set([id, ...(data.family_relations || []).flatMap(e => [e.from, e.to]), ...(data.child_parent_relations || []).flatMap(e => [e.from, e.to])]);
@@ -498,7 +516,7 @@
     }
     function canExpand(id) {
         const depth = graphData && buildModel(graphData).depths.get(id);
-        return /^Q[1-9]\d*$/.test(id || "") && depth !== undefined && depth < 2 && !expanded.has(id) && expanded.size < 20;
+        return /^Q[1-9]\d*$/.test(id || "") && depth !== undefined && depth < MAX_DEPTH && !expanded.has(id) && expanded.size < 20;
     }
     function draw(data, preserve = false) {
         const model = buildModel(data);
@@ -532,8 +550,12 @@
         joins.append("rect").attr("x", -4).attr("y", -4).attr("width", 8).attr("height", 8).attr("fill", "#fff").attr("stroke", "#64748b");
         joins.append("title").text(r => r.label);
         const captions = edgeLayer.selectAll("text.pi-family-caption").data(result.routes.filter(r => r.caption)).join("text")
-            .attr("class", "pi-family-caption").attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#334b63")
-            .attr("x", r => r.captionPoint.x).attr("y", r => r.captionPoint.y).text(r => r.caption);
+            .attr("class", "pi-family-caption").attr("text-anchor", "middle").attr("font-size", 14).attr("fill", "#334b63")
+            .attr("x", r => r.captionPoint.x).attr("y", r => r.captionPoint.y);
+        captions.each(function (route) {
+            const text = d3.select(this), parts = wrapName(route.caption, 210);
+            parts.forEach((part, index) => text.append("tspan").attr("x", route.captionPoint.x).attr("dy", index ? 19 : -(parts.length - 1) * 19).text(part));
+        });
         const groups = nodeLayer.selectAll("g.pi-person").data(model.nodes, n => n.id).join("g").attr("class", "pi-person")
             .attr("data-person-id", n => n.id).attr("data-generation", n => model.levels.get(n.id)).attr("data-selected", n => String(n.id === selectedId))
             .attr("transform", n => { const p = result.positions.get(n.id); return "translate(" + p.x + "," + p.y + ")"; })
@@ -546,12 +568,15 @@
                 edges: model.edges.filter(e => e.from === node.id || e.to === node.id), paths } }));
             window.dispatchEvent(new CustomEvent("pi:external-evidence-selected", { detail: { edges: model.edges.filter(e => e.from === node.id || e.to === node.id), paths } }));
         };
-        const expand = node => { if (selectedId !== node.id) select(node); if (canExpand(node.id)) window.dispatchEvent(new CustomEvent("pi:external-expand", { detail: { qid: node.id } })); };
+        const expand = node => { if (selectedId !== node.id) select(node); window.dispatchEvent(new CustomEvent("pi:external-expand", { detail: { qid: node.id } })); };
         groups.on("click", (event, node) => { if (event.detail < 2 || !event.detail) select(node); }).on("dblclick", (event, node) => { event.stopPropagation(); expand(node); })
             .on("keydown", (event, node) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(node); } if (event.key.toLowerCase() === "e") expand(node); });
         // Horizontal dragging keeps generations and non-overlapping card spacing intact.
-        groups.call(d3.drag().subject((event, node) => result.positions.get(node.id))
-            .on("start", event => event.sourceEvent?.stopPropagation()).on("drag", function (event, node) {
+        let dragged = false, dragStart = null;
+        groups.call(d3.drag().clickDistance(5).subject((event, node) => result.positions.get(node.id))
+            .on("start", event => { dragged = false; dragStart = { x: event.x, y: event.y }; event.sourceEvent?.stopPropagation(); }).on("drag", function (event, node) {
+                if (!dragged && Math.hypot(event.x - dragStart.x, event.y - dragStart.y) <= 5) return;
+                dragged = true;
                 const point = result.positions.get(node.id), row = result.rows.get(point.level), index = row.indexOf(node.id);
                 const min = index > 0 ? result.positions.get(row[index - 1]).x + 200 : -Infinity;
                 const max = index < row.length - 1 ? result.positions.get(row[index + 1]).x - 200 : Infinity;
@@ -561,11 +586,14 @@
                 groups.attr("transform", n => { const p = revised.positions.get(n.id); return "translate(" + p.x + "," + p.y + ")"; });
                 lines.attr("d", r => byKey.get(r.key).d);
                 joins.attr("transform", r => { const p = byKey.get(r.key).junction; return "translate(" + p.x + "," + p.y + ")"; });
-                captions.attr("x", r => byKey.get(r.key).captionPoint.x).attr("y", r => byKey.get(r.key).captionPoint.y);
+                captions.attr("x", r => byKey.get(r.key).captionPoint.x).attr("y", r => byKey.get(r.key).captionPoint.y)
+                    .selectAll("tspan").attr("x", function () { return byKey.get(this.parentNode.__data__.key).captionPoint.x; });
                 lastLayout = revised;
             }).on("end", (event, node) => {
                 // Keep horizontal adjustments while preserving generation and family constraints.
-                draw(graphData, true);
+                // Mouseup also ends a zero-distance gesture. Replacing the target here
+                // destroys the native click/dblclick sequence before it can select.
+                if (dragged) draw(graphData, true);
             }));
         groups.each(function (node) {
             const group = d3.select(this), radius = 30, center = node.id === model.root;
@@ -578,15 +606,15 @@
             const name = group.append("text").attr("class", "pi-person-fullname").attr("text-anchor", "middle").attr("font-size", 14).attr("fill", "#172033");
             result.labels.get(node.id).forEach((line, index) => name.append("tspan").attr("x", 0).attr("y", 51 + index * 18).text(line));
             const point = result.positions.get(node.id);
-            const relationText = group.append("text").attr("class", "pi-person-relation").attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#334b63");
-            wrapName(relationshipLabel(model, node.id)).forEach((line, i) => relationText.append("tspan").attr("x", 0).attr("y", 59 + result.labels.get(node.id).length * 18 + i * 15).text(line));
+            const relationText = group.append("text").attr("class", "pi-person-relation").attr("text-anchor", "middle").attr("font-size", 16).attr("font-weight", 600).attr("fill", "#334b63");
+            relationLines(relationshipLabel(model, node.id)).forEach((line, i) => relationText.append("tspan").attr("x", 0).attr("y", 63 + result.labels.get(node.id).length * 18 + i * 22).text(line));
             group.append("text").attr("class", "pi-person-hint").attr("text-anchor", "middle").attr("y", point.bottom - 2).attr("font-size", 10).attr("fill", "#64748b")
                 .text(model.edges.some(e => e.source_difference || e.layout_conflict ? e.from === node.id || e.to === node.id : false) ? "! 来源冲突 · 查看证据" : canExpand(node.id) ? "双击或按 E 展开 · 待核验" : "来源可查 · 待核验");
             group.append("title").text((node.name || node.id) + "\n" + node.id);
         });
         const b = result.bounds;
         externalBounds = { width: b.maxX - b.minX, height: b.maxY - b.minY, centerX: (b.minX + b.maxX) / 2, centerY: (b.minY + b.maxY) / 2 };
-        if (previousTransform) svg.call(externalZoom.transform, previousTransform); else fit();
+        if (previousTransform) svg.call(externalZoom.transform, previousTransform); else fit(true);
         const notice = document.getElementById("piFamilyLayoutNotice");
         if (notice) notice.textContent = `家庭单元 ${result.units.length} 个；单亲资料不补齐另一方。${result.ambiguous.length ? ` ${result.ambiguous.length} 位人物父母归属待核对，保留候选证据。` : ""}${model.generation_conflicts ? ` ${model.generation_conflicts} 条世代矛盾边保留，未强行归组。` : ""}`;
         const perspective = document.getElementById("piFamilyPerspective");

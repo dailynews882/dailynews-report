@@ -238,7 +238,7 @@ function piFamilyStatus(message) {
 function piPartialNotice(data) {
     const codes = { TIMEOUT: "超时", RATE_LIMITED: "限流", BUSY: "请求繁忙", NODE_LIMIT: "节点上限", RESULT_LIMIT: "反向结果上限", REQUEST_LIMIT: "请求上限", ENTITY_MISSING: "实体缺失", UNVERIFIED_PERSON_OMITTED: "未通过人物核验的关系已省略" };
     const difference = data.source_conflicts?.length ? ` 发现 ${data.source_conflicts.length} 项来源差异／身份待核对；保留双方证据，未覆盖。` : "";
-    return (data.partial_results ? "部分资料未完成：" + (data.warnings || []).map(w => w.section + "：" + (codes[w.code] || w.code || "外部请求失败")).join("；") + "。缺失不代表没有亲属。" : "实时声明及文章记载均待独立核验；点击人物查看来源，可按 QID 展开。最多两层。") + difference;
+    return (data.partial_results ? "部分资料未完成：" + (data.warnings || []).map(w => w.section + "：" + (codes[w.code] || w.code || "外部请求失败")).join("；") + "。缺失不代表没有亲属。" : "实时声明及文章记载均待独立核验；单击查看人物，双击按 QID 展开。最多三条关系边，限 100 人／20 次展开。") + difference;
 }
 function piUpdateExpandButton() {
     const button = document.getElementById("piExpandPerson");
@@ -293,6 +293,10 @@ function piShowEvidence(detail) {
     if (edges.length > 40) list.append(createExternalText("p", "当前仅显示前 40 条证据，请选择具体人物或连线查看。"));
 }
 async function piExpandExternalPerson(qid) {
+    if (/^wp:[a-f0-9]{32}:\d+$/.test(qid || "")) {
+        piFamilyStatus("此人物是 Wikipedia 会话临时身份，没有已核验的 QID，无法直接展开；仅展示已有资料和证据，不按姓名猜测身份。");
+        return;
+    }
     if (!/^Q[1-9]\d*$/.test(qid || "") || !window.PIExternalGraph?.canExpand(qid)) return;
     const version = piSelectedExternalVersion, searchVersion = piExternalSearchSequence;
     const sequence = ++piExternalProfileSequence;
@@ -1362,7 +1366,7 @@ window.addEventListener("pi:external-person-selected", event => {
     piSelectedExternalQid = qid; piSelectedExternalVersion++; ciRequestSequence++; piUpdateExpandButton();
     piRenderSelectedInfo({ ...node, id: qid }, detail);
     const status = value => { const el = document.getElementById("piPersonStatus"); if (el) el.textContent = value; };
-    if (qid.startsWith("wp:")) { status("会话内已有资料与证据；未获取字段不补造，未进行姓名或本地人物回退。"); return; }
+    if (qid.startsWith("wp:")) { status("会话内已有资料与证据；没有已核验 QID，无法直接展开，未获取字段不补造，不按姓名或本地记录回退。"); return; }
     status("正在按所选人物 QID 获取实时详情…");
     const controller = piSelectionController = new AbortController(), timer = setTimeout(() => controller.abort(), 30000);
     piSelectionRequestQid = qid;

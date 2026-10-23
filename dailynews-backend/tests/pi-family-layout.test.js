@@ -20,6 +20,10 @@ for (let i = 0; i < 21; i++) {
     if (i < 20) muskEdges.push(relation(id, i < 7 ? "Q110" : i < 14 ? "Q111" : "Q112", "mother"));
 }
 const musk = data("Q100", muskNames, muskEdges);
+// A second sibling is reachable only through an explicit shared-parent path.
+musk.nodes.push({ id: "Q107", name: "Sibling via explicit parent", entity_type: "human" });
+musk.family_relations.push(relation("Q101", "Q107", "child"));
+const siblingBranch = data("Q104", { Q104: "Sibling", Q105: "Sibling Spouse", Q106: "Sibling Child" }, [relation("Q104", "Q105", "spouse"), relation("Q104", "Q106", "child"), relation("Q106", "Q105", "mother")]);
 const female = data("Q300", { Q300: "女性中心人物", Q301: "父亲", Q302: "母亲", Q303: "伴侣", Q304: "子女", Q305: "外祖母", Q306: "孙辈", Q307: "兄弟姐妹" }, [
     relation("Q300", "Q301", "father"), relation("Q300", "Q302", "mother"), relation("Q302", "Q305", "mother"), relation("Q300", "Q303", "spouse"),
     relation("Q300", "Q304", "child"), relation("Q304", "Q300", "mother"), relation("Q304", "Q303", "father"), relation("Q304", "Q306", "child"), relation("Q300", "Q307", "sibling")
@@ -28,7 +32,7 @@ function arrangement(fixture) { const graph = engine(); return graph.layout(grap
 function geometry(result) {
     for (const row of result.rows.values()) {
         const sorted = row.map(id => result.positions.get(id)).sort((a, b) => a.x - b.x);
-        assert(sorted.every(p => p.y === sorted[0].y), "One exact generation row, no vertical wrapping");
+        assert(sorted.every(p => p.level === sorted[0].level), "Generation bands remain explicit even with staggered co-parents");
         for (let i = 1; i < sorted.length; i++) assert(sorted[i].x - sorted[i - 1].x >= 200, "No overlapping person cards");
     }
     for (const route of result.routes) {
@@ -106,6 +110,29 @@ test("relationship labels use the centre perspective and explicit parent roles, 
     assert.equal(graph.relationshipLabel(graph.buildModel(zhao), temp(3)), "前配偶");
 });
 
+test("sibling branch keeps its own spouse/child unit and accepts three-edge paths", () => {
+    const graph = engine(), model = graph.buildModel({ ...musk, nodes: [...musk.nodes, ...siblingBranch.nodes], family_relations: [...musk.family_relations, ...siblingBranch.family_relations] });
+    const result = graph.layout(model); geometry(result);
+    assert.match(graph.relationshipLabel(model, "Q107"), /兄弟姐妹.*共同/);
+    assert.equal(graph.relationshipLabel(model, "Q106"), "兄弟姐妹的子女（关系路径）");
+    assert.equal(graph.relationshipLabel(model, "Q105"), "兄弟姐妹的配偶（关系路径）");
+    const unit = result.units.find(u => u.children.includes("Q106"));
+    assert.deepEqual(Array.from(unit.parents), ["Q104", "Q105"]);
+    assert(!result.units.filter(u => u.parents.includes("Q100")).some(u => u.children.includes("Q106")));
+    const reached = data("Q1", { Q1: "Root", Q2: "Parent", Q3: "Sibling", Q4: "Niece", Q5: "Beyond" }, [relation("Q1", "Q2", "father"), relation("Q2", "Q3", "child"), relation("Q3", "Q4", "child"), relation("Q4", "Q5", "child")]);
+    assert.deepEqual(Array.from(graph.buildModel(reached).nodes, n => n.id), ["Q1", "Q2", "Q3", "Q4"]);
+});
+
+test("multi-family co-parents have vertical space without changing generation or guessing parents", () => {
+    const result = arrangement(musk); geometry(result);
+    for (const id of ["Q110", "Q111", "Q112"]) {
+        const p = result.positions.get(id); assert.equal(p.level, 0); assert(p.y > result.positions.get("Q100").y);
+        const unit = result.units.find(u => u.parents.includes(id));
+        assert(unit.children.every(child => result.positions.get(child).y - 34 > p.y + p.bottom));
+    }
+    assert(result.routes.filter(r => r.kind === "family").every(r => r.caption.includes("家庭") && r.unit.parents.every(id => r.caption.includes(result.model.nodes.find(n => n.id === id).name))));
+});
+
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewport retention", { timeout: 60000 }, async t => {
     const executable = ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"].find(p => fs.existsSync(p));
@@ -123,9 +150,9 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
         else if (url.pathname === "/") {
             res.setHeader("Content-Type", "text/html; charset=utf-8");
             const fixture = JSON.stringify(fixtures[url.searchParams.get("case")] || zhao);
-            const init = `window.fixture=${fixture};window.PIExternalGraph.render(window.fixture);
+            const init = `window.fixture=${fixture};window.branch=${JSON.stringify(siblingBranch)};window.PIExternalGraph.render(window.fixture);
                 window.profileCalls=[];window.fetch=(url,options)=>{profileCalls.push(url);const id=url.split('/').pop();const node=fixture.nodes.find(n=>n.id===id)||{id,name:'Expanded person'};
-                return new Promise(resolve=>setTimeout(()=>resolve({ok:true,json:async()=>({success:true,qid:id,profile:{...node,description:node.name+' DETAILS',citizenship:[id+' COUNTRY'],education:[id+' SCHOOL']},nodes:[node],family_relations:[],organization_relations:[]})}),id==='Q101'?160:15));};
+                return new Promise(resolve=>setTimeout(()=>resolve({ok:true,json:async()=>({success:true,qid:id,profile:{...node,description:node.name+' DETAILS',citizenship:[id+' COUNTRY'],education:[id+' SCHOOL']},nodes:id==='Q104'?branch.nodes:[node],family_relations:id==='Q104'?branch.family_relations:[],organization_relations:[]})}),id==='Q101'?160:15));};
                 window.addEventListener('load',()=>{const s=document.createElement('script');s.src='/controller.js';s.onload=()=>{window.controllerReady=true;document.getElementById('piFamilyReadingSize').onclick=()=>PIExternalGraph.focus();};document.body.appendChild(s);});`;
             res.end(html.replace("</body>", '<script src="/d3.js"></script><script src="/graph.js"></script><script>' + init + '</script></body>'));
         } else { res.statusCode = 404; res.end(); }
@@ -156,12 +183,23 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
             const result = await call("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true }, sessionId);
             assert(!result.exceptionDetails, JSON.stringify(result.exceptionDetails)); return result.result.value;
         };
+        // Native mouse input is essential: dispatchEvent('click') bypasses D3 drag's mouseup.
+        const mouseClick = async (id, count = 1) => {
+            const point = await evaluate(`(()=>{const g=document.querySelector('[data-person-id="${id}"]'),c=g.querySelector('circle');const r=c.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+            await call("Input.dispatchMouseEvent", { type: "mouseMoved", ...point }, sessionId);
+            for (let clickCount = 1; clickCount <= count; clickCount++) {
+                await call("Input.dispatchMouseEvent", { type: "mousePressed", button: "left", buttons: 1, clickCount, ...point }, sessionId);
+                await call("Input.dispatchMouseEvent", { type: "mouseReleased", button: "left", buttons: 0, clickCount, ...point }, sessionId);
+            }
+        };
         await call("Network.enable", {}, sessionId); await call("Network.setBlockedURLs", { urls: ["https://*", "http://www.*"] }, sessionId);
         for (const [name, width, height] of [["zhao", 1600, 1000], ["musk", 1600, 1000], ["female", 1600, 1000], ["female", 390, 844]]) {
             await call("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width < 500 }, sessionId);
             await call("Page.navigate", { url: "http://127.0.0.1:" + server.address().port + "/?case=" + name }, sessionId);
             await evaluate('new Promise((resolve,reject)=>{let i=0;const check=()=>{if(window.PIExternalGraph?.getState().layout&&window.controllerReady)resolve(true);else if(i++>100)reject(Error("Graph/controller not ready"));else setTimeout(check,20)};check()})');
             await delay(400);
+            assert((await evaluate('PIExternalGraph.getState().transform.k')) >= 0.85, "Initial view keeps relation labels readable; overview remains available");
+            await evaluate('PIExternalGraph.fit()'); await delay(350);
             const metrics = await evaluate(`(()=>{const nodes=[...document.querySelectorAll('g.pi-person')];return {count:nodes.length,allNames:nodes.every(g=>g.querySelector('.pi-person-fullname').textContent.replace(/\\s/g,'')===fixture.nodes.find(n=>n.id===g.dataset.personId).name.replace(/\\s/g,'')),widths:nodes.map(g=>g.querySelector('.pi-person-fullname').getBBox().width),radii:nodes.map(g=>g.querySelector('circle').getAttribute('r')),diagonal:[...document.querySelectorAll('path.pi-family-route')].some(p=>/[LCQ]/.test(p.getAttribute('d'))),toolbar:getComputedStyle(document.querySelector('.g-canvas-toolbar')).zIndex};})()`);
             assert.equal(metrics.count, fixtures[name].nodes.length); assert(metrics.allNames); assert(metrics.widths.every(w => w <= 190));
             assert(metrics.radii.every(r => r === "30")); assert.equal(metrics.diagonal, false); assert(Number(metrics.toolbar) > 10);
@@ -170,29 +208,49 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
             const styles = await evaluate('Array.from(document.querySelectorAll("path.pi-family-route"),p=>({stroke:p.getAttribute("stroke"),dash:p.getAttribute("stroke-dasharray")}))');
             assert(styles.every(s => s.stroke === "#334b63" && s.dash === null));
             assert(await evaluate('Array.from(document.querySelectorAll("g.pi-person"),g=>!!g.querySelector(".pi-person-relation").textContent).every(Boolean)'));
-            const chosen = name === "zhao" ? temp(5) : name === "musk" ? "Q110" : "Q304";
-            await evaluate(`(()=>{document.getElementById('infoCountry').textContent='OLD CENTRE COUNTRY';document.querySelector('[data-person-id="${chosen}"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));return true})()`);
+            const chosen = name === "zhao" ? temp(4) : name === "musk" ? "Q110" : "Q304";
+            await evaluate(`document.getElementById('infoCountry').textContent='OLD CENTRE COUNTRY'`);
+            await mouseClick(chosen);
             assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), fixtures[name].nodes.find(n => n.id === chosen).name);
             if (chosen.startsWith("wp:")) {
                 assert.equal(await evaluate('document.getElementById("infoCountry").textContent'), "未获取");
                 assert.equal(await evaluate('profileCalls.length'), 0);
+                await mouseClick(chosen, 2);
+                assert.match(await evaluate('document.getElementById("piFamilyStatus").textContent'), /没有.*QID.*无法.*展开/);
+                assert.equal(await evaluate('profileCalls.length'), 0);
+                await mouseClick(temp(5));
+                assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), "子女甲");
             } else {
                 await delay(60); assert((await evaluate('document.getElementById("infoCountry").textContent')).includes(chosen + " COUNTRY"));
             }
             if (name === "musk") {
-                await evaluate(`(()=>{document.querySelector('[data-person-id="Q101"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));document.querySelector('[data-person-id="Q102"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));return true})()`);
+                await mouseClick("Q101"); await mouseClick("Q102");
                 await delay(230);
                 assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), "Parent Two");
                 assert.equal(await evaluate('document.getElementById("infoCountry").textContent'), "Q102 COUNTRY");
                 assert(await evaluate('profileCalls.every(u=>u.startsWith("/api/people-intelligence/external/profile/"))'));
+                const before = await evaluate('PIExternalGraph.getState().transform');
+                await mouseClick("Q104", 2); await delay(100);
+                assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), "Sibling");
+                assert.equal(await evaluate('document.querySelectorAll("[data-person-id=Q106]").length'), 1);
+                assert.deepEqual(await evaluate('PIExternalGraph.getState().layout.units.find(u=>u.children.includes("Q106")).parents'), ["Q104", "Q105"]);
+                assert.equal(await evaluate('PIExternalGraph.getState().selectedId'), "Q104");
+                assert.deepEqual(await evaluate('PIExternalGraph.getState().transform'), before);
+                assert.equal(await evaluate('profileCalls.filter(u=>u.endsWith("/Q104")).length'), 1, "Double click shares the selection profile request");
             }
             const canvas = await evaluate('(()=>{const r=document.querySelector(".g-canvas-pane").getBoundingClientRect();return {width:r.width,height:r.height,scroll:document.documentElement.scrollWidth,viewport:innerWidth}})()');
             assert(canvas.width > 300 && canvas.height > 400, "The graph canvas remains visible on mobile");
             assert(canvas.scroll <= canvas.viewport + 1, "No page-level horizontal overflow");
             const screenshot = await call("Page.captureScreenshot", { format: "png" }, sessionId);
             fs.writeFileSync(path.join(folder, name + "-" + width + ".png"), Buffer.from(screenshot.data, "base64"));
+            await evaluate('PIExternalGraph.focus()');
+            assert.equal(await evaluate('PIExternalGraph.getState().transform.k'), 1);
+            assert.equal(await evaluate('document.querySelector(".pi-person-relation").getAttribute("font-size")'), "16");
+            const reading = await call("Page.captureScreenshot", { format: "png" }, sessionId);
+            fs.writeFileSync(path.join(folder, name + "-" + width + "-reading.png"), Buffer.from(reading.data, "base64"));
             if (name === "female" && width > 500) {
-                await evaluate(`(()=>{document.querySelector('[data-person-id="Q304"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));PIExternalGraph.zoomIn();return true})()`);
+                await evaluate('PIExternalGraph.fit()'); await delay(350);
+                await mouseClick("Q304"); await evaluate('PIExternalGraph.zoomIn()');
                 await delay(300); const before = await evaluate('PIExternalGraph.getState().transform');
                 await evaluate(`PIExternalGraph.merge({qid:'Q304',nodes:[{id:'Q304',name:'子女',entity_type:'human'},{id:'Q309',name:'Expanded Grandchild Full Name',entity_type:'human'}],family_relations:[{from:'Q304',to:'Q309',type:'child'}]})`);
                 assert.deepEqual(await evaluate('PIExternalGraph.getState().transform'), before);
