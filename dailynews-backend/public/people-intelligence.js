@@ -218,6 +218,100 @@ function bindEvents() {
 ========================================================= */
 
 let piExternalSearchSequence = 0;
+let piExternalProfileSequence = 0;
+let piExternalProfileController = null;
+let piExternalSearchController = null;
+let piLiveMode = false;
+let piSelectedExternalQid = null;
+let piSelectedExternalVersion = 0;
+let piExternalBusy = false;
+
+function piFamilyStatus(message) {
+    const status = document.getElementById("piFamilyStatus");
+    if (status) status.textContent = message;
+}
+function piPartialNotice(data) {
+    const codes = { TIMEOUT: "超时", RATE_LIMITED: "限流", BUSY: "请求繁忙", NODE_LIMIT: "节点上限", RESULT_LIMIT: "反向结果上限", REQUEST_LIMIT: "请求上限", ENTITY_MISSING: "实体缺失", UNVERIFIED_PERSON_OMITTED: "未通过人物核验的关系已省略" };
+    return data.partial_results ? "部分资料未完成：" + (data.warnings || []).map(w => w.section + "：" + (codes[w.code] || "外部请求失败")).join("；") + "。缺失不代表没有亲属。" : "实时声明尚未独立核验；点击人物查看来源，双击亲属或使用按钮展开。最多两层。";
+}
+function piUpdateExpandButton() {
+    const button = document.getElementById("piExpandPerson");
+    if (button) button.disabled = piExternalBusy || !piSelectedExternalQid || !window.PIExternalGraph?.canExpand(piSelectedExternalQid);
+}
+function piResetFamilyPanel() {
+    piSelectedExternalQid = null; piSelectedExternalVersion++; piExternalBusy = false;
+    document.getElementById("piFamilyEvidenceList")?.replaceChildren();
+    piUpdateExpandButton();
+}
+function piShowEvidence(detail) {
+    const list = document.getElementById("piFamilyEvidenceList");
+    if (!list) return;
+    list.replaceChildren();
+    const link = (container, text, url) => {
+        try { const parsed = new URL(url); if (!["https:", "http:"].includes(parsed.protocol) || parsed.username || parsed.password) return;
+            const a = createExternalText("a", text); a.href = parsed.href; a.target = "_blank"; a.rel = "noopener noreferrer"; container.append(a); } catch (_) { /* Invalid source URL is not clickable. */ }
+    };
+    for (const path of detail.paths || []) list.append(createExternalText("p", path.label + "：" + path.from + " → " + path.via + " → " + path.to + "；由两条原始声明组成，不是单条直接声明。"));
+    const edges = [...new Map([...(detail.edges || []), ...(detail.paths || []).flatMap(p => p.steps || [])].map(e => [e.statement_id || [e.from,e.to,e.type].join("|"),e])).values()];
+    if (!edges.length) list.append(createExternalText("p", "暂无可展示的声明；不能据此认定不存在亲属。"));
+    for (const edge of edges.slice(0, 40)) {
+        const item = document.createElement("div"); item.className = "pi-family-evidence-item";
+        item.append(createExternalText("p", (edge.statement_subject || edge.from) + " → " + (edge.statement_object || edge.to) + " · " + (edge.property || edge.type) + " · " + (edge.statement_label || edge.label || edge.type)));
+        link(item, "原始声明 ↗", edge.source_url);
+        item.append(createExternalText("p", "声明 ID：" + (edge.statement_id || "来源未提供") + "；独立核验：未完成"));
+        if (Object.keys(edge.qualifiers || {}).length) item.append(createExternalText("pre", "限定条件：" + JSON.stringify(edge.qualifiers, null, 2)));
+        const refs = edge.references || [];
+        if (!refs.length) item.append(createExternalText("p", "该声明未提供可用参考文献。"));
+        for (const reference of refs) {
+            for (const snak of reference.snaks?.P854 || []) link(item, "参考文献 ↗", snak.datavalue?.value);
+            for (const snak of reference.snaks?.P248 || []) {
+                const id = snak.datavalue?.value?.id;
+                if (/^Q[1-9]\d*$/.test(id || "")) link(item, "引述来源 " + id + " ↗", "https://www.wikidata.org/wiki/" + id);
+            }
+            item.append(createExternalText("pre", "参考声明：" + JSON.stringify(reference.snaks || {}, null, 2)));
+        }
+        list.append(item);
+    }
+    if (edges.length > 40) list.append(createExternalText("p", "当前仅显示前 40 条证据，请选择具体人物或连线查看。"));
+}
+async function piExpandExternalPerson(qid) {
+    if (!/^Q[1-9]\d*$/.test(qid || "") || !window.PIExternalGraph?.canExpand(qid)) return;
+    const version = piSelectedExternalVersion, searchVersion = piExternalSearchSequence;
+    const sequence = ++piExternalProfileSequence;
+    piExternalProfileController?.abort();
+    const controller = piExternalProfileController = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    piExternalBusy = true; piUpdateExpandButton(); piFamilyStatus("正在实时展开 " + qid + "…");
+    try {
+        const response = await fetch("/api/people-intelligence/external/profile/" + encodeURIComponent(qid), { cache: "no-store", signal: controller.signal });
+        const data = await response.json();
+        if (sequence !== piExternalProfileSequence || searchVersion !== piExternalSearchSequence || version !== piSelectedExternalVersion) return;
+        if (!response.ok || !data.success) throw new Error(data.message || "展开失败");
+        const result = window.PIExternalGraph.merge(data);
+        if (!result.rendered) { piFamilyStatus("已达到展开边界，未重复加载。"); return; }
+        piExternalOrganizationCache.set(qid, data.organization_relations || []);
+        for (const node of data.nodes || []) piExternalOrganizationNodeMap.set(node.id, node);
+        const selected = data.profile || {};
+        window.dispatchEvent(new CustomEvent("pi:external-person-selected", { detail: { qid, node: selected, relationship: "已展开；关系见来源连线" } }));
+        piShowEvidence({ edges: data.family_relations || [] });
+        piFillExternalIdentity(selected);
+        piFamilyStatus(piPartialNotice(data) + (result.limited ? " 已达到当前图谱节点上限。" : ""));
+    } catch (error) {
+        if (sequence === piExternalProfileSequence && searchVersion === piExternalSearchSequence && version === piSelectedExternalVersion)
+            piFamilyStatus("展开未完成：" + (controller.signal.aborted ? "请求超时或已取消" : error.message) + "；保留已显示关系，可稍后重试。");
+    } finally {
+        clearTimeout(timer);
+        if (sequence === piExternalProfileSequence) { piExternalBusy = false; piUpdateExpandButton(); }
+    }
+}
+window.addEventListener("pi:external-expand", event => piExpandExternalPerson(event.detail?.qid));
+window.addEventListener("pi:external-evidence-selected", event => piShowEvidence(event.detail || {}));
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("piExpandPerson")?.addEventListener("click", () => piExpandExternalPerson(piSelectedExternalQid));
+    document.getElementById("piShowFamilyEvidence")?.addEventListener("click", () => {
+        const panel = document.getElementById("piFamilyEvidence"); if (panel) { panel.open = true; panel.scrollIntoView({ block: "nearest" }); }
+    });
+});
 
 function getExternalCandidatePanel() {
     let panel = document.getElementById("piExternalCandidatePanel");
@@ -386,16 +480,23 @@ function renderExternalCandidates(payload, query) {
         });
 
         generateButton.addEventListener("click", async () => {
+            const searchVersion = piExternalSearchSequence;
+            const sequence = ++piExternalProfileSequence;
+            piExternalProfileController?.abort();
+            const controller = piExternalProfileController = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 30000);
+            piResetFamilyPanel();
             generateButton.disabled = true;
             generateButton.textContent = "正在读取人物关系…";
 
             try {
                 const response = await fetch(
                     `/api/people-intelligence/external/profile/${encodeURIComponent(candidate.wikidata_id)}`,
-                    { cache: "no-store" }
+                    { cache: "no-store", signal: controller.signal }
                 );
 
                 const data = await response.json();
+                if (sequence !== piExternalProfileSequence || searchVersion !== piExternalSearchSequence) return;
 
                 if (!response.ok || !data.success) {
                     throw new Error(
@@ -418,7 +519,10 @@ function renderExternalCandidates(payload, query) {
                 currentData = null;
 
                 // Render the external relationship graph.
+                piResetFamilyPanel();
                 window.PIExternalGraph.render(data);
+                piFamilyStatus(piPartialNotice(data));
+                piShowEvidence({ edges: data.family_relations || [] });
 
                 const profile = data.profile || {};
 
@@ -705,11 +809,13 @@ function renderExternalCandidates(payload, query) {
 
 
             } catch (error) {
+                if (sequence !== piExternalProfileSequence || searchVersion !== piExternalSearchSequence) return;
                 console.error("生成外部关系图失败:", error);
 
                 alert(`生成失败：${error.message}`);
 
             } finally {
+                clearTimeout(timer);
                 generateButton.disabled = false;
                 generateButton.textContent = "生成实时人物关系图";
             }
@@ -742,6 +848,12 @@ async function loadPersonTopology(name) {
     const query = String(name || "").trim();
     if (!query) return;
     const sequence = ++piExternalSearchSequence;
+    piLiveMode = true;
+    ++piExternalProfileSequence; piExternalProfileController?.abort();
+    piExternalSearchController?.abort();
+    const searchController = piExternalSearchController = new AbortController();
+    const searchTimer = setTimeout(() => searchController.abort(), 30000);
+    piResetFamilyPanel(); piFamilyStatus("正在检索实时人物身份…");
     ciRequestSequence += 1;
     currentData = null;
     piExternalOrganizationCache = new Map();
@@ -749,6 +861,7 @@ async function loadPersonTopology(name) {
     piExternalRootQid = null;
     piCurrentExternalProfile = null;
     if (window.PIExternalGraph) window.PIExternalGraph.hide();
+    if (gContainer) gContainer.selectAll("*").remove();
     closeExternalCandidatePanel();
     const panel = getExternalCandidatePanel();
     panel.hidden = false;
@@ -756,34 +869,24 @@ async function loadPersonTopology(name) {
     // The history endpoint records the query only, never the fetched profile.
     fetch("/api/people-intelligence/search-history", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, source: "Wikidata" })
+        body: JSON.stringify({ query, source: "Wikidata" }), signal: AbortSignal.timeout(5000)
     }).catch(() => { });
     try {
-        // Direct QID is an exact entity request; names use the same Wikidata search service.
-        if (/^Q[1-9]\d*$/i.test(query)) {
-            const qid = query.toUpperCase();
-            const response = await fetch(`/api/people-intelligence/external/profile/${qid}`, { cache: "no-store" });
-            const profile = await response.json();
-            if (sequence !== piExternalSearchSequence) return;
-            if (!response.ok || !profile.success) throw new Error(profile.message || "人物读取失败");
-            renderExternalCandidates({ candidates: [{ wikidata_id: qid, name: profile.profile?.name || qid, description: profile.profile?.description || "", entity_type: "human", type_checked: true }] }, query);
-            // User chooses when to generate graph; no database writes.
-            return;
-        }
         const response = await fetch(
             `/api/people-intelligence/external/search?q=${encodeURIComponent(query)}`,
-            { cache: "no-store" }
+            { cache: "no-store", signal: searchController.signal }
         );
         const data = await response.json();
         if (sequence !== piExternalSearchSequence) return;
         if (!response.ok || !data.success) throw new Error(data.message || "实时搜索失败");
         renderExternalCandidates(data, query);
+        piFamilyStatus(data.partial_results ? piPartialNotice(data) : "请选择通过人物类型核验的候选，再生成家族图谱。");
     } catch (error) {
         if (sequence !== piExternalSearchSequence) return;
         console.error("Wikidata 实时搜索失败:", error);
         panel.hidden = false;
         panel.replaceChildren(createExternalText("p", `实时搜索失败：${error.message}`));
-    }
+    } finally { clearTimeout(searchTimer); }
 }
 
 /* =========================================================
@@ -1210,6 +1313,12 @@ window.addEventListener("pi:external-person-selected", event => {
         return;
     }
 
+    if (piExternalBusy && piSelectedExternalQid !== String(qid)) {
+        ++piExternalProfileSequence; piExternalProfileController?.abort(); piExternalBusy = false;
+    }
+    piSelectedExternalQid = String(qid);
+    piSelectedExternalVersion++;
+    piUpdateExpandButton();
     // Invalidate pending local commercial intelligence requests.
     ciRequestSequence += 1;
 
@@ -1496,6 +1605,9 @@ async function loadCommercialIntelligence(entity) {
 // 点击图谱节点时，右侧即时加载该人物深度档案
 
 async function loadAndDisplayEntity(name) {
+    // Legacy curated navigation is separate; never use it for an active live search.
+    if (piLiveMode) { piFamilyStatus("实时模式仅允许按 Wikidata QID 查询；未使用本地人物回退。"); return; }
+    const localVersion = ciRequestSequence;
 
     try {
 
@@ -1503,6 +1615,7 @@ async function loadAndDisplayEntity(name) {
 
         const data = await res.json();
 
+        if (piLiveMode || localVersion !== ciRequestSequence) return;
         if (data.success && data.entity) {
 
             currentData = data;

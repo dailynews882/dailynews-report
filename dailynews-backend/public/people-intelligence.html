@@ -322,6 +322,14 @@
         .node-circle:hover {
             filter: drop-shadow(0 4px 10px rgba(29, 78, 216, 0.3));
         }
+        .g-canvas-toolbar { flex-wrap: wrap; max-width: calc(100% - 32px); }
+        .pi-family-status { position: absolute; left: 16px; bottom: 12px; right: 16px; z-index: 12; margin: 0; padding: 8px 12px; border: 1px solid #dbe3ee; border-radius: 8px; background: rgba(255,255,255,.95); color: #475569; font-size: 12px; pointer-events: none; }
+        .pi-family-evidence { margin-bottom: 16px; padding: 12px; border: 1px solid #dbe3ee; border-radius: 8px; font-size: 12px; color: #475569; }
+        .pi-family-evidence summary { cursor: pointer; color: #2454d6; font-weight: 600; }
+        .pi-family-evidence a { display: inline-block; margin-right: 10px; color: #2454d6; }
+        .pi-family-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; font-size: 11px; }
+        .pi-family-evidence-item { border-top: 1px solid #e2e8f0; padding: 8px 0; overflow-wrap: anywhere; }
+        @media (max-width: 600px) { .g-canvas-toolbar { gap: 4px; } .g-canvas-toolbar button { padding: 6px 8px; font-size: 11px; } .pi-family-status { font-size: 11px; } }
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
@@ -347,7 +355,10 @@
                 <button type="button" id="btnTreeCenter">适应居中</button>
                 <button type="button" id="btnZoomIn">放大 (+)</button>
                 <button type="button" id="btnZoomOut">缩小 (-)</button>
+                <button type="button" id="piExpandPerson" disabled>展开选中亲属</button>
+                <button type="button" id="piShowFamilyEvidence">关系来源</button>
             </div>
+            <p id="piFamilyStatus" class="pi-family-status" role="status" aria-live="polite">实时外部声明；缺失关系不作推断。</p>
             <svg id="familyTreeSvg"></svg>
         </main>
 
@@ -359,6 +370,11 @@
             </div>
 
             <div class="g-info-body">
+                <details id="piFamilyEvidence" class="pi-family-evidence">
+                    <summary>家族关系来源与限定条件</summary>
+                    <p>连线代表原始声明；祖辈及孙辈为两段关系路径。未知婚姻状态不代表当前婚姻。</p>
+                    <div id="piFamilyEvidenceList"></div>
+                </details>
                 <div class="wiki-infobox">
                     <div class="ci-profile-label"><span class="ci-number">01</span> 人物基础档案 <small>PROFILE</small></div>
                     <div class="wiki-infobox-header">
