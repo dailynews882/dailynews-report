@@ -210,11 +210,11 @@
     let graphData = null;
     let expanded = new Set();
     function edgeKey(edge) {
-        return edge.statement_id || [edge.from, edge.to, edge.type, edge.source_url].join("|");
+        return edge.evidence_id || edge.statement_id || [edge.from, edge.to, edge.type, edge.source_url].join("|");
     }
     function buildModel(data) {
         const root = String(data.qid || "");
-        const all = new Map((data.nodes || []).filter(n => /^Q[1-9]\d*$/.test(n?.id || "") && n.entity_type !== "other").map(n => [n.id, n]));
+        const all = new Map((data.nodes || []).filter(n => (/^Q[1-9]\d*$/.test(n?.id || "") || /^wp:[a-f0-9]{32}:\d+$/.test(n?.id || "")) && n.entity_type !== "other").map(n => [n.id, n]));
         const facts = new Map();
         for (const edge of [...(data.family_relations || []), ...(data.child_parent_relations || [])]) {
             const normalized = edge.statement_subject && edge.statement_object
@@ -279,7 +279,7 @@
     }
     function canExpand(id) {
         const depth = graphData && buildModel(graphData).depths.get(id);
-        return depth !== undefined && depth < 2 && !expanded.has(id) && expanded.size < 20;
+        return /^Q[1-9]\d*$/.test(id || "") && depth !== undefined && depth < 2 && !expanded.has(id) && expanded.size < 20;
     }
     function draw(data) {
         const model = buildModel(data);
@@ -308,8 +308,8 @@
         const edgeLayer = externalLayer.append("g"), nodeLayer = externalLayer.append("g");
         const path = edge => { const a = positions.get(edge.from), b = positions.get(edge.to); return "M " + a.x + " " + a.y + " L " + b.x + " " + b.y; };
         const lines = edgeLayer.selectAll("path").data(model.edges).join("path")
-            .attr("d", path).attr("fill", "none").attr("stroke", e => e.type === "spouse" ? "#e11d48" : "#94a3b8")
-            .attr("stroke-width", 2).attr("stroke-dasharray", e => e.spouse_status === "former" ? "5,4" : null)
+            .attr("d", path).attr("fill", "none").attr("stroke", e => e.source_difference ? "#d97706" : e.type === "spouse" ? "#e11d48" : "#94a3b8")
+            .attr("stroke-width", 2).attr("stroke-dasharray", e => e.spouse_status === "former" || e.derived ? "5,4" : null)
             .style("cursor", "pointer").on("click", (event, edge) => {
                 event.stopPropagation(); window.dispatchEvent(new CustomEvent("pi:external-evidence-selected", { detail: { edges: [edge] } }));
             });

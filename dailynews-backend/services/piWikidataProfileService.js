@@ -238,7 +238,14 @@ async function getWikidataProfile(req, res) {
         const rootData = await live.entities([qid], ctx, "root", true), person = rootData[qid];
         if (!person) return res.status(404).json({ success: false, message: "Wikidata 中不存在该人物" });
         if (!live.human(person)) return res.status(422).json({ success: false, message: "该实体未通过 P31=Q5 人物核验" });
-        const family = await live.family(qid, person, ctx);
+        const wikipedia = require("./piWikipediaFamilyService");
+        const [family, articleData] = await Promise.all([
+            live.family(qid, person, ctx),
+            wikipedia.extract(qid, person, ctx).catch(error => {
+                live.warn(ctx, "wikipedia", live.errorCode(error));
+                return { observations: [], articles: [], identities: {} };
+            })
+        ]);
         const related = family.entities;
         const otherRelations = [];
         for (const [property, type] of Object.entries(RELATION_PROPERTIES)) {
@@ -250,23 +257,30 @@ async function getWikidataProfile(req, res) {
         }
         const identityIds = [...new Set(["P27", "P19", "P551", "P106", "P69"].flatMap(p => live.ids(person, p)))];
         const extraIds = [...new Set([...otherRelations.map(e => e.to), ...identityIds])].filter(id => !related[id]);
-        const remaining = Math.max(0, live.LIMITS.nodes - Object.keys(related).length);
+        const articleReserve = Math.min(wikipedia.LIMITS.nodes, articleData.observations.length);
+        const remaining = Math.max(0, live.LIMITS.nodes - Object.keys(related).length - articleReserve);
         if (extraIds.length > remaining) live.warn(ctx, "optional", "NODE_LIMIT");
         Object.assign(related, await live.entities(extraIds.slice(0, remaining), ctx, "optional"));
         const nodes = Object.entries(related).map(([id, entity]) => ({ ...buildNode(id, entity), entity_type: live.human(entity) ? "human" : "other", gender_ids: live.ids(entity, "P21") }));
         const names = property => live.ids(person, property).map(id => live.localized(related[id]?.labels) || id);
         const profile = { ...nodes.find(n => n.id === qid), citizenship: names("P27"), birthplace: names("P19"), residence: names("P551"),
             occupations: names("P106"), education: names("P69"), occupation_ids: live.ids(person, "P106") };
-        const relations = [...family.relations, ...otherRelations];
+        const articleFamily = wikipedia.combine(qid, nodes, family.relations, articleData);
+        nodes.push(...articleFamily.nodes);
+        if (articleFamily.limited) live.warn(ctx, "wikipedia", "NODE_LIMIT");
+        const familyRelations = [...family.relations, ...articleFamily.relations];
+        const relations = [...familyRelations, ...otherRelations];
         return res.json({ success: true, source: "Wikidata", qid, profile, nodes, relations,
-            family_relations: family.relations, child_parent_relations: family.childRelations,
+            family_relations: familyRelations, child_parent_relations: family.childRelations,
+            sources: ["Wikidata", ...(articleData.articles.length ? ["Wikipedia"] : [])], wikipedia_articles: articleData.articles,
+            source_conflicts: articleFamily.conflicts,
             child_parent_summaries: family.summaries, child_parent_lookup_status: ctx.warnings.some(w => ["family", "co_parents"].includes(w.section)) ? "partial" : "completed",
             child_parent_count: family.summaries.length, child_parent_relation_count: family.childRelations.length,
             organization_relations: otherRelations.filter(r => ["employer", "owned_entity"].includes(r.type)),
             commercial_relation_counts: { employer: otherRelations.filter(r => r.type === "employer").length, owned_entity: otherRelations.filter(r => r.type === "owned_entity").length },
             education_relations: otherRelations.filter(r => r.type === "education"), node_count: nodes.length, relation_count: relations.length,
             partial_results: ctx.warnings.length > 0, warnings: ctx.warnings, family_depth: 1, limits: live.LIMITS,
-            notice: "实时 Wikidata 声明，尚未独立核验；缺少结束时间不代表当前婚姻。反向关系已回查人物声明。跨代关系仅展示两段来源路径；缺失或失败不代表没有亲属。P108/P1830 不证明当前持股或控制权。" });
+            notice: "Wikidata 声明与 Wikipedia 文章记载分别保留，均待独立核验；文章称现任不代表已核实当前婚姻。跨代关系展示两段路径，未记载的中间身份明确标为未知；缺失不代表没有亲属。P108/P1830 不证明当前持股或控制权。" });
     } catch (error) {
         return res.status(502).json({ success: false, code: live.errorCode(error), message: "Wikidata 人物详情暂不可用，请稍后重试" });
     }

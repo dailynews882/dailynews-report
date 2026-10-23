@@ -17,17 +17,17 @@ function warn(ctx, section, code) {
 function errorCode(error) { return typeof error?.code === "string" ? error.code : (/abort|timeout/i.test(error?.name || "") ? "TIMEOUT" : "UPSTREAM_ERROR"); }
 function failure(code) { return Object.assign(new Error(code), { code }); }
 
-async function requestJson(url, ctx) {
+async function requestJson(url, ctx, options = {}) {
     const host = new URL(url).host;
     const now = Date.now();
     if (now - windowStart >= 60000) { windowStart = now; windowCount = 0; }
-    if (now >= ctx.deadline) throw failure("TIMEOUT");
+    if (now >= Math.min(ctx.deadline, options.deadline || ctx.deadline)) throw failure("TIMEOUT");
     if (ctx.requests >= LIMITS.requests) throw failure("REQUEST_LIMIT");
     if ((cooldowns.get(host) || 0) > now || windowCount >= 120) throw failure("RATE_LIMITED");
     if (active >= 4 || ctx.active >= LIMITS.concurrency) throw failure("BUSY");
     active++; ctx.active++; ctx.requests++; windowCount++;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), Math.min(8000, ctx.deadline - now));
+    const timer = setTimeout(() => controller.abort(), Math.max(1, Math.min(options.timeoutMs || 8000, ctx.deadline - now, (options.deadline || ctx.deadline) - now)));
     try {
         const response = await fetch(String(url), {
             headers: { Accept: "application/json", "User-Agent": "DailyNewsPeopleIntelligence/11.4 (https://www.dailynews.report)" },
@@ -83,14 +83,14 @@ function localized(values) {
     for (const lang of ["zh", "zh-hans", "zh-hant", "en"]) if (typeof values?.[lang]?.value === "string") return values[lang].value;
     return "";
 }
-async function entities(idsToLoad, ctx, section = "entities", strict = false) {
+async function entities(idsToLoad, ctx, section = "entities", strict = false, options = {}) {
     const result = {};
     const list = [...new Set(idsToLoad.filter(id => QID.test(id)))].slice(0, LIMITS.nodes);
     if (idsToLoad.length > LIMITS.nodes) warn(ctx, section, "NODE_LIMIT");
     for (let offset = 0; offset < list.length; offset += 10) {
         const batch = list.slice(offset, offset + 10);
         try {
-            const data = await requestJson(apiUrl({ action: "wbgetentities", ids: batch.join("|"), props: "labels|descriptions|aliases|claims", languages: "zh|zh-hans|zh-hant|en" }), ctx);
+            const data = await requestJson(apiUrl({ action: "wbgetentities", ids: batch.join("|"), props: "labels|descriptions|aliases|claims" + (section === "root" ? "|sitelinks" : ""), languages: "zh|zh-hans|zh-hant|en" }), ctx, options);
             if (!data.entities || typeof data.entities !== "object") throw failure("INVALID_RESPONSE");
             for (const id of batch) {
                 const entity = data.entities?.[id];

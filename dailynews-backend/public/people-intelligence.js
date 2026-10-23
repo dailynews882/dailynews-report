@@ -232,7 +232,8 @@ function piFamilyStatus(message) {
 }
 function piPartialNotice(data) {
     const codes = { TIMEOUT: "超时", RATE_LIMITED: "限流", BUSY: "请求繁忙", NODE_LIMIT: "节点上限", RESULT_LIMIT: "反向结果上限", REQUEST_LIMIT: "请求上限", ENTITY_MISSING: "实体缺失", UNVERIFIED_PERSON_OMITTED: "未通过人物核验的关系已省略" };
-    return data.partial_results ? "部分资料未完成：" + (data.warnings || []).map(w => w.section + "：" + (codes[w.code] || "外部请求失败")).join("；") + "。缺失不代表没有亲属。" : "实时声明尚未独立核验；点击人物查看来源，双击亲属或使用按钮展开。最多两层。";
+    const difference = data.source_conflicts?.length ? ` 发现 ${data.source_conflicts.length} 项来源差异／身份待核对；保留双方证据，未覆盖。` : "";
+    return (data.partial_results ? "部分资料未完成：" + (data.warnings || []).map(w => w.section + "：" + (codes[w.code] || w.code || "外部请求失败")).join("；") + "。缺失不代表没有亲属。" : "实时声明及文章记载均待独立核验；点击人物查看来源，可按 QID 展开。最多两层。") + difference;
 }
 function piUpdateExpandButton() {
     const button = document.getElementById("piExpandPerson");
@@ -251,17 +252,28 @@ function piShowEvidence(detail) {
         try { const parsed = new URL(url); if (!["https:", "http:"].includes(parsed.protocol) || parsed.username || parsed.password) return;
             const a = createExternalText("a", text); a.href = parsed.href; a.target = "_blank"; a.rel = "noopener noreferrer"; container.append(a); } catch (_) { /* Invalid source URL is not clickable. */ }
     };
-    for (const path of detail.paths || []) list.append(createExternalText("p", path.label + "：" + path.from + " → " + path.via + " → " + path.to + "；由两条原始声明组成，不是单条直接声明。"));
-    const edges = [...new Map([...(detail.edges || []), ...(detail.paths || []).flatMap(p => p.steps || [])].map(e => [e.statement_id || [e.from,e.to,e.type].join("|"),e])).values()];
+    for (const path of detail.paths || []) list.append(createExternalText("p", path.label + "：" + path.from + " → " + path.via + " → " + path.to + "；由两条有来源的关系边组成，不是单条直接声明。"));
+    const edges = [...new Map([...(detail.edges || []), ...(detail.paths || []).flatMap(p => p.steps || [])].map(e => [e.evidence_id || e.statement_id || [e.from,e.to,e.type,e.source_url].join("|"),e])).values()];
     if (!edges.length) list.append(createExternalText("p", "暂无可展示的声明；不能据此认定不存在亲属。"));
     for (const edge of edges.slice(0, 40)) {
         const item = document.createElement("div"); item.className = "pi-family-evidence-item";
         item.append(createExternalText("p", (edge.statement_subject || edge.from) + " → " + (edge.statement_object || edge.to) + " · " + (edge.property || edge.type) + " · " + (edge.statement_label || edge.label || edge.type)));
-        link(item, "原始声明 ↗", edge.source_url);
-        item.append(createExternalText("p", "声明 ID：" + (edge.statement_id || "来源未提供") + "；独立核验：未完成"));
+        link(item, edge.source === "Wikipedia" ? "文章修订来源 ↗" : "原始声明 ↗", edge.source_url);
+        if (edge.article) {
+            const article = edge.article;
+            item.append(createExternalText("p", `来源类型：Wikipedia 文章记载／待独立核验；${article.title}；修订 ${article.revision_id}；${article.location?.field || article.location?.section || ""}`));
+            if (edge.derived) item.append(createExternalText("p", "路径分解：由文章亲属称谓展开，并非文章逐条直接声明；中间身份可能未知。"));
+            item.append(createExternalText("p", article.excerpt || ""));
+            if (!article.citations?.length) item.append(createExternalText("p", "该段未提供可用引用。"));
+            for (const citation of article.citations || []) {
+                link(item, "文章引用 ↗", citation.url); item.append(createExternalText("p", citation.text || citation.id));
+                for (const url of citation.urls || []) link(item, "引用链接 ↗", url);
+            }
+        } else item.append(createExternalText("p", "声明 ID：" + (edge.statement_id || "来源未提供") + "；独立核验：未完成"));
+        if (edge.source_difference) item.append(createExternalText("p", "此关系存在来源差异／身份待核对，请对照 Wikidata 与文章，不能据此认定任一方正确。"));
         if (Object.keys(edge.qualifiers || {}).length) item.append(createExternalText("pre", "限定条件：" + JSON.stringify(edge.qualifiers, null, 2)));
         const refs = edge.references || [];
-        if (!refs.length) item.append(createExternalText("p", "该声明未提供可用参考文献。"));
+        if (!refs.length && !edge.article) item.append(createExternalText("p", "该声明未提供可用参考文献。"));
         for (const reference of refs) {
             for (const snak of reference.snaks?.P854 || []) link(item, "参考文献 ↗", snak.datavalue?.value);
             for (const snak of reference.snaks?.P248 || []) {
@@ -1309,7 +1321,7 @@ window.addEventListener("pi:external-person-selected", event => {
     const node = detail.node || {};
     const qid = detail.qid || node.id;
 
-    if (!/^Q[1-9]\d*$/.test(String(qid || ""))) {
+    if (!/^Q[1-9]\d*$/.test(String(qid || "")) && !/^wp:[a-f0-9]{32}:\d+$/.test(String(qid || ""))) {
         return;
     }
 
@@ -1350,7 +1362,8 @@ window.addEventListener("pi:external-person-selected", event => {
 
     // 01: Selected person's identity.
     setText("infoNameZh", node.name || qid);
-    setText("infoNameEn", `Wikidata · ${qid}`);
+    const articleNode = node.source === "Wikipedia";
+    setText("infoNameEn", articleNode ? `${/^wp:/.test(qid) ? "会话内临时身份" : "QID 身份"} · Wikipedia 文章记载／待独立核验` : `Wikidata · ${qid}`);
 
     setText(
         "infoRole",
@@ -1433,17 +1446,15 @@ window.addEventListener("pi:external-person-selected", event => {
     setText(
         "infoBiography",
         node.description
-            ? `${node.description}\n\n来源：Wikidata。人物资料与关系尚未经过本站独立核验。`
-            : "Wikidata 外部人物候选，详细资料尚待核验。"
+            ? `${node.description}\n\n来源：${articleNode ? "Wikipedia 文章记载" : "Wikidata"}。人物资料与关系尚未经过本站独立核验。`
+            : "外部人物候选，详细资料尚待核验。"
     );
 
     const wikiLink = document.getElementById("infoWikiUrl");
 
     if (wikiLink) {
-        wikiLink.href =
-            `https://www.wikidata.org/wiki/${encodeURIComponent(qid)}`;
-
-        wikiLink.textContent = "查看 Wikidata 原始资料 ↗";
+        wikiLink.href = articleNode && /^https:\/\/(?:zh|en)\.wikipedia\.org\//.test(node.source_url || "") ? node.source_url : `https://www.wikidata.org/wiki/${encodeURIComponent(qid)}`;
+        wikiLink.textContent = articleNode ? "查看 Wikipedia 文章修订 ↗" : "查看 Wikidata 原始资料 ↗";
     }
 });
 
