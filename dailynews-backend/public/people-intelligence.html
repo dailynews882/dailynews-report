@@ -330,6 +330,9 @@
         .pi-family-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; font-size: 11px; }
         .pi-family-evidence-item { border-top: 1px solid #e2e8f0; padding: 8px 0; overflow-wrap: anywhere; }
         .pi-person[data-selected="true"] > circle { stroke: #f59e0b; stroke-width: 4; }
+        .pi-person-ref[data-selected="true"] > rect { stroke: #2454d6; stroke-width: 3; }
+        .pi-person-ref:focus { outline: none; }
+        .pi-person-ref:focus > rect { stroke: #2454d6; stroke-width: 3; }
         .pi-person-fullname { font-family: system-ui, "Microsoft YaHei", sans-serif; }
         .pi-person:focus { outline: none; }
         .pi-person:focus > circle { stroke: #f59e0b; stroke-width: 4; }
@@ -377,7 +380,7 @@
                 <button type="button" id="piShowFamilyEvidence">关系来源</button>
                 <button type="button" id="piFamilyReadingSize">阅读大小</button>
             </div>
-            <div class="pi-family-layout-key"><strong id="piFamilyPerspective">关系视角：中心人物</strong><br>单击查看人物；双击有 QID 的人物展开其家庭（含兄弟姐妹分支）。临时身份不能按姓名展开。<br>深蓝灰色线：有来源的关系；方形接点及家庭编号：亲子单元。婚姻、待核验与冲突见文字及证据。可缩放或使用“阅读大小”。<div id="piFamilyLayoutNotice" aria-live="polite"></div></div>
+            <div class="pi-family-layout-key"><strong id="piFamilyPerspective">关系视角：中心人物</strong><br>每个家庭独立分区；亲子归属与婚姻声明分开。方形接点只连接有来源的亲子关系。<br>“同一人物引用”指向同一身份，不是新增人物。单击查看资料，双击 QID 展开；临时身份不按姓名展开。<br>“适应居中”查看全图，“阅读大小”查看选中人物附近。冲突、未知另一方不强行归组。<div id="piFamilyLayoutNotice" aria-live="polite"></div></div>
             <p id="piFamilyStatus" class="pi-family-status" role="status" aria-live="polite">实时外部声明；缺失关系不作推断。</p>
             <svg id="familyTreeSvg"></svg>
         </main>

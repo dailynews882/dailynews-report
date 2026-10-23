@@ -12,6 +12,7 @@ const zhao = data("Q197424", { Q197424: "赵本山", [temp(1)]: "父亲（模拟
     relation("Q197424", temp(3), "spouse", { spouse_status: "former" }), relation("Q197424", temp(4), "spouse", { spouse_status: "reported_current" }),
     ...[5, 6, 7, 8].map(n => relation("Q197424", temp(n), "child"))
 ]);
+const zhaoAttributed = { ...zhao, family_relations: [...zhao.family_relations, relation(temp(5), temp(3), "mother"), relation(temp(6), temp(3), "mother"), relation(temp(7), temp(4), "mother")] };
 const muskNames = { Q100: "Elon Musk (synthetic family fixture)", Q101: "Parent One", Q102: "Parent Two", Q103: "Grandparent", Q104: "Sibling", Q110: "Former Partner One", Q111: "Partner Two", Q112: "Explicit Co-parent (no marriage claim)" };
 const muskEdges = [relation("Q100", "Q101", "father"), relation("Q100", "Q102", "mother"), relation("Q101", "Q103", "father"), relation("Q100", "Q104", "sibling"), relation("Q100", "Q110", "spouse", { spouse_status: "former" }), relation("Q100", "Q111", "spouse", { spouse_status: "unknown" })];
 for (let i = 0; i < 21; i++) {
@@ -92,13 +93,13 @@ test("duplicate QIDs and temporary identities retain one main node", () => {
     const result = arrangement({ ...zhao, nodes: [...zhao.nodes, ...zhao.nodes], family_relations: [...zhao.family_relations, ...zhao.family_relations] });
     assert.equal(result.positions.size, zhao.nodes.length); geometry(result);
 });
-test("co-parents align over their own child blocks, not over the centre person's whole row", () => {
+test("each co-parent unit has local parent ports, child ports and its own bounded junction", () => {
     const result = arrangement(musk);
     for (const partner of ["Q110", "Q111", "Q112"]) {
         const unit = result.units.find(u => u.parents.includes(partner));
-        const centre = unit.children.reduce((sum, id) => sum + result.positions.get(id).x, 0) / unit.children.length;
-        assert.equal(result.positions.get(partner).x, centre);
-        assert.equal(result.routes.find(r => r.unit?.key === unit.key).junction.x, centre);
+        assert(unit.ports.has(partner) && unit.ports.has("Q100"));
+        for (const p of [...unit.ports.values(), ...unit.childPorts.values()]) assert(p.x > unit.left && p.x < unit.right);
+        assert.equal(result.routes.find(r => r.unit?.key === unit.key).junction.x, (unit.left + unit.right) / 2);
     }
     const seen = result.units.flatMap(u => Array.from(u.children)); assert.equal(new Set(seen).size, seen.length);
 });
@@ -123,14 +124,65 @@ test("sibling branch keeps its own spouse/child unit and accepts three-edge path
     assert.deepEqual(Array.from(graph.buildModel(reached).nodes, n => n.id), ["Q1", "Q2", "Q3", "Q4"]);
 });
 
-test("multi-family co-parents have vertical space without changing generation or guessing parents", () => {
+test("family blocks reserve their own parent-to-child generation band", () => {
     const result = arrangement(musk); geometry(result);
     for (const id of ["Q110", "Q111", "Q112"]) {
-        const p = result.positions.get(id); assert.equal(p.level, 0); assert(p.y > result.positions.get("Q100").y);
+        const p = result.positions.get(id); assert.equal(p.level, 0);
         const unit = result.units.find(u => u.parents.includes(id));
         assert(unit.children.every(child => result.positions.get(child).y - 34 > p.y + p.bottom));
     }
-    assert(result.routes.filter(r => r.kind === "family").every(r => r.caption.includes("家庭") && r.unit.parents.every(id => r.caption.includes(result.model.nodes.find(n => n.id === id).name))));
+    assert(result.routes.filter(r => r.kind === "family").every(r => r.caption.includes("家庭") && r.unit.parents.every(id => r.unit.ports.has(id))));
+});
+
+const mixed = data("Q1", { Q1: "共享家长", Q2: "共同家长甲", Q3: "共同家长乙", Q4: "甲的另一位家长", Q10: "共同双亲子女甲", Q11: "共同双亲子女乙", Q12: "同父异母子女", Q13: "另一方未知子女", Q14: "同母异父子女" }, [
+    relation("Q10", "Q1", "father"), relation("Q10", "Q2", "mother"), relation("Q11", "Q1", "father"), relation("Q11", "Q2", "mother"),
+    relation("Q12", "Q1", "father"), relation("Q12", "Q3", "mother"), relation("Q13", "Q1", "father"), relation("Q14", "Q4", "father"), relation("Q14", "Q2", "mother"), relation("Q1", "Q4", "sibling")
+]);
+const conflicted = data("Q1", { Q1: "中心人物", Q2: "母亲候选甲", Q3: "母亲候选乙", Q15: "归属待核实子女" }, [
+    relation("Q1", "Q15", "child"), relation("Q15", "Q2", "mother", { source_difference: true }), relation("Q15", "Q3", "mother", { source_difference: true })
+]);
+
+function blockGeometry(result) {
+    geometry(result);
+    for (const level of new Set(result.blocks.map(b => b.level))) {
+        const blocks = result.blocks.filter(b => b.level === level).sort((a, b) => a.left - b.left);
+        for (let i = 1; i < blocks.length; i++) assert(blocks[i].left - blocks[i - 1].right >= 80, "Independent family regions do not overlap");
+    }
+    for (const route of result.routes.filter(r => r.block)) {
+        const block = result.blocks.find(b => b.key === route.block);
+        for (const match of route.d.matchAll(/([MHV])\s+(-?[\d.]+)/g)) if (match[1] !== "V") assert(+match[2] >= block.left && +match[2] <= block.right, "Connectors stay in their family region");
+    }
+    for (const edge of result.model.edges) assert(result.routes.some(r => r.edges.includes(edge)), "No real relation may be discarded to simplify layout");
+}
+
+test("full and half siblings, single-parent children and shared mothers form exact evidence groups", () => {
+    const result = arrangement(mixed); blockGeometry(result);
+    const groups = Array.from(result.units, u => [Array.from(u.parents).join("+"), Array.from(u.children).sort().join("+")]);
+    assert.deepEqual(groups, [["Q1", "Q13"], ["Q1+Q2", "Q10+Q11"], ["Q1+Q3", "Q12"], ["Q2+Q4", "Q14"]]);
+    assert.equal(result.positions.size, mixed.nodes.length);
+    assert(result.references.some(r => r.id === "Q1")); assert(result.references.some(r => r.id === "Q2"));
+    assert(result.units.every(u => u.marriage_status === "not_declared"));
+});
+
+test("source conflict is an independent candidate region without a shared family junction", () => {
+    const result = arrangement(conflicted); blockGeometry(result);
+    assert.equal(result.units[0].evidence_status, "conflict");
+    assert(result.routes.every(r => !r.junction));
+    assert.equal(result.references.filter(r => r.id === "Q15").length, 3);
+    assert(result.references.filter(r => r.id === "Q15").every(r => r.label.includes("候选")));
+});
+
+test("ancestor, sibling, descendant and multiple partner subtrees are measured before placement", () => {
+    const complete = { ...musk, nodes: [...musk.nodes, ...siblingBranch.nodes], family_relations: [...musk.family_relations, ...siblingBranch.family_relations] };
+    const result = arrangement(complete); blockGeometry(result);
+    const brother = result.units.find(u => u.children.includes("Q106"));
+    for (const unit of result.units.filter(u => u.parents.includes("Q100"))) assert(unit.right < brother.left || brother.right < unit.left);
+    const family = result.units.find(u => u.parents.includes("Q112")); assert.equal(family.marriage_status, "not_declared");
+    assert(result.units.find(u => u.parents.includes("Q110")).marriage_status.includes("former"));
+    const other = arrangement(zhaoAttributed); blockGeometry(other);
+    assert.deepEqual(Array.from(other.units.find(u => u.parents.includes(temp(3))).children).sort(), [temp(5), temp(6)]);
+    assert.deepEqual(Array.from(other.units.find(u => u.parents.length === 1 && u.parents[0] === "Q197424").children), [temp(8)]);
+    blockGeometry(arrangement(female));
 });
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -140,7 +192,7 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
     if (!executable || !d3Path || !fs.existsSync(d3Path)) { t.skip("Browser or official D3 fixture unavailable; visual acceptance not performed"); return; }
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), "dailynews-family-layout-visual-"));
     const html = fs.readFileSync(path.join(root, "public/people-intelligence.html"), "utf8").replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
-    const fixtures = { zhao, musk, female };
+    const fixtures = { zhao: zhaoAttributed, musk, female, mixed, conflicted };
     const server = http.createServer((req, res) => {
         const url = new URL(req.url, "http://fixture.invalid");
         if (url.pathname === "/d3.js") { res.setHeader("Content-Type", "text/javascript"); res.end(fs.readFileSync(d3Path)); }
@@ -184,31 +236,38 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
             assert(!result.exceptionDetails, JSON.stringify(result.exceptionDetails)); return result.result.value;
         };
         // Native mouse input is essential: dispatchEvent('click') bypasses D3 drag's mouseup.
-        const mouseClick = async (id, count = 1) => {
-            const point = await evaluate(`(()=>{const g=document.querySelector('[data-person-id="${id}"]'),c=g.querySelector('circle');const r=c.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+        const mouseClick = async (id, count = 1, reference = false) => {
+            const selector = reference ? '[data-ref-person-id="' + id + '"]' : '[data-person-id="' + id + '"]';
+            const point = await evaluate(`(()=>{const g=window.clickedElement=document.querySelector('${selector}'),c=g.querySelector('${reference ? "rect" : "circle"}');const r=c.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
             await call("Input.dispatchMouseEvent", { type: "mouseMoved", ...point }, sessionId);
             for (let clickCount = 1; clickCount <= count; clickCount++) {
                 await call("Input.dispatchMouseEvent", { type: "mousePressed", button: "left", buttons: 1, clickCount, ...point }, sessionId);
                 await call("Input.dispatchMouseEvent", { type: "mouseReleased", button: "left", buttons: 0, clickCount, ...point }, sessionId);
             }
+            if (count === 1) assert(await evaluate(`window.clickedElement===document.querySelector('${selector}')`), "Zero-distance mouseup must not rebuild the clicked node");
         };
         await call("Network.enable", {}, sessionId); await call("Network.setBlockedURLs", { urls: ["https://*", "http://www.*"] }, sessionId);
-        for (const [name, width, height] of [["zhao", 1600, 1000], ["musk", 1600, 1000], ["female", 1600, 1000], ["female", 390, 844]]) {
+        for (const [name, width, height] of [["zhao", 1600, 1000], ["musk", 1600, 1000], ["female", 1600, 1000], ["mixed", 1600, 1000], ["conflicted", 1600, 1000], ["musk", 390, 844], ["female", 390, 844]]) {
+            if (process.env.PI_LAYOUT_VIEW && process.env.PI_LAYOUT_VIEW !== name + "-" + width) continue;
             await call("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width < 500 }, sessionId);
             await call("Page.navigate", { url: "http://127.0.0.1:" + server.address().port + "/?case=" + name }, sessionId);
             await evaluate('new Promise((resolve,reject)=>{let i=0;const check=()=>{if(window.PIExternalGraph?.getState().layout&&window.controllerReady)resolve(true);else if(i++>100)reject(Error("Graph/controller not ready"));else setTimeout(check,20)};check()})');
             await delay(400);
             assert((await evaluate('PIExternalGraph.getState().transform.k')) >= 0.85, "Initial view keeps relation labels readable; overview remains available");
             await evaluate('PIExternalGraph.fit()'); await delay(350);
+            assert(await evaluate('(()=>{const s=PIExternalGraph.getState(),b=s.layout.bounds,t=s.transform,r=document.getElementById("piExternalSvg").getBoundingClientRect();return b.minX*t.k+t.x>=0&&b.maxX*t.k+t.x<=r.width&&b.minY*t.k+t.y>=0&&b.maxY*t.k+t.y<=r.height})()'), "Overview contains the entire graph, including all family regions");
+            // Measure readable text at 1:1. Chrome quantizes glyph metrics at tiny overview scales.
+            await evaluate('PIExternalGraph.focus()');
             const metrics = await evaluate(`(()=>{const nodes=[...document.querySelectorAll('g.pi-person')];return {count:nodes.length,allNames:nodes.every(g=>g.querySelector('.pi-person-fullname').textContent.replace(/\\s/g,'')===fixture.nodes.find(n=>n.id===g.dataset.personId).name.replace(/\\s/g,'')),widths:nodes.map(g=>g.querySelector('.pi-person-fullname').getBBox().width),radii:nodes.map(g=>g.querySelector('circle').getAttribute('r')),diagonal:[...document.querySelectorAll('path.pi-family-route')].some(p=>/[LCQ]/.test(p.getAttribute('d'))),toolbar:getComputedStyle(document.querySelector('.g-canvas-toolbar')).zIndex};})()`);
-            assert.equal(metrics.count, fixtures[name].nodes.length); assert(metrics.allNames); assert(metrics.widths.every(w => w <= 190));
+            assert.equal(metrics.count, fixtures[name].nodes.length); assert(metrics.allNames); assert(metrics.widths.every(w => w <= 190), name + " " + width + " name widths: " + JSON.stringify(metrics.widths));
             assert(metrics.radii.every(r => r === "30")); assert.equal(metrics.diagonal, false); assert(Number(metrics.toolbar) > 10);
             const textOverlaps = await evaluate(`Array.from(document.querySelectorAll('g.pi-person')).map(g=>{const a=g.querySelector('.pi-person-fullname').getBBox(),b=g.querySelector('.pi-person-relation').getBBox();return {id:g.dataset.personId,width:b.width,relationTop:b.y,nameBottom:a.y+a.height}}).filter(r=>r.width>190||r.relationTop<r.nameBottom)`);
             assert.deepEqual(textOverlaps, [], "Relation labels fit their own area: " + JSON.stringify(textOverlaps));
             const styles = await evaluate('Array.from(document.querySelectorAll("path.pi-family-route"),p=>({stroke:p.getAttribute("stroke"),dash:p.getAttribute("stroke-dasharray")}))');
             assert(styles.every(s => s.stroke === "#334b63" && s.dash === null));
             assert(await evaluate('Array.from(document.querySelectorAll("g.pi-person"),g=>!!g.querySelector(".pi-person-relation").textContent).every(Boolean)'));
-            const chosen = name === "zhao" ? temp(4) : name === "musk" ? "Q110" : "Q304";
+            await evaluate('PIExternalGraph.fit()'); await delay(350);
+            const chosen = { zhao: temp(4), musk: "Q110", female: "Q304", mixed: "Q10", conflicted: "Q15" }[name];
             await evaluate(`document.getElementById('infoCountry').textContent='OLD CENTRE COUNTRY'`);
             await mouseClick(chosen);
             assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), fixtures[name].nodes.find(n => n.id === chosen).name);
@@ -237,6 +296,9 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
                 assert.equal(await evaluate('PIExternalGraph.getState().selectedId'), "Q104");
                 assert.deepEqual(await evaluate('PIExternalGraph.getState().transform'), before);
                 assert.equal(await evaluate('profileCalls.filter(u=>u.endsWith("/Q104")).length'), 1, "Double click shares the selection profile request");
+                await mouseClick("Q100", 1, true); await delay(60);
+                assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), muskNames.Q100);
+                assert.equal(await evaluate('document.querySelectorAll("g.pi-person[data-person-id=Q100]").length'), 1, "References do not create duplicate principal identities");
             }
             const canvas = await evaluate('(()=>{const r=document.querySelector(".g-canvas-pane").getBoundingClientRect();return {width:r.width,height:r.height,scroll:document.documentElement.scrollWidth,viewport:innerWidth}})()');
             assert(canvas.width > 300 && canvas.height > 400, "The graph canvas remains visible on mobile");
@@ -248,6 +310,17 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
             assert.equal(await evaluate('document.querySelector(".pi-person-relation").getAttribute("font-size")'), "16");
             const reading = await call("Page.captureScreenshot", { format: "png" }, sessionId);
             fs.writeFileSync(path.join(folder, name + "-" + width + "-reading.png"), Buffer.from(reading.data, "base64"));
+            const refOverlaps = await evaluate(`Array.from(document.querySelectorAll('g.pi-person-ref')).map(g=>({width:g.querySelector('.pi-reference-name').getBBox().width})).filter(r=>r.width>190)`);
+            assert.deepEqual(refOverlaps, [], "Referenced names also fit without truncation at reading size");
+            if (["musk", "zhao"].includes(name) && width > 500) {
+                const family = await evaluate('(()=>{const s=PIExternalGraph.getState(),p=s.layout.positions.get(s.selectedId);const b=s.layout.blocks.find(b=>b.key===p.home);return {width:b.width,key:b.key}})()');
+                await call("Emulation.setDeviceMetricsOverride", { width: Math.max(1600, Math.ceil(family.width + 700)), height: 1200, deviceScaleFactor: 1, mobile: false }, sessionId);
+                await evaluate('PIExternalGraph.focus()');
+                const visible = await evaluate('(()=>{const s=PIExternalGraph.getState(),b=s.layout.blocks.find(b=>b.key===s.layout.positions.get(s.selectedId).home),r=document.getElementById("piExternalSvg").getBoundingClientRect(),t=s.transform;return b.left*t.k+t.x>=0&&b.right*t.k+t.x<=r.width&&Array.from(b.childPorts.values()).every(p=>p.y*t.k+t.y+p.bottom<=r.height-45)})()');
+                assert(visible, "Whole selected family unit is visible at 1:1 on a wide desktop viewport");
+                const local = await call("Page.captureScreenshot", { format: "png" }, sessionId);
+                fs.writeFileSync(path.join(folder, name + "-whole-local-family-1x.png"), Buffer.from(local.data, "base64"));
+            }
             if (name === "female" && width > 500) {
                 await evaluate('PIExternalGraph.fit()'); await delay(350);
                 await mouseClick("Q304"); await evaluate('PIExternalGraph.zoomIn()');

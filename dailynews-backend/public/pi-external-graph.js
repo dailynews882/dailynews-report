@@ -1,7 +1,7 @@
 "use strict";
 
 /*
- * V11.4.2 - deterministic generation and family-unit layout.
+ * V11.4.5 - evidence-based family-unit forest with local identity references.
  * External evidence is retained; layout never invents a parent or marriage.
  */
 
@@ -64,7 +64,9 @@
                 background: "transparent",
                 touchAction: "none",
                 cursor: "grab",
-                userSelect: "none"
+                userSelect: "none",
+                textSizeAdjust: "100%",
+                WebkitTextSizeAdjust: "100%"
             });
 
             parent.appendChild(externalSvg);
@@ -142,7 +144,7 @@
         );
 
         const safeScale = Math.max(
-            readable === true ? 0.85 : 0.12,
+            readable === true ? 0.85 : 0.005,
             Math.min(4, scale)
         );
 
@@ -314,136 +316,176 @@
         return [...labels].join("／") || "关联人物（见来源路径）";
     }
     function layout(model, overrides = new Map()) {
-        const { units, ambiguous } = familyUnits(model), positions = new Map(), rows = new Map(), labels = new Map();
-        for (const node of model.nodes) {
-            const lines = wrapName(node.name || node.id); labels.set(node.id, lines);
-            const level = model.levels.get(node.id);
-            if (!rows.has(level)) rows.set(level, []); rows.get(level).push(node.id);
-        }
-        const levels = [...rows.keys()].sort((a, b) => a - b);
-        // Sort entire child-family blocks, not individual children, using parent barycentres.
-        for (const level of levels) {
-            const ids = rows.get(level).sort(), blocks = [], assigned = new Set();
-            const incoming = units.filter(u => u.level + 1 === level && !u.uncertain);
-            for (const unit of incoming) {
-                const children = [...new Set(unit.children)].filter(id => !assigned.has(id)).sort();
-                children.forEach(id => assigned.add(id));
-                if (children.length) blocks.push({ key: unit.key, ids: children, score: unit.parents.reduce((s, id) => s + (positions.get(id)?.x || 0), 0) / unit.parents.length });
-            }
-            for (const id of ids) if (!assigned.has(id)) {
-                const relatives = model.edges.filter(e => ["spouse", "sibling"].includes(e.type) && (e.from === id || e.to === id));
-                const rootPartner = relatives.some(e => e.from === model.root || e.to === model.root);
-                blocks.push({ key: id === model.root ? "0-root" : rootPartner ? "1-" + id : "2-" + id, ids: [id], score: 0 });
-            }
-            blocks.sort((a, b) => a.score - b.score || a.key.localeCompare(b.key, "en"));
-            const ordered = blocks.flatMap(b => b.ids);
-            if (level === 0 && ordered.includes(model.root)) { ordered.splice(ordered.indexOf(model.root), 1); ordered.splice(Math.floor(ordered.length / 2), 0, model.root); }
-            rows.set(level, ordered);
-            ordered.forEach((id, index) => positions.set(id, { x: (index - (ordered.length - 1) / 2) * 218, y: 0, level, bottom: 63 + labels.get(id).length * 18 + relationLines(relationshipLabel(model, id)).length * 22 + 28, width: 190 }));
-        }
-        // Root remains the coordinate origin. Every generation has exactly one horizontal row.
-        const rootX = positions.get(model.root).x;
-        for (const point of positions.values()) point.x -= rootX;
-        // A shared parent occupies the gap between family blocks. Each other explicit
-        // parent is aligned over their own children's centre; spouse status is irrelevant.
-        const rootUnits = units.filter(u => !u.uncertain && u.parents.includes(model.root));
-        if (rootUnits.length > 1) {
-            const split = Math.ceil(rootUnits.length / 2), placed = new Set();
-            let left = -230, right = 230;
-            const place = (unit, side) => {
-                const children = [...new Set(unit.children)].sort(), width = (children.length - 1) * 218;
-                const start = side < 0 ? left - width : right;
-                children.forEach((id, i) => { positions.get(id).x = start + i * 218; placed.add(id); });
-                if (side < 0) left = start - 340; else right = start + width + 340;
-            };
-            rootUnits.slice(0, split).reverse().forEach(u => place(u, -1)); rootUnits.slice(split).forEach(u => place(u, 1));
-            const level = model.levels.get(model.root) + 1;
-            for (const id of rows.get(level) || []) if (!placed.has(id)) { positions.get(id).x = right; right += 218; }
-        }
-        for (const level of [...levels].reverse()) {
-            const outgoing = units.filter(u => u.level === level && !u.uncertain), counts = new Map(), targets = new Map();
-            outgoing.forEach(u => u.parents.forEach(id => counts.set(id, (counts.get(id) || 0) + 1)));
-            for (const unit of outgoing) {
-                const centre = unit.children.reduce((sum, id) => sum + positions.get(id).x, 0) / unit.children.length;
-                const movable = unit.parents.filter(id => id !== model.root && counts.get(id) === 1);
-                movable.forEach((id, i) => targets.set(id, centre + (movable.length > 1 ? (i - (movable.length - 1) / 2) * 218 : 0)));
-            }
-            const order = [...rows.get(level)].sort((a, b) => (targets.get(a) ?? positions.get(a).x) - (targets.get(b) ?? positions.get(b).x) || a.localeCompare(b, "en"));
-            if (order.includes(model.root)) {
-                const centre = order.indexOf(model.root); positions.get(model.root).x = 0;
-                for (let i = centre - 1; i >= 0; i--) positions.get(order[i]).x = Math.min(targets.get(order[i]) ?? positions.get(order[i]).x, positions.get(order[i + 1]).x - 218);
-                for (let i = centre + 1; i < order.length; i++) positions.get(order[i]).x = Math.max(targets.get(order[i]) ?? positions.get(order[i]).x, positions.get(order[i - 1]).x + 218);
-            } else order.forEach((id, i) => { positions.get(id).x = Math.max(targets.get(id) ?? positions.get(id).x, i ? positions.get(order[i - 1]).x + 218 : -Infinity); });
-            rows.set(level, order);
-        }
-        const relatedLinks = model.edges.filter(e => ["spouse", "sibling"].includes(e.type)).sort((a, b) => edgeKey(a).localeCompare(edgeKey(b), "en"));
-        // Stagger explicit co-parents within the generation band, never into a child generation.
-        const offsets = new Map();
-        if (rootUnits.length > 1) rootUnits.forEach((unit, index) => unit.parents.filter(id => id !== model.root).forEach(id => offsets.set(id, 65 + (index % 3) * 55)));
-        const rowBottom = new Map(levels.map(l => [l, Math.max(...rows.get(l).map(id => positions.get(id).bottom + (offsets.get(id) || 0)))]));
-        const band = level => (units.filter(u => u.level === level).length * 2 + relatedLinks.filter(e => model.levels.get(e.from) === level).length + 5) * 18 + 30;
-        const rowY = new Map([[0, 0]]), min = Math.min(...levels), max = Math.max(...levels);
-        for (let l = 1; l <= max; l++) rowY.set(l, rowY.get(l - 1) + (rowBottom.get(l - 1) || 100) + band(l - 1) + 40);
-        for (let l = -1; l >= min; l--) rowY.set(l, rowY.get(l + 1) - (rowBottom.get(l) || 100) - band(l) - 40);
-        for (const [id, point] of positions) point.y = rowY.get(point.level) + (offsets.get(id) || 0);
-        for (const row of rows.values()) row.forEach((id, index) => {
-            if (id === model.root || !overrides.has(id)) return;
-            const minX = index ? positions.get(row[index - 1]).x + 200 : -Infinity;
-            const maxX = index < row.length - 1 ? positions.get(row[index + 1]).x - 200 : Infinity;
-            positions.get(id).x = Math.max(minX, Math.min(maxX, overrides.get(id)));
-        });
-        const routes = [], lane = new Map();
-        const nextLane = level => { const value = (lane.get(level) || 0) + 1; lane.set(level, value); return value; };
-        const pathThrough = points => points.map((p, i) => (i ? p.x === points[i - 1].x ? "V " + p.y : "H " + p.x : "M " + p.x + " " + p.y)).join(" ");
-        const port = id => { const p = positions.get(id); return { x: p.x, y: p.y + p.bottom + 4 }; };
-        const used = new Set();
-        for (const edge of relatedLinks) {
-            const pairKey = edge.type + "|" + [edge.from, edge.to].sort().join("|");
-            if (used.has(pairKey)) continue; used.add(pairKey);
-            const evidence = relatedLinks.filter(e => e.type === edge.type && [e.from, e.to].sort().join("|") === [edge.from, edge.to].sort().join("|"));
-            if (edge.type === "sibling" && units.some(u => u.children.includes(edge.from) && u.children.includes(edge.to))) continue;
-            const a = port(edge.from), b = port(edge.to), level = model.levels.get(edge.from);
-            const y = Math.max(rowY.get(level) + rowBottom.get(level), rowY.get(model.levels.get(edge.to)) + rowBottom.get(model.levels.get(edge.to))) + nextLane(level) * 18;
-            routes.push({ key: pairKey, kind: edge.type, edges: evidence, from: edge.from, to: edge.to,
-                conflict: evidence.some(e => e.layout_conflict || e.source_difference), former: evidence.some(e => e.spouse_status === "former"),
-                d: pathThrough([a, { x: a.x, y }, { x: b.x, y }, b]) });
-        }
-        const unitIndexes = new Map();
+        const { units, ambiguous } = familyUnits(model);
+        const people = new Map(model.nodes.map(n => [n.id, n])), positions = new Map(), rows = new Map(), labels = new Map();
+        const compare = (a, b) => a.localeCompare(b, "en");
+        const order = ids => [...ids].sort((a, b) => (model.depths.get(a) ?? 99) - (model.depths.get(b) ?? 99) || compare(a, b));
+        const pairKey = ids => [...ids].sort(compare).join("|");
+        const blocks = [], incoming = new Map(), owned = new Map(), memberships = new Map();
+        const add = (map, key, value) => { if (!map.has(key)) map.set(key, []); map.get(key).push(value); };
+        const spouseEdges = model.edges.filter(e => e.type === "spouse" && !e.layout_conflict);
         for (const unit of units) {
-            const parentPorts = unit.parents.map(port), children = [...new Set(unit.children)].sort((a, b) => positions.get(a).x - positions.get(b).x);
-            const x = children.reduce((sum, id) => sum + positions.get(id).x, 0) / children.length;
-            const junctionY = rowY.get(unit.level) + rowBottom.get(unit.level) + nextLane(unit.level) * 18;
-            const index = (unitIndexes.get(unit.level) || 0) + 1; unitIndexes.set(unit.level, index);
-            const busY = rowY.get(unit.level + 1) - 38 - index * 18;
-            if (unit.uncertain) {
-                for (const parent of unit.parents) for (const childId of children) {
-                    const a = port(parent), child = positions.get(childId);
-                    routes.push({ key: "candidate|" + parent + "|" + childId, kind: "conflict", conflict: true,
-                        edges: unit.edges.filter(e => parentPair(e)?.parent === parent), label: "父母归属冲突候选 · 未组成家庭",
-                        ...(parent === unit.parents[0] ? { caption: "父母归属冲突 · 待核实", captionPoint: { x: positions.get(childId).x, y: positions.get(childId).y - 48 } } : {}),
-                        d: pathThrough([a, { x: a.x, y: junctionY }, { x: child.x, y: junctionY }, { x: child.x, y: child.y - 34 }]) });
+            unit.kind = unit.uncertain ? "conflict" : "parentage";
+            unit.members = [...unit.parents]; unit.owner = order(unit.parents)[0];
+            unit.evidence_status = unit.uncertain ? "conflict" : unit.edges.some(e => e.verification_status !== "verified") ? "unverified" : "verified";
+            unit.marriage_edges = unit.parents.length === 2 ? spouseEdges.filter(e => pairKey([e.from, e.to]) === pairKey(unit.parents)) : [];
+            unit.marriage_status = !unit.marriage_edges.length ? "not_declared" : unit.marriage_edges.some(e => e.source_difference) ? "conflict" : [...new Set(unit.marriage_edges.map(e => e.spouse_status || "unknown"))].join("/");
+            blocks.push(unit); unit.children.forEach(id => incoming.set(id, unit));
+        }
+        // A marriage without child evidence is a partnership block, never a parenting unit.
+        const partnership = new Map();
+        for (const edge of spouseEdges) {
+            const key = pairKey([edge.from, edge.to]);
+            if (units.some(u => !u.uncertain && pairKey(u.parents) === key)) continue;
+            if (!partnership.has(key)) partnership.set(key, { key: "partnership|" + key, kind: "partnership", members: key.split("|"), parents: [], children: [], edges: [], level: model.levels.get(edge.from), owner: order([edge.from, edge.to])[0] });
+            partnership.get(key).edges.push(edge);
+        }
+        blocks.push(...partnership.values());
+        blocks.sort((a, b) => a.level - b.level || compare(a.key, b.key));
+        for (const block of blocks) { add(owned, block.owner, block); block.members.forEach(id => add(memberships, id, block)); }
+        for (const node of [...model.nodes].sort((a, b) => compare(a.id, b.id))) {
+            labels.set(node.id, wrapName(node.name || node.id));
+            if (!memberships.has(node.id) && !incoming.has(node.id)) {
+                const block = { key: "person|" + node.id, kind: "person", owner: node.id, members: [node.id], parents: [], children: [], edges: [], level: model.levels.get(node.id) };
+                blocks.push(block); add(owned, node.id, block); add(memberships, node.id, block);
+            }
+        }
+        const home = new Map();
+        const homeOrder = (a, b) => Number(!!a.uncertain) - Number(!!b.uncertain) || Number(b.parents.length === 2) - Number(a.parents.length === 2) || compare(a.key, b.key);
+        for (const node of model.nodes) {
+            const options = owned.get(node.id) || memberships.get(node.id) || [];
+            if (options.length) home.set(node.id, [...options].sort(homeOrder)[0]);
+        }
+        // Ownership is a layout forest only. It creates no genealogical statement.
+        for (const block of blocks) {
+            block.parent = incoming.get(block.owner) || null;
+            if (block.parent === block || block.parent?.level >= block.level) block.parent = null;
+            block.descendants = [];
+        }
+        for (const block of blocks) if (block.parent) block.parent.descendants.push(block);
+        const card = 230, gap = 90, padding = 35;
+        function measure(block) {
+            block.branches = [...block.children].sort(compare).map(id => {
+                const descendants = block.descendants.filter(b => b.owner === id).sort(homeOrder);
+                const width = descendants.length ? descendants.reduce((s, b) => s + measure(b), 0) + gap * (descendants.length - 1) : card;
+                return { id, descendants, width };
+            });
+            block.width = Math.max(block.members.length * card + padding * 2, block.branches.reduce((s, b) => s + b.width, 0) + gap * Math.max(0, block.branches.length - 1) + padding * 2);
+            return block.width;
+        }
+        const roots = blocks.filter(b => !b.parent).sort((a, b) => a.level - b.level || (a.owner === model.root ? -1 : b.owner === model.root ? 1 : compare(a.key, b.key)));
+        roots.forEach(measure);
+        const levels = [...new Set(model.nodes.map(n => model.levels.get(n.id)))].sort((a, b) => a - b);
+        const cardBottom = id => 63 + labels.get(id).length * 18 + relationLines(relationshipLabel(model, id)).length * 22 + 28;
+        const siblingEdges = model.edges.filter(e => e.type === "sibling");
+        const extraEdges = model.edges.filter(e => e.layout_conflict);
+        const peerEdges = [...new Map([...siblingEdges, ...extraEdges].map(e => [edgeKey(e), e])).values()].sort((a, b) => compare(edgeKey(a), edgeKey(b)));
+        const peerExtra = new Map(); peerEdges.forEach(e => peerExtra.set(e.from, (peerExtra.get(e.from) || 0) + Math.max(100, labels.get(e.to).length * 18 + 50)));
+        const rowBottom = new Map(levels.map(level => [level, Math.max(...model.nodes.filter(n => model.levels.get(n.id) === level).map(n => cardBottom(n.id) + (peerExtra.get(n.id) || 0)))]));
+        const generationGap = level => 210 + Math.max(0, ...units.filter(u => u.uncertain && u.level === level).flatMap(u => u.children.map(id => labels.get(id).length * 18 + 42 - 92)));
+        const rowY = new Map([[0, 0]]), min = Math.min(...levels), max = Math.max(...levels);
+        for (let l = 1; l <= max; l++) rowY.set(l, rowY.get(l - 1) + (rowBottom.get(l - 1) || 170) + generationGap(l - 1));
+        for (let l = -1; l >= min; l--) rowY.set(l, rowY.get(l + 1) - (rowBottom.get(l) || 170) - generationGap(l));
+        const references = [];
+        function put(id, x, block, isMember) {
+            if (!positions.has(id) && (!home.has(id) || home.get(id) === block)) {
+                positions.set(id, { x, y: rowY.get(model.levels.get(id)), level: model.levels.get(id), bottom: cardBottom(id), width: 190, home: block.key, minX: x - 12, maxX: x + 12 });
+            }
+            const port = { id, x, y: rowY.get(block.level), bottom: cardBottom(id), block: block.key };
+            if (isMember) { block.ports.set(id, port); }
+        }
+        function place(block, left) {
+            block.left = left; block.right = left + block.width; block.ports = new Map();
+            block.members.forEach((id, index) => put(id, (block.left + block.right) / 2 + (index - (block.members.length - 1) / 2) * card, block, true));
+            let cursor = block.left + (block.width - block.branches.reduce((s, b) => s + b.width, 0) - gap * Math.max(0, block.branches.length - 1)) / 2;
+            for (const branch of block.branches) {
+                branch.left = cursor; branch.right = cursor + branch.width;
+                if (branch.descendants.length) {
+                    let childLeft = cursor;
+                    for (const descendant of branch.descendants) { place(descendant, childLeft); childLeft += descendant.width + gap; }
+                } else put(branch.id, cursor + branch.width / 2, block, false);
+                cursor += branch.width + gap;
+            }
+        }
+        let cursor = 0;
+        for (const block of roots) { place(block, cursor); cursor += block.width + gap * 2; }
+        // All identities must have a single canonical card, including co-parents owned elsewhere.
+        for (const node of model.nodes) if (!positions.has(node.id)) throw new Error("Unplaced family identity: " + node.id);
+        const shift = positions.get(model.root).x;
+        for (const block of blocks) {
+            block.left -= shift; block.right -= shift;
+            block.ports.forEach(p => { p.x -= shift; });
+            block.branches.forEach(b => { b.left -= shift; b.right -= shift; });
+            block.extent = { left: block.left, right: block.right, top: rowY.get(block.level) - 80, bottom: rowY.has(block.level + 1) ? rowY.get(block.level + 1) - 48 : rowY.get(block.level) + (rowBottom.get(block.level) || 170) + 80 };
+        }
+        for (const [id, p] of positions) {
+            p.x -= shift; p.minX -= shift; p.maxX -= shift;
+            if (id !== model.root && overrides.has(id)) p.x = Math.max(p.minX, Math.min(p.maxX, overrides.get(id)));
+            add(rows, p.level, id);
+        }
+        for (const row of rows.values()) row.sort((a, b) => positions.get(a).x - positions.get(b).x);
+        for (const block of blocks) for (const port of block.ports.values()) {
+            const p = positions.get(port.id);
+            if (p.home === block.key) { port.x = p.x; port.y = p.y; port.bottom += peerExtra.get(port.id) || 0; }
+            else references.push({ ...port, key: block.key + "|" + port.id, kind: "participant", node: people.get(port.id), label: "同一人物引用 · " + port.id });
+        }
+        for (const block of blocks) {
+            block.childPorts = new Map();
+            for (const branch of block.branches) {
+                const p = positions.get(branch.id), local = p.x >= branch.left && p.x <= branch.right;
+                const port = local ? p : { id: branch.id, x: (branch.left + branch.right) / 2, y: rowY.get(block.level + 1), bottom: cardBottom(branch.id) };
+                block.childPorts.set(branch.id, port);
+                if (!local) references.push({ ...port, id: branch.id, key: block.key + "|child|" + branch.id, kind: "participant", node: people.get(branch.id), label: "同一子女引用 · " + branch.id });
+            }
+        }
+        const pathThrough = points => points.map((p, i) => i === 0 ? "M " + p.x + " " + p.y : p.x === points[i - 1].x ? "V " + p.y : "H " + p.x).join(" ");
+        const bottomPort = p => ({ x: p.x, y: p.y + p.bottom + 10 });
+        const routes = [], frames = []; let number = 0;
+        const marriageLabel = block => block.marriage_status === "conflict" ? "婚姻来源冲突；待核对" : block.marriage_status === "not_declared" ? "共同家长；婚姻未声明" : block.marriage_edges?.some(e => e.spouse_status === "former") ? "有前配偶声明；现状待核验" : "配偶声明；现状待核验";
+        for (const block of blocks) {
+            if (block.kind === "person") continue;
+            const index = ++number; block.number = index;
+            const localBottom = rowY.get(block.level) + (rowBottom.get(block.level) || 170);
+            const busY = rowY.get(block.level + 1) - 62, junctionY = localBottom + 95;
+            const children = [...block.children].sort((a, b) => positions.get(a).x - positions.get(b).x);
+            const x = (block.left + block.right) / 2;
+            frames.push({ ...block.extent, key: block.key, number: index, kind: block.kind, label: (block.kind === "partnership" ? "伴侣声明 " : block.uncertain ? "归属待核实 " : "家庭 ") + index });
+            if (block.kind === "partnership") {
+                const a = bottomPort(block.ports.get(block.members[0])), b = bottomPort(block.ports.get(block.members[1]));
+                routes.push({ key: block.key, kind: "spouse", block: block.key, edges: block.edges, former: block.edges.some(e => e.spouse_status === "former"), from: block.members[0], to: block.members[1], d: pathThrough([a, { x: a.x, y: localBottom + 35 }, { x: b.x, y: localBottom + 35 }, b]), caption: block.edges.some(e => e.source_difference) ? "婚姻来源冲突；待核对；无子女归属推定" : block.edges.some(e => e.spouse_status === "former") ? "前配偶；无子女归属推定" : "配偶；婚姻现状待核验；无子女归属推定", captionPoint: { x, y: localBottom + 78 } });
+                continue;
+            }
+            if (block.uncertain) {
+                for (const parent of block.parents) for (const child of children) {
+                    const a = bottomPort(block.ports.get(parent)), y = localBottom + 55, key = "candidate|" + parent + "|" + child;
+                    references.push({ key, kind: "evidence", id: child, x: a.x, y, height: Math.max(92, labels.get(child).length * 18 + 42), node: people.get(child), label: "同一子女的归属候选；待核实" });
+                    routes.push({ key, kind: "conflict", block: block.key, edges: block.edges.filter(e => parentPair(e)?.parent === parent), conflict: true, label: "父母候选；未组成共同家长家庭", d: pathThrough([a, { x: a.x, y: y - 8 }]) });
                 }
                 continue;
             }
-            const pieces = parentPorts.map(p => pathThrough([p, { x: p.x, y: junctionY }, { x, y: junctionY }]));
+            const pieces = [...block.ports.values()].map(p => { const a = bottomPort(p); return pathThrough([a, { x: a.x, y: junctionY }, { x, y: junctionY }]); });
             pieces.push(pathThrough([{ x, y: junctionY }, { x, y: busY }]));
-            for (const id of children) { const child = positions.get(id); pieces.push(pathThrough([{ x, y: busY }, { x: child.x, y: busY }, { x: child.x, y: child.y - 34 }])); }
-            routes.push({ key: "family|" + unit.key, kind: "family", unit, edges: unit.edges, uncertain: unit.uncertain || unit.parents.length === 1 || unit.edges.some(e => e.derived),
-                pending: unit.edges.some(e => e.verification_status !== "verified"), d: pieces.join(" "), junction: { x, y: junctionY },
-                caption: `家庭 ${index} · ${unit.parents.map(id => model.nodes.find(n => n.id === id)?.name || id).join(" + ")} · ${unit.parents.length === 1 ? "另一方未知／待核实" : "双亲有记载"}`,
-                captionPoint: { x, y: busY - 10 }, label: unit.parents.length === 1 ? "单亲资料 · 另一方未知" : "双亲声明 · 婚姻另行核验" });
+            children.forEach(id => { const p = block.childPorts.get(id); pieces.push(pathThrough([{ x, y: busY }, { x: p.x, y: busY }, { x: p.x, y: p.y - 34 }])); });
+            routes.push({ key: "family|" + block.key, kind: "family", block: block.key, unit: block, edges: block.edges, pending: block.evidence_status !== "verified", uncertain: block.parents.length === 1, d: pieces.join(" "), junction: { x, y: junctionY }, caption: "家庭 " + index + " · " + (block.parents.length === 1 ? "另一方未知／待核实" : marriageLabel(block)), captionPoint: { x, y: junctionY - 15 }, label: "仅依据明确亲子证据；" + block.evidence_status });
+            if (block.marriage_edges.length) {
+                const a = block.ports.get(block.parents[0]), b = block.ports.get(block.parents[1]);
+                routes.push({ key: "marriage|" + block.key, kind: "spouse", block: block.key, edges: block.marriage_edges, former: block.marriage_edges.some(e => e.spouse_status === "former"), from: a.id, to: b.id, d: pathThrough([{ x: a.x + 34, y: a.y }, { x: b.x - 34, y: b.y }]), label: marriageLabel(block) });
+            }
         }
-        // Keep contradictory constraints visible as outside evidence paths, never as a false family unit.
-        const right = Math.max(...[...positions.values()].map(p => p.x)) + 140; let conflictIndex = 0;
-        for (const edge of model.edges.filter(e => e.layout_conflict && parentPair(e))) {
-            const a = port(edge.from), b = port(edge.to), x = right + (++conflictIndex) * 18;
-            routes.push({ key: "conflict|" + edgeKey(edge), kind: "conflict", edges: [edge], conflict: true,
-                d: pathThrough([a, { x, y: a.y }, { x, y: b.y }, b]) });
+        // Non-tree evidence stays visible via labelled identity references, not cross-branch buses.
+        const peerIndex = new Map();
+        for (const edge of peerEdges) {
+            const p = positions.get(edge.from), offset = peerIndex.get(edge.from) || 0, height = Math.max(92, labels.get(edge.to).length * 18 + 42); peerIndex.set(edge.from, offset + height + 8);
+            const y = p.y + p.bottom + 22 + offset, key = "peer|" + edgeKey(edge);
+            references.push({ key, kind: "evidence", id: edge.to, x: p.x, y, height, node: people.get(edge.to), label: edge.layout_conflict ? "关系冲突候选 · " + edge.type : "兄弟姐妹声明引用", edges: [edge] });
+            routes.push({ key, kind: edge.layout_conflict ? "conflict" : "sibling", conflict: !!edge.layout_conflict, edges: [edge], from: edge.from, to: edge.to, d: pathThrough([{ x: p.x, y: y - 20 }, { x: p.x, y: y - 8 }]) });
         }
         const points = [...positions.values()];
-        return { model, positions, labels, rows, units, ambiguous, routes, bounds: {
-            minX: Math.min(...points.map(p => p.x)) - 120, maxX: right + conflictIndex * 18,
-            minY: Math.min(...points.map(p => p.y)) - 60, maxY: Math.max(...points.map(p => p.y + p.bottom + band(p.level))) + 30 } };
+        return { model, people, positions, labels, rows, units, blocks, frames, references, ambiguous, routes, bounds: {
+            minX: Math.min(...points.map(p => p.x - 115), ...frames.map(f => f.left)) - 30,
+            maxX: Math.max(...points.map(p => p.x + 115), ...frames.map(f => f.right)) + 30,
+            minY: Math.min(...points.map(p => p.y - 85), ...frames.map(f => f.top)) - 20,
+            maxY: Math.max(...points.map(p => p.y + (rowBottom.get(p.level) || p.bottom)), ...frames.map(f => f.bottom)) + 90 } };
     }
     function buildModel(data) {
         const root = String(data.qid || "");
@@ -527,10 +569,14 @@
         show(); clear();
         const svg = d3.select(externalSvg);
         externalLayer = svg.append("g");
-        externalZoom = d3.zoom().scaleExtent([0.04, 4]).on("zoom", event => {
+        externalZoom = d3.zoom().scaleExtent([0.005, 4]).on("zoom", event => {
             viewTransform = event.transform; externalLayer.attr("transform", event.transform);
         });
         svg.call(externalZoom).on("dblclick.zoom", null);
+        const frameLayer = externalLayer.append("g").attr("class", "pi-family-blocks").attr("pointer-events", "none");
+        const frames = frameLayer.selectAll("g.pi-family-block").data(result.frames, b => b.key).join("g").attr("class", "pi-family-block").attr("data-family-key", b => b.key);
+        frames.append("rect").attr("x", b => b.left).attr("y", b => b.top).attr("width", b => b.right - b.left).attr("height", b => b.bottom - b.top).attr("rx", 14).attr("fill", "#f8fafc").attr("fill-opacity", 0.85).attr("stroke", "#cbd5e1");
+        frames.append("text").attr("x", b => b.left + 16).attr("y", b => b.top + 23).attr("fill", "#334b63").attr("font-size", 15).attr("font-weight", 600).text(b => b.label);
         const edgeLayer = externalLayer.append("g").attr("class", "pi-family-connectors");
         const nodeLayer = externalLayer.append("g");
         const lines = edgeLayer.selectAll("path.pi-family-route").data(result.routes, r => r.key).join("path")
@@ -560,8 +606,10 @@
             .attr("data-person-id", n => n.id).attr("data-generation", n => model.levels.get(n.id)).attr("data-selected", n => String(n.id === selectedId))
             .attr("transform", n => { const p = result.positions.get(n.id); return "translate(" + p.x + "," + p.y + ")"; })
             .attr("tabindex", 0).attr("role", "button").attr("aria-label", n => n.name || n.id).style("cursor", "pointer");
+        let refGroups = null;
         const select = node => {
             selectedId = node.id; groups.attr("data-selected", n => String(n.id === selectedId));
+            refGroups?.attr("data-selected", r => String(r.id === selectedId));
             const paths = model.paths.filter(p => p.to === node.id);
             window.dispatchEvent(new CustomEvent("pi:external-person-selected", { detail: { qid: node.id, node, isCenter: node.id === model.root,
                 relationship: relationshipLabel(model, node.id), perspective: model.nodes.find(n => n.id === model.root)?.name || model.root,
@@ -571,6 +619,25 @@
         const expand = node => { if (selectedId !== node.id) select(node); window.dispatchEvent(new CustomEvent("pi:external-expand", { detail: { qid: node.id } })); };
         groups.on("click", (event, node) => { if (event.detail < 2 || !event.detail) select(node); }).on("dblclick", (event, node) => { event.stopPropagation(); expand(node); })
             .on("keydown", (event, node) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(node); } if (event.key.toLowerCase() === "e") expand(node); });
+        refGroups = nodeLayer.selectAll("g.pi-person-ref").data(result.references, r => r.key).join("g").attr("class", "pi-person-ref")
+            .attr("data-ref-person-id", r => r.id).attr("data-selected", r => String(r.id === selectedId)).attr("transform", r => "translate(" + r.x + "," + r.y + ")")
+            .attr("role", "button").attr("tabindex", 0).attr("aria-label", r => r.node.name + " · " + r.label).style("cursor", "pointer")
+            .on("click", (event, r) => { event.stopPropagation(); if (event.detail < 2 || !event.detail) select(r.node); })
+            .on("dblclick", (event, r) => { event.stopPropagation(); expand(r.node); })
+            .on("keydown", (event, r) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(r.node); } if (event.key.toLowerCase() === "e") expand(r.node); });
+        refGroups.each(function (r) {
+            const group = d3.select(this), evidence = r.kind === "evidence", name = wrapName(r.node.name || r.id);
+            group.append("rect").attr("x", -99).attr("y", evidence ? -7 : -28).attr("width", 198).attr("height", evidence ? r.height : r.bottom + 38).attr("rx", 8).attr("fill", "#fff").attr("stroke", "#94a3b8");
+            const text = group.append("text").attr("class", "pi-reference-name").attr("text-anchor", "middle").attr("font-size", 14).attr("fill", "#172033");
+            name.forEach((line, i) => text.append("tspan").attr("x", 0).attr("y", (evidence ? 12 : 30) + i * 18).text(line));
+            group.append("text").attr("text-anchor", "middle").attr("y", evidence ? r.height - 24 : -7).attr("font-size", 11).attr("fill", "#334b63").text(evidence ? r.label : "↗ 同一人物引用");
+            if (!evidence) {
+                const relation = group.append("text").attr("text-anchor", "middle").attr("font-size", 16).attr("fill", "#334b63");
+                relationLines(relationshipLabel(model, r.id)).forEach((line, i) => relation.append("tspan").attr("x", 0).attr("y", 48 + name.length * 18 + i * 22).text(line));
+                group.append("text").attr("text-anchor", "middle").attr("y", r.bottom - 1).attr("font-size", 10).attr("fill", "#64748b").text(r.id.startsWith("wp:") ? "会话内同一身份 · 待核验" : r.id + " · 同一身份 · 待核验");
+            }
+            group.append("title").text(r.node.name + "\n" + r.id + "\n同一人物的引用，不是新增人物。单击查看资料，双击按 QID 展开。");
+        });
         // Horizontal dragging keeps generations and non-overlapping card spacing intact.
         let dragged = false, dragStart = null;
         groups.call(d3.drag().clickDistance(5).subject((event, node) => result.positions.get(node.id))
@@ -581,7 +648,7 @@
                 const min = index > 0 ? result.positions.get(row[index - 1]).x + 200 : -Infinity;
                 const max = index < row.length - 1 ? result.positions.get(row[index + 1]).x - 200 : Infinity;
                 if (node.id === model.root) return;
-                manualX.set(node.id, Math.max(min, Math.min(max, event.x)));
+                manualX.set(node.id, Math.max(point.minX, min, Math.min(point.maxX, max, event.x)));
                 const revised = layout(model, manualX), byKey = new Map(revised.routes.map(r => [r.key, r]));
                 groups.attr("transform", n => { const p = revised.positions.get(n.id); return "translate(" + p.x + "," + p.y + ")"; });
                 lines.attr("d", r => byKey.get(r.key).d);
@@ -626,7 +693,12 @@
         focus: () => {
             if (!externalZoom || !lastLayout) return;
             const point = lastLayout.positions.get(selectedId || lastLayout.model.root), rect = externalSvg.getBoundingClientRect();
-            d3.select(externalSvg).call(externalZoom.transform, d3.zoomIdentity.translate(rect.width / 2 - point.x, rect.height / 2 - point.y).scale(1));
+            const block = lastLayout.blocks.find(b => b.key === point.home);
+            const parentY = block ? lastLayout.positions.get(block.owner).y : point.y;
+            const targetX = block && block.width + 100 <= rect.width ? (block.left + block.right) / 2 : point.x;
+            const key = document.querySelector?.(".pi-family-layout-key"), keyBottom = key?.getBoundingClientRect().bottom;
+            const top = Math.max(rect.width <= 600 ? 205 : 145, (keyBottom || rect.top || 0) - (rect.top || 0) + 45);
+            d3.select(externalSvg).call(externalZoom.transform, d3.zoomIdentity.translate(rect.width / 2 - targetX, top - parentY).scale(1));
         },
         getState: () => ({ selectedId, transform: viewTransform && { x: viewTransform.x, y: viewTransform.y, k: viewTransform.k }, layout: lastLayout }),
         zoomIn: () => zoomBy(1.25), zoomOut: () => zoomBy(0.8), isActive: () => active };
