@@ -138,7 +138,7 @@ function getNewsIdFromUrl() {
 
 function getCurrentUserName() {
     try {
-        const user = JSON.parse(localStorage.getItem("dailynewsUser") || "{}");
+        const user = JSON.parse(sessionStorage.getItem("dailynewsUser") || localStorage.getItem("dailynewsUser") || "{}");
 
         if (user.name) {
             return user.name;

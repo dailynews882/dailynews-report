@@ -84,8 +84,8 @@ document.addEventListener("DOMContentLoaded", function () {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  function saveLoginData(token, user) {
-    window.dailynewsSession.save(token, user);
+  function saveLoginData(token, user, remember = true) {
+    window.dailynewsSession.save(token, user, remember);
   }
 
   function clearLoginData() {
@@ -208,7 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       if (response.status === 401 || response.status === 403) {
-        if (localStorage.getItem("token") !== token) return;
+        if (window.dailynewsSession.token() !== token) return;
         clearLoginData();
         showLoggedOutHeader();
         return;
@@ -221,11 +221,8 @@ document.addEventListener("DOMContentLoaded", function () {
         );
       }
 
-      if (localStorage.getItem("token") !== token) return;
-      localStorage.setItem(
-        "dailynewsUser",
-        JSON.stringify(data.user)
-      );
+      if (window.dailynewsSession.token() !== token) return;
+      window.dailynewsSession.updateUser(data.user, token);
 
       showLoggedInHeader(data.user);
     } catch (error) {
@@ -236,7 +233,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Network failures, 429/5xx and malformed gateway responses do not revoke a session.
       // Cached header data is display-only; protected APIs still verify the token.
-      if (localStorage.getItem("token") === token && savedUser) showLoggedInHeader(savedUser);
+      if (window.dailynewsSession.token() === token && savedUser) showLoggedInHeader(savedUser);
     }
 
   }
@@ -460,6 +457,7 @@ document.addEventListener("DOMContentLoaded", function () {
           "loginPassword"
         )?.value || ""
       );
+      const rememberLogin = document.getElementById("rememberLogin")?.checked !== false;
 
       showMessage(
         "loginMessage",
@@ -491,7 +489,7 @@ document.addEventListener("DOMContentLoaded", function () {
           );
         }
 
-        saveLoginData(data.token, data.user);
+        saveLoginData(data.token, data.user, rememberLogin);
         showLoggedInHeader(data.user);
 
         showMessage(

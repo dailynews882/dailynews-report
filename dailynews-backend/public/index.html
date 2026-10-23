@@ -123,6 +123,29 @@
       cursor: pointer;
     }
 
+    #loginModal .auth-modal-content { padding: 28px; }
+    #loginModal h2 { margin-bottom: 18px; }
+    #loginModal .auth-form-group { margin-bottom: 14px; }
+    #loginModal .auth-remember {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 14px;
+      color: #555555;
+      font-size: 14px;
+      line-height: 20px;
+      cursor: pointer;
+    }
+    #loginModal .auth-remember input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: #168cff;
+    }
+    #loginModal .auth-message { margin-top: 10px; }
+    #loginModal .auth-message:empty { display: none; }
+    #loginModal .auth-switch-text { margin-top: 12px; }
+
     .auth-message {
       min-height: 20px;
       margin: 14px 0 0;
@@ -795,6 +818,10 @@
 
         </div>
 
+        <label class="auth-remember" for="rememberLogin">
+          <input type="checkbox" id="rememberLogin" name="rememberLogin" checked />
+          <span>记住登录状态</span>
+        </label>
 
         <button type="submit" class="auth-submit-btn">
           登录
@@ -985,8 +1012,8 @@
 
   <script src="/site-settings.js"></script>
 
-  <script src="/auth-session.js?v=20261023"></script>
-  <script src="/auth-modal.js?v=20261023"></script>
+  <script src="/auth-session.js?v=20261023-remember"></script>
+  <script src="/auth-modal.js?v=20261023-remember"></script>
   <script src="/password-reset.js"></script>
 
 </body>

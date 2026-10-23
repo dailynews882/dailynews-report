@@ -16,7 +16,7 @@ function load(name, overrides) {
   };
   m._compile(source(name), filename); return m.exports;
 }
-function browser(values = new Map(), fetch = async () => ({ status: 200, ok: true, json: async () => ({ success: true, user: { username: "Fixture" } }) })) {
+function browser(values = new Map(), fetch = async () => ({ status: 200, ok: true, json: async () => ({ success: true, user: { username: "Fixture" } }) }), temporaryValues = new Map()) {
   function element() {
     return { value: "", textContent: "", style: {}, dataset: {}, children: [], listeners: {}, classList: { add() {}, remove() {} },
       setAttribute(k, v) { this[k] = v; }, removeAttribute(k) { delete this[k]; },
@@ -27,6 +27,7 @@ function browser(values = new Map(), fetch = async () => ({ status: 200, ok: tru
   const elements = new Map(), events = {}, timers = [];
   const context = { console: { log() {}, warn() {}, error() {} }, URLSearchParams, Date,
     localStorage: { getItem: k => values.get(k) ?? null, setItem: (k, v) => values.set(k, String(v)), removeItem: k => values.delete(k) },
+    sessionStorage: { getItem: k => temporaryValues.get(k) ?? null, setItem: (k, v) => temporaryValues.set(k, String(v)), removeItem: k => temporaryValues.delete(k) },
     document: { body: { style: {} }, querySelector() { return null; },
       getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
       createElement: element, addEventListener(k, fn) { events["document:" + k] = fn; } },
@@ -35,7 +36,7 @@ function browser(values = new Map(), fetch = async () => ({ status: 200, ok: tru
     setTimeout(fn) { timers.push(fn); return timers.length; }, clearTimeout(id) { timers[id - 1] = null; },
     setInterval() {}, clearInterval() {}, alert() {}, confirm: () => true, fetch };
   context.window = context; vm.createContext(context);
-  return { context, elements, events, values, timers, run: file => vm.runInContext(source(file), context) };
+  return { context, elements, events, values, temporaryValues, timers, run: file => vm.runInContext(source(file), context) };
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function startSession(b) {
@@ -111,9 +112,114 @@ test("login: standalone login and member/wallet pages use the same persistent se
   vm.runInContext(wallet, b.context); await tick();
   assert.equal(b.values.get("token"), "fixture");
   for (const name of ["public/index.html", "public/my.html", "public/wallet.html", "login.html", "register.html"]) {
-    assert(source(name).includes('/auth-session.js?v=20261023'), name);
+    assert(source(name).includes('/auth-session.js?v=20261023-remember'), name);
   }
   assert(source("login.html").includes("window.dailynewsSession.save(data.token, data.user)"));
+});
+
+test("remember choice: checkbox defaults checked, sits below password, and preserves compact modal controls", () => {
+  const html = source("public/index.html");
+  assert.match(html, /<input type="checkbox" id="rememberLogin"[^>]*\bchecked\s*\/>/);
+  assert(html.indexOf('id="rememberLogin"') > html.indexOf('id="loginPassword"'));
+  assert(html.indexOf('id="rememberLogin"') < html.indexOf('<button type="submit" class="auth-submit-btn">'));
+  assert(html.includes("记住登录状态"));
+  assert(html.includes('#loginModal .auth-message:empty { display: none; }'));
+  assert(html.includes('id="forgotPasswordBtn"')); assert(html.includes('id="switchToRegister"'));
+});
+
+test("remember choice: successful modal callback selects persistent or session storage and updates identity", async () => {
+  for (const remember of [true, false]) {
+    const b = browser(new Map([["dailynewsLikes", "keep"]]), async url => ({ status: 200, ok: true,
+      json: async () => url.endsWith("/login") ? { success: true, token: "choice-token", user: { username: "SignedInMember" } } : { success: true, user: { username: "SignedInMember" } } }));
+    startSession(b);
+    const field = id => b.context.document.getElementById(id);
+    field("loginAccount").value = "autofilled@example.test";
+    field("loginPassword").value = "Autofilled123!";
+    field("rememberLogin").checked = remember;
+    assert.equal(field("authUserArea").style.display, "none", "Autofill alone is not authentication");
+    await field("loginForm").listeners.submit({ preventDefault() {} });
+    assert.equal(field("authUserName").textContent, "SignedInMember");
+    assert.equal(field("authUserArea").style.display, "flex");
+    const selected = remember ? b.values : b.temporaryValues;
+    const other = remember ? b.temporaryValues : b.values;
+    assert.equal(selected.get("token"), "choice-token");
+    assert.equal(selected.get("dailynews_token"), "choice-token");
+    assert.equal(other.has("token"), false); assert.equal(other.has("dailynewsUser"), false);
+    assert.equal(b.values.get("dailynewsLikes"), "keep");
+    const refreshed = browser(b.values, b.context.fetch, b.temporaryValues); startSession(refreshed); await tick();
+    assert.equal(refreshed.elements.get("authUserName").textContent, "SignedInMember");
+    assert.equal(other.has("token"), false, "Profile refresh cannot promote a session-only token");
+    const reopened = browser(b.values, b.context.fetch); startSession(reopened); await tick();
+    assert.equal(reopened.elements.get("authUserArea").style.display, remember ? "flex" : "none");
+  }
+});
+
+test("remember choice: changing mode removes old credentials from both stores; explicit logout clears all aliases", () => {
+  const b = browser(new Map([["token", "old"], ["user", "{}"], ["adminToken", "unrelated"]]), undefined,
+    new Map([["dailynews_token", "old-session"], ["dailynews_user", "{}"]]));
+  b.run("public/auth-session.js");
+  b.context.dailynewsSession.save("session-only", { username: "Session" }, false);
+  assert.equal(b.values.has("token"), false); assert.equal(b.values.has("user"), false);
+  b.context.dailynewsSession.save("persistent", { username: "Persistent" }, true);
+  assert.equal(b.temporaryValues.size, 0);
+  startSession(b);
+  b.temporaryValues.set("user", "{}"); b.elements.get("logoutBtn").listeners.click();
+  assert.deepEqual([...b.values], [["adminToken", "unrelated"]]); assert.equal(b.temporaryValues.size, 0);
+});
+
+test("remember choice: session-only validation clears 401/403, retains temporary failures and ignores stale responses", async () => {
+  for (const status of [401, 403, 429, 503]) {
+    const b = browser(new Map(), async () => ({ status, ok: false, json: async () => ({ success: false }) }),
+      new Map([["token", "session-only"], ["dailynewsUser", '{"username":"Cached"}']]));
+    startSession(b); await tick();
+    assert.equal(b.temporaryValues.has("token"), status !== 401 && status !== 403);
+    assert.equal(b.values.size, 0);
+  }
+  let finish;
+  const b = browser(new Map(), () => new Promise(resolve => { finish = resolve; }), new Map([["token", "old"]]));
+  startSession(b); b.context.dailynewsSession.save("new", { username: "New" }, false);
+  finish({ status: 401 }); await tick(); assert.equal(b.temporaryValues.get("token"), "new");
+});
+
+test("remember choice: member profile refresh and wallet requests use session token without creating persistent credentials", async () => {
+  const calls = [];
+  const b = browser(new Map(), async (url, options) => {
+    calls.push({ url, options }); return { status: 200, ok: true,
+      json: async () => ({ success: true, user: { username: "SessionMember" }, wallet: {} }) };
+  }, new Map([["token", "session-only"]]));
+  b.run("public/auth-session.js");
+  Object.assign(b.context, { API_AUTH: "/api/auth", API_WALLET: "/api/wallet", requireLogin: () => b.context.dailynewsSession.token(),
+    clearLoginData: () => b.context.dailynewsSession.clear(), setUserProfile() {}, setWalletData() {}, showMessage() {} });
+  const html = source("public/my.html");
+  const profile = html.slice(html.indexOf("    async function loadMyProfile()"), html.indexOf("    async function openCustomerPortal()"));
+  vm.runInContext(profile, b.context); await b.context.loadMyProfile();
+  assert.equal(b.values.size, 0);
+  assert.equal(JSON.parse(b.temporaryValues.get("dailynewsUser")).username, "SessionMember");
+  assert(calls.some(call => call.url === "/api/wallet/me"));
+  assert(calls.every(call => call.options.headers.Authorization === "Bearer session-only"));
+});
+
+test("remember choice: failed login does not authenticate autofilled fields or save credentials", async () => {
+  const b = browser(new Map(), async () => ({ status: 401, ok: false, json: async () => ({ success: false, message: "Invalid login" }) }));
+  startSession(b);
+  b.context.document.getElementById("loginAccount").value = "autofilled@example.test";
+  b.context.document.getElementById("loginPassword").value = "Autofilled123!";
+  b.context.document.getElementById("rememberLogin").checked = false;
+  await b.elements.get("loginForm").listeners.submit({ preventDefault() {} });
+  assert.equal(b.elements.get("authUserArea").style.display, "none");
+  assert.equal(b.values.size, 0); assert.equal(b.temporaryValues.size, 0);
+});
+
+test("remember choice: password reset success clears both persistent and session credentials", async () => {
+  const b = browser(new Map([["token", "persistent"]]), async () => ({ status: 200, ok: true,
+    json: async () => ({ success: true, message: "Synthetic reset success" }) }), new Map([["token", "temporary"]]));
+  b.run("public/password-reset.js"); b.events["document:DOMContentLoaded"]();
+  const field = id => b.context.document.getElementById(id);
+  field("resetEmail").value = "fixture@example.test"; field("resetCode").value = "123456";
+  field("resetPassword").value = field("resetConfirmPassword").value = "Synthetic123!";
+  field("passwordResetForm").reset = () => {};
+  await field("passwordResetForm").listeners.submit({ preventDefault() {} });
+  assert.equal(b.values.size, 0); assert.equal(b.temporaryValues.size, 0);
 });
 
 test("admin news: frontend uses authenticated same-origin backend paging, next/previous/page jump and reset-on-filter", async () => {

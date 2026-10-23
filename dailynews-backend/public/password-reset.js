@@ -73,7 +73,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const data = await post("confirm", { email: email(), code, newPassword });
       message(data.message, true);
-      for (const key of ["token", "dailynewsUser", "user", "dailynews_token", "dailynews_user"]) localStorage.removeItem(key);
+      for (const storage of [localStorage, typeof sessionStorage === "undefined" ? null : sessionStorage]) {
+        if (storage) for (const key of ["token", "dailynewsUser", "user", "dailynews_token", "dailynews_user"]) storage.removeItem(key);
+      }
       form.reset();
       window.setTimeout(() => window.location.reload(), 1500);
     } catch (error) { message(error.message); confirm.disabled = false; }

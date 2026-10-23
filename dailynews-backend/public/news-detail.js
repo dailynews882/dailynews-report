@@ -14,7 +14,7 @@ async function loadNewsDetail() {
         return;
     }
 
-    const token = localStorage.getItem("token") || "";
+    const token = sessionStorage.getItem("token") || sessionStorage.getItem("dailynews_token") || localStorage.getItem("token") || "";
 
     try {
         const response = await fetch(`/api/news/public/${encodeURIComponent(id)}`, {

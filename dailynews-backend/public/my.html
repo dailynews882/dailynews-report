@@ -466,7 +466,7 @@
 
   </main>
 
-  <script src="/auth-session.js?v=20261023"></script>
+  <script src="/auth-session.js?v=20261023-remember"></script>
   <script>
     const API_AUTH = "/api/auth";
     const API_WALLET = "/api/wallet";
@@ -744,10 +744,7 @@
 
         const user = data.user || {};
 
-        localStorage.setItem(
-          "dailynewsUser",
-          JSON.stringify(user)
-        );
+        window.dailynewsSession.updateUser(user, token);
 
         setUserProfile(user);
 
