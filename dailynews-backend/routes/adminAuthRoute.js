@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const router = express.Router();
+// Keep the original implementation below for history; the shared identity routes handle login/verify.
+router.use(require("./adminIdentityRoute"));
 
 router.post("/login", async (req, res) => {
     try {

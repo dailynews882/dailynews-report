@@ -48,5 +48,5 @@ function verifyAdminToken(req, res, next) {
 }
 
 module.exports = {
-    verifyAdminToken
+    verifyAdminToken: require("./adminIdentity").verifyAdminToken
 };

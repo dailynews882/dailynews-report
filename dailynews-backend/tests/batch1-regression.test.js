@@ -46,6 +46,8 @@ test("batch 1 isolated HTTP and SQLite regression", async t => {
   };
   const oldSecret = process.env.JWT_SECRET;
   const oldAdmin = process.env.ADMIN_JWT_SECRET;
+  const oldOwner = process.env.ADMIN_USERNAME;
+  process.env.ADMIN_USERNAME = "FixtureOwner";
   process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
   process.env.ADMIN_JWT_SECRET = crypto.randomBytes(32).toString("hex");
   const db = await new Promise((resolve, reject) => {
@@ -114,17 +116,17 @@ test("batch 1 isolated HTTP and SQLite regression", async t => {
       const publicList = await request("/api/news?status=all&admin=true");
       assert.deepEqual(publicList.body.data.map(n => n.id), [1, 2]);
       assert.equal(publicList.cache, "private, no-store");
-      const admin = jwt.sign({ role: "admin", type: "admin_access" }, process.env.ADMIN_JWT_SECRET);
+      const admin = jwt.sign({ username: "FixtureOwner", role: "admin", type: "admin_access" }, process.env.ADMIN_JWT_SECRET);
       const adminList = await request("/api/news", undefined, admin);
       assert.equal(adminList.body.data.length, 4);
       assert.equal((await request("/api/news?country=us", undefined, admin)).body.data.length, 2);
       assert.equal((await request("/api/news?country=us")).body.data.length, 0);
       assert.equal((await request("/api/news/3", undefined, admin)).body.data.content, "private draft");
       assert.equal((await get("SELECT views FROM news WHERE id=3")).views, 0);
-      const fakeAdmin = jwt.sign({ role: "admin", type: "admin_access" }, process.env.JWT_SECRET);
+      const fakeAdmin = jwt.sign({ username: "FixtureOwner", role: "admin", type: "admin_access" }, process.env.JWT_SECRET);
       assert.equal((await request("/api/news", undefined, fakeAdmin)).body.data.length, 2);
       assert.equal((await request("/api/news/3", undefined, fakeAdmin)).status, 403);
-      const expiredAdmin = jwt.sign({ role: "admin", type: "admin_access" }, process.env.ADMIN_JWT_SECRET, { expiresIn: -1 });
+      const expiredAdmin = jwt.sign({ username: "FixtureOwner", role: "admin", type: "admin_access" }, process.env.ADMIN_JWT_SECRET, { expiresIn: -1 });
       assert.equal((await request("/api/news", undefined, expiredAdmin)).body.data.length, 2);
       assert.equal((await request("/api/news/3", undefined, expiredAdmin)).status, 403);
       assert.equal((await request("/api/news?country=invalid")).status, 400);
@@ -140,7 +142,7 @@ test("batch 1 isolated HTTP and SQLite regression", async t => {
       assert.equal((await get("SELECT views FROM news WHERE id=2")).views, 0);
     });
     await t.test("admin create-edit-publish-delete lifecycle preserves public and VIP boundaries", async () => {
-      const admin = jwt.sign({ role: "admin", type: "admin_access" }, process.env.ADMIN_JWT_SECRET);
+      const admin = jwt.sign({ username: "FixtureOwner", role: "admin", type: "admin_access" }, process.env.ADMIN_JWT_SECRET);
       const draft = { title: "Lifecycle fixture", content: "private lifecycle body", status: "draft", is_vip: 1, country_code: "sg" };
       assert.equal((await request("/api/news", draft)).status, 401);
       const created = await request("/api/news", draft, admin);
@@ -323,6 +325,7 @@ test("batch 1 isolated HTTP and SQLite regression", async t => {
     sqlite.Database = OriginalDatabase;
     if (oldSecret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = oldSecret;
     if (oldAdmin === undefined) delete process.env.ADMIN_JWT_SECRET; else process.env.ADMIN_JWT_SECRET = oldAdmin;
+    if (oldOwner === undefined) delete process.env.ADMIN_USERNAME; else process.env.ADMIN_USERNAME = oldOwner;
     assert.equal(path.dirname(directory), fs.realpathSync(os.tmpdir()));
     assert(path.basename(directory).startsWith("dailynews-batch1-test-"));
     fs.rmSync(directory, { recursive: true });

@@ -5,7 +5,8 @@ const {
   verifyAdminToken,
 } = require("../middleware/adminAuth");
 const { checkUserToken } = require("../middleware/userAuth");
-const { hasNewsAdminAccess } = require("../middleware/newsReadAccess");
+const { hasNewsAdminAccess, attachNewsAdmin } = require("../middleware/newsReadAccess");
+router.use(attachNewsAdmin);
 router.use("/public-page", require("./publicNewsPageRoute")(db));
 const NEWS_COUNTRY_METADATA = Object.freeze({
   sg: {

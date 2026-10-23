@@ -117,7 +117,8 @@ document.addEventListener("DOMContentLoaded", function () {
       return JSON.parse(savedUser);
     } catch (error) {
       console.error("用户资料解析失败：", error);
-      clearLoginData();
+      localStorage.removeItem("dailynewsUser");
+      localStorage.removeItem("user");
       return null;
     }
 
@@ -234,6 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       if (response.status === 401 || response.status === 403) {
+        if (localStorage.getItem("token") !== token) return;
         clearLoginData();
         showLoggedOutHeader();
         return;
@@ -246,6 +248,7 @@ document.addEventListener("DOMContentLoaded", function () {
         );
       }
 
+      if (localStorage.getItem("token") !== token) return;
       localStorage.setItem(
         "dailynewsUser",
         JSON.stringify(data.user)
