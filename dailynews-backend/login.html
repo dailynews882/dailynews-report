@@ -227,6 +227,7 @@
     </div>
   </div>
 
+  <script src="/auth-session.js?v=20261023"></script>
   <script>
     /*
      * 使用 Node 服务器打开页面时：
@@ -330,15 +331,7 @@
           return;
         }
 
-        localStorage.setItem(
-          "dailynews_token",
-          data.token
-        );
-
-        localStorage.setItem(
-          "dailynews_user",
-          JSON.stringify(data.user)
-        );
+        window.dailynewsSession.save(data.token, data.user);
 
         showMessage(
           "登录成功，欢迎您：" +
@@ -374,7 +367,7 @@
      * 如果用户已经登录，可以直接进入会员中心。
      */
     const existingToken =
-      localStorage.getItem("dailynews_token");
+      window.dailynewsSession.token();
 
     if (existingToken) {
       showMessage(

@@ -18,6 +18,11 @@ const GNEWS_AUTO_FETCH_RUN_API =
     "/api/site-settings/gnews-auto-fetch/run";
 
 let adminNewsRecords = [];
+let adminNewsPage = 1;
+let adminNewsPagination = null;
+let adminNewsRequest = 0;
+let adminNewsFilterTimer;
+let adminNewsFilters = { search: "", status: "all", ai: "all" };
 
 const MANUAL_TARGET_TO_GNEWS_CATEGORY =
     Object.freeze({
@@ -36,9 +41,8 @@ const MANUAL_TARGET_TO_GNEWS_CATEGORY =
     });
 
 document.addEventListener("DOMContentLoaded", async function () {
-    await loadGNewsMetadataOptions();
-
     loadAdminNewsRecords();
+    await loadGNewsMetadataOptions();
     initializeGNewsAutoFetchConfig();
 
     const refreshStatusButton =
@@ -68,7 +72,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     loadGNewsAutoFetchStatus();
 });
 
-async function loadAdminNewsRecords() {
+async function loadAdminNewsRecords(page = adminNewsPage) {
+    const requestNumber = ++adminNewsRequest;
     const tableBody = document.getElementById("adminNewsTableBody");
 
     if (!tableBody) {
@@ -85,7 +90,8 @@ async function loadAdminNewsRecords() {
     `;
 
     try {
-        const response = await fetch(ADMIN_NEWS_API, {
+        const query = new URLSearchParams({ page: String(page), ...adminNewsFilters });
+        const response = await fetch(ADMIN_NEWS_API + "/admin-page?" + query, {
             method: "GET",
             headers: {
                 ...getAdminAuthorizationHeaders(),
@@ -95,6 +101,7 @@ async function loadAdminNewsRecords() {
         });
 
         const result = await response.json();
+        if (requestNumber !== adminNewsRequest) return;
 
         if (!response.ok || !result.success) {
             throw new Error(
@@ -106,9 +113,19 @@ async function loadAdminNewsRecords() {
             ? result.data
             : [];
 
+        adminNewsPagination = result.pagination;
+        adminNewsPage = result.pagination.page;
         renderAdminNewsRecords(adminNewsRecords);
-        updateAdminNewsStatistics(adminNewsRecords);
+        renderAdminNewsPagination();
+        const statistics = result.statistics;
+        for (const [id, key] of [["newsTotalCount", "total"], ["newsTodayCount", "today"], ["newsApiCount", "api"], ["newsPendingCount", "pending"]]) {
+            const element = document.getElementById(id);
+            if (element) element.textContent = String(statistics[key]);
+        }
     } catch (error) {
+        if (requestNumber !== adminNewsRequest) return;
+        const pagination = document.getElementById("adminNewsPagination");
+        if (pagination) pagination.replaceChildren();
         console.error("加载后台新闻失败：", error);
 
         tableBody.innerHTML = `
@@ -300,64 +317,63 @@ function updateAdminNewsStatistics(records) {
 }
 
 window.filterNewsRecords = function () {
-    const searchInput =
-        document.getElementById("newsSearchInput");
-
-    const statusFilter =
-        document.getElementById("newsStatusFilter");
-
-    const aiFilter =
-        document.getElementById("newsAiFilter");
-
-    const keyword = String(
-        searchInput?.value || ""
-    ).trim().toLowerCase();
-
-    const selectedStatus =
-        statusFilter?.value || "all";
-
-    const selectedAi =
-        aiFilter?.value || "all";
-
-    const filteredRecords = adminNewsRecords.filter(function (news) {
-        const searchableText = [
-            news.title,
-            news.category,
-            news.source,
-            news.author
-        ]
-            .map(function (value) {
-                return String(value || "").toLowerCase();
-            })
-            .join(" ");
-
-        const newsStatus =
-            String(news.status || "draft").toLowerCase();
-
-        const newsAi = String(news.summary || "").trim()
-            ? "generated"
-            : "not_generated";
-
-        const matchesKeyword =
-            !keyword || searchableText.includes(keyword);
-
-        const matchesStatus =
-            selectedStatus === "all" ||
-            newsStatus === selectedStatus;
-
-        const matchesAi =
-            selectedAi === "all" ||
-            newsAi === selectedAi;
-
-        return (
-            matchesKeyword &&
-            matchesStatus &&
-            matchesAi
-        );
-    });
-
-    renderAdminNewsRecords(filteredRecords);
+    adminNewsPage = 1;
+    adminNewsFilters = {
+        search: String(document.getElementById("newsSearchInput")?.value || "").trim(),
+        status: document.getElementById("newsStatusFilter")?.value || "all",
+        ai: document.getElementById("newsAiFilter")?.value || "all"
+    };
+    // Invalidate an earlier request before the debounce fires.
+    adminNewsRequest++;
+    clearTimeout(adminNewsFilterTimer);
+    adminNewsFilterTimer = setTimeout(() => loadAdminNewsRecords(1), 200);
 };
+
+function renderAdminNewsPagination() {
+    const container = document.getElementById("adminNewsPagination");
+    if (!container || !adminNewsPagination) return;
+    container.replaceChildren();
+    const { page, totalPages, total } = adminNewsPagination;
+    const info = document.createElement("span");
+    info.textContent = "第 " + page + " / " + totalPages + " 页，共 " + total + " 条（每页 10 条）";
+    container.appendChild(info);
+    const button = (label, target, disabled) => {
+        const element = document.createElement("button");
+        element.type = "button";
+        element.className = "table-btn";
+        element.textContent = label;
+        element.disabled = disabled;
+        if (target === page) element.setAttribute("aria-current", "page");
+        element.addEventListener("click", () => loadAdminNewsRecords(target));
+        container.appendChild(element);
+    };
+    button("上一页", page - 1, page === 1);
+    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+    for (let number = start; number <= Math.min(totalPages, start + 4); number++) {
+        button(String(number), number, number === page);
+    }
+    button("下一页", page + 1, page === totalPages);
+    const form = document.createElement("form");
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "1";
+    input.max = String(totalPages);
+    input.value = String(page);
+    input.required = true;
+    input.style.width = "80px";
+    input.setAttribute("aria-label", "跳转到页码");
+    const submit = document.createElement("button");
+    submit.type = "submit";
+    submit.className = "table-btn";
+    submit.textContent = "跳转";
+    form.append(input, submit);
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const target = Number(input.value);
+        if (Number.isInteger(target) && target >= 1 && target <= totalPages) loadAdminNewsRecords(target);
+    });
+    container.appendChild(form);
+}
 
 window.viewRealNews = function (newsId) {
     const news = adminNewsRecords.find(function (item) {
@@ -514,6 +530,7 @@ window.deleteRealNews = async function (newsId) {
             {
                 method: "DELETE",
                 headers: {
+                    ...getAdminAuthorizationHeaders(),
                     Accept: "application/json"
                 }
             }

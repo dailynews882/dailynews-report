@@ -466,6 +466,7 @@
 
   </main>
 
+  <script src="/auth-session.js?v=20261023"></script>
   <script>
     const API_AUTH = "/api/auth";
     const API_WALLET = "/api/wallet";
@@ -475,16 +476,11 @@
       document.getElementById("message");
 
     function getToken() {
-      return localStorage.getItem("token");
+      return window.dailynewsSession.token();
     }
 
     function clearLoginData() {
-      localStorage.removeItem("token");
-      localStorage.removeItem("dailynewsUser");
-      localStorage.removeItem("user");
-
-      localStorage.removeItem("dailynews_token");
-      localStorage.removeItem("dailynews_user");
+      window.dailynewsSession.clear();
     }
 
     function showMessage(
@@ -721,6 +717,7 @@
           `${API_AUTH}/me`,
           {
             method: "GET",
+            cache: "no-store",
             headers: {
               Authorization:
                 `Bearer ${token}`

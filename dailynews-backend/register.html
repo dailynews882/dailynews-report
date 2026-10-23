@@ -337,6 +337,7 @@
 
   </div>
 
+  <script src="/auth-session.js?v=20261023"></script>
   <script>
     const isLiveServer =
       window.location.hostname === "127.0.0.1" ||
@@ -610,18 +611,8 @@
           return;
         }
 
-        if (data.token) {
-          localStorage.setItem(
-            "dailynews_token",
-            data.token
-          );
-        }
-
-        if (data.user) {
-          localStorage.setItem(
-            "dailynews_user",
-            JSON.stringify(data.user)
-          );
+        if (data.token && data.user) {
+          window.dailynewsSession.save(data.token, data.user);
         }
 
         showMessage(

@@ -330,7 +330,7 @@
   </div>
 
   <div class="table-tools">
-    <input type="text" id="newsSearchInput" placeholder="搜索新闻标题、分类或来源" onkeyup="filterNewsRecords()" />
+    <input type="text" id="newsSearchInput" maxlength="200" placeholder="搜索新闻标题、分类或来源" oninput="filterNewsRecords()" />
 
     <select id="newsStatusFilter" onchange="filterNewsRecords()">
       <option value="all">全部发布状态</option>
@@ -370,6 +370,8 @@
       </tr>
     </tbody>
   </table>
+  <nav id="adminNewsPagination" aria-label="后台新闻分页" aria-live="polite"
+    style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0;"></nav>
   </section>
 
   <div class="modal-overlay" id="newsModal">
@@ -462,8 +464,8 @@
   </div>
 
   <script src="admin-menu.js"></script>
-  <script src="admin.js"></script>
-  <script src="admin-news.js"></script>
+  <script src="admin.js?v=20261023"></script>
+  <script src="admin-news.js?v=20261023"></script>
   <script src="admin-news-editor.js"></script>
 </body>
 

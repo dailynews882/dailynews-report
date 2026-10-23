@@ -344,7 +344,7 @@ test("frontend session recovery preserves transient failures and clears explicit
     const document = { getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
       addEventListener(event, callback) { if (event === "DOMContentLoaded") callback(); } };
     const context = { document, localStorage: { getItem: key => values.get(key) || null, setItem: (key, val) => values.set(key, val), removeItem: key => values.delete(key) },
-      console: { log() {}, warn() {}, error() {} }, window: { location: { href: "/my.html" } },
+      console: { log() {}, warn() {}, error() {} }, window: { location: { href: "/my.html" }, addEventListener() {} },
       fetch: async () => {
         if (outcome === "network") throw new TypeError("Offline fixture");
         return { status: typeof outcome === "number" ? outcome : 502, ok: outcome === 200,
@@ -352,6 +352,7 @@ test("frontend session recovery preserves transient failures and clears explicit
       }
     };
     vm.createContext(context);
+    vm.runInContext(fs.readFileSync(path.join(root, "public/auth-session.js"), "utf8"), context);
     vm.runInContext(modalSource.replace("  refreshCurrentUser();", "  globalThis.recover = refreshCurrentUser; globalThis.validateEmail = isValidEmail;"), context);
     await context.recover();
     assert.equal(values.has("token"), outcome !== 401 && outcome !== 403);

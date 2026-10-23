@@ -85,43 +85,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function saveLoginData(token, user) {
-    localStorage.setItem("token", token);
-
-    localStorage.setItem(
-      "dailynewsUser",
-      JSON.stringify(user)
-    );
-
+    window.dailynewsSession.save(token, user);
   }
 
   function clearLoginData() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("dailynewsUser");
-    localStorage.removeItem("user");
-
-    localStorage.removeItem("dailynews_token");
-    localStorage.removeItem("dailynews_user");
-
+    window.dailynewsSession.clear();
   }
 
   function getSavedUser() {
-    const savedUser =
-      localStorage.getItem("dailynewsUser") ||
-      localStorage.getItem("user");
-
-    if (!savedUser) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(savedUser);
-    } catch (error) {
-      console.error("用户资料解析失败：", error);
-      localStorage.removeItem("dailynewsUser");
-      localStorage.removeItem("user");
-      return null;
-    }
-
+    return window.dailynewsSession.user();
   }
 
   function getDisplayName(user) {
@@ -201,7 +173,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function goToMyPage() {
-    const token = localStorage.getItem("token");
+    const token = window.dailynewsSession.token();
 
     if (!token) {
       showLoggedOutHeader();
@@ -214,7 +186,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function refreshCurrentUser() {
-    const token = localStorage.getItem("token");
+    const token = window.dailynewsSession.token();
     const savedUser = getSavedUser();
 
     if (!token) {
@@ -229,6 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       const response = await fetch("/api/auth/me", {
         method: "GET",
+        cache: "no-store",
         headers: {
           Authorization: "Bearer " + token
         }
@@ -263,7 +236,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Network failures, 429/5xx and malformed gateway responses do not revoke a session.
       // Cached header data is display-only; protected APIs still verify the token.
-      if (savedUser) showLoggedInHeader(savedUser);
+      if (localStorage.getItem("token") === token && savedUser) showLoggedInHeader(savedUser);
     }
 
   }
@@ -666,5 +639,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   );
 
+  window.addEventListener("pageshow", function (event) {
+    if (event.persisted) refreshCurrentUser();
+  });
+  window.addEventListener("storage", function (event) {
+    if (event.key === "token" || event.key === "dailynews_token" || event.key === null) refreshCurrentUser();
+  });
   refreshCurrentUser();
 });

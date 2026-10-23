@@ -8,6 +8,7 @@ const { checkUserToken } = require("../middleware/userAuth");
 const { hasNewsAdminAccess, attachNewsAdmin } = require("../middleware/newsReadAccess");
 router.use(attachNewsAdmin);
 router.use("/public-page", require("./publicNewsPageRoute")(db));
+router.use("/admin-page", verifyAdminToken, require("./adminNewsPageRoute")(db));
 const NEWS_COUNTRY_METADATA = Object.freeze({
   sg: {
     name: "Singapore",

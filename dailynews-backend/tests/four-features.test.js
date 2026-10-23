@@ -196,8 +196,8 @@ test('remember login: actual modal persists across contexts, tolerates malformed
         const elements=new Map(), element=()=>({value:'',style:{},classList:{add(){},remove(){}},setAttribute(){},removeAttribute(){},listeners:{},addEventListener(k,v){this.listeners[k]=v;}});
         const context={document:{body:{style:{}},querySelector(){return null;},getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},addEventListener(event,fn){if(event==='DOMContentLoaded')fn();}},
             localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},console:{log(){},warn(){},error(){}},
-            window:{location:{href:'/',reload(){}},setTimeout(){}},fetch:async url=>({status:200,ok:true,json:async()=>url.endsWith('/login')?{success:true,token:'fixture-persistent-token',user:{username:'FixtureMember'}}:{success:true,user:{username:'FixtureMember'}}})};
-        vm.createContext(context);vm.runInContext(source.replace('  refreshCurrentUser();','  globalThis.refreshSession = refreshCurrentUser;'),context);return {context,elements};
+            window:{location:{href:'/',reload(){}},setTimeout(){},addEventListener(){}},fetch:async url=>({status:200,ok:true,json:async()=>url.endsWith('/login')?{success:true,token:'fixture-persistent-token',user:{username:'FixtureMember'}}:{success:true,user:{username:'FixtureMember'}}})};
+        vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(root,'public/auth-session.js'),'utf8'),context);vm.runInContext(source.replace('  refreshCurrentUser();','  globalThis.refreshSession = refreshCurrentUser;'),context);return {context,elements};
     }
     const first=browser();first.context.document.getElementById('loginAccount').value='fixture@example.test';first.context.document.getElementById('loginPassword').value='FixturePass123!';
     await first.elements.get('loginForm').listeners.submit({preventDefault(){}});assert.equal(values.get('token'),'fixture-persistent-token');

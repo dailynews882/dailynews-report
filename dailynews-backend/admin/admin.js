@@ -27,6 +27,14 @@
     .then(async (response) => {
       const result = await response.json().catch(() => ({}));
 
+      if (response.status === 401 || response.status === 403) {
+        if (localStorage.getItem("adminToken") !== adminToken) return;
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminUser");
+        localStorage.removeItem("adminLoggedIn");
+        window.location.href = "./admin-login.html";
+        return;
+      }
       if (!response.ok || !result.success) {
         throw new Error(
           result.message || "管理员登录已失效。"
@@ -43,11 +51,7 @@
     .catch((error) => {
       console.error("Admin authentication error:", error);
 
-      localStorage.removeItem("adminToken");
-      localStorage.removeItem("adminUser");
-      localStorage.removeItem("adminLoggedIn");
-
-      window.location.href = "./admin-login.html";
+      // Network and gateway failures do not revoke the admin session.
     });
 })();
 

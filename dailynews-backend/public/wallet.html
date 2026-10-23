@@ -266,13 +266,14 @@
     </div>
   </div>
 
+  <script src="/auth-session.js?v=20261023"></script>
   <script>
     const API_AUTH = "/api/auth";
     const API_WALLET = "/api/wallet";
     const API_PAYMENT = "/api/payment";
 
     async function loadWalletPage() {
-      const token = localStorage.getItem("token");
+      const token = window.dailynewsSession.token();
 
       if (!token) {
         alert("请先登录");
@@ -288,14 +289,15 @@
           }
         });
 
-        const walletData = await walletRes.json();
-
-        if (!walletData.success) {
-          alert(walletData.message || "登录状态失效，请重新登录");
-          localStorage.removeItem("token");
-          localStorage.removeItem("dailynewsUser");
+        if (walletRes.status === 401 || walletRes.status === 403) {
+          if (window.dailynewsSession.token() !== token) return;
+          window.dailynewsSession.clear();
           window.location.href = "index.html";
           return;
+        }
+        const walletData = await walletRes.json();
+        if (!walletRes.ok || !walletData.success) {
+          throw new Error(walletData.message || "钱包暂时无法读取，登录信息已保留，请稍后重试。");
         }
 
         const user = walletData.user;
@@ -332,7 +334,7 @@
     }
 
     async function loadTransactions() {
-      const token = localStorage.getItem("token");
+      const token = window.dailynewsSession.token();
 
       try {
         const res = await fetch(`${API_WALLET}/transactions`, {
@@ -413,7 +415,7 @@
     }
 
     async function rechargeDemo() {
-      const token = localStorage.getItem("token");
+      const token = window.dailynewsSession.token();
 
       if (!token) {
         alert("请先登录");
@@ -451,7 +453,7 @@
     }
 
     async function createStripeTopup() {
-      const token = localStorage.getItem("token");
+      const token = window.dailynewsSession.token();
 
       if (!token) {
         alert("请先登录");
