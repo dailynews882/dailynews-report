@@ -126,21 +126,41 @@
     #loginModal .auth-modal-content { padding: 28px; }
     #loginModal h2 { margin-bottom: 18px; }
     #loginModal .auth-form-group { margin-bottom: 14px; }
+    #loginModal .auth-login-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
     #loginModal .auth-remember {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 0 0 14px;
+      margin: 0;
       color: #555555;
       font-size: 14px;
       line-height: 20px;
       cursor: pointer;
+      white-space: nowrap;
     }
     #loginModal .auth-remember input {
       width: 16px;
       height: 16px;
       margin: 0;
       accent-color: #168cff;
+    }
+    #loginModal .auth-login-options button {
+      margin-left: auto;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #168cff;
+      font: inherit;
+      font-size: 14px;
+      line-height: 20px;
+      white-space: nowrap;
+      cursor: pointer;
     }
     #loginModal .auth-message { margin-top: 10px; }
     #loginModal .auth-message:empty { display: none; }
@@ -818,17 +838,19 @@
 
         </div>
 
-        <label class="auth-remember" for="rememberLogin">
-          <input type="checkbox" id="rememberLogin" name="rememberLogin" checked />
-          <span>记住登录状态</span>
-        </label>
+        <div class="auth-login-options">
+          <label class="auth-remember" for="rememberLogin">
+            <input type="checkbox" id="rememberLogin" name="rememberLogin" checked />
+            <span>记住登录状态</span>
+          </label>
+          <button type="button" id="forgotPasswordBtn">忘记密码？</button>
+        </div>
 
         <button type="submit" class="auth-submit-btn">
           登录
         </button>
 
         <p id="loginMessage" class="auth-message"></p>
-        <p class="auth-switch-text"><button type="button" id="forgotPasswordBtn">忘记密码？</button></p>
 
       </form>
 
