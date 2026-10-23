@@ -124,6 +124,7 @@ let ciOrgRequestSequence = 0;
 let svg, gContainer, zoomHandler;
 
 document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("piFamilyReadingSize")?.addEventListener("click", () => window.PIExternalGraph?.focus());
 
     initSvg();
 

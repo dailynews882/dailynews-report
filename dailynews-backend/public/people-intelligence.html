@@ -138,7 +138,7 @@
             display: flex;
             gap: 6px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            z-index: 10;
+            z-index: 15;
         }
 
         .g-canvas-toolbar button {
@@ -329,7 +329,25 @@
         .pi-family-evidence a { display: inline-block; margin-right: 10px; color: #2454d6; }
         .pi-family-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; font-size: 11px; }
         .pi-family-evidence-item { border-top: 1px solid #e2e8f0; padding: 8px 0; overflow-wrap: anywhere; }
+        .pi-person[data-selected="true"] > circle { stroke: #f59e0b; stroke-width: 4; }
+        .pi-person-fullname { font-family: system-ui, "Microsoft YaHei", sans-serif; }
+        .pi-person:focus { outline: none; }
+        .pi-person:focus > circle { stroke: #f59e0b; stroke-width: 4; }
+        .pi-family-layout-key { position: absolute; top: 72px; left: 20px; z-index: 12; max-width: calc(100% - 40px); pointer-events: none; color: #64748b; font-size: 11px; background: rgba(255,255,255,.94); padding: 5px 8px; border-radius: 6px; }
+        @media (max-width: 600px) { .pi-family-layout-key { top: 125px; font-size: 10px; } }
         @media (max-width: 600px) { .g-canvas-toolbar { gap: 4px; } .g-canvas-toolbar button { padding: 6px 8px; font-size: 11px; } .pi-family-status { font-size: 11px; } }
+        @media (max-width: 800px) {
+            body { height: auto; min-height: 100vh; overflow: auto; }
+            .g-header { height: auto; min-height: 60px; flex-wrap: wrap; gap: 10px; padding: 10px 12px; }
+            .g-logo { font-size: 12px; min-width: 0; }
+            .g-logo-icon { flex-shrink: 0; }
+            .g-search-box { width: 100%; min-width: 0; }
+            .g-search-box input { min-width: 0; width: 0; }
+            .g-search-btn { white-space: nowrap; }
+            .g-workspace { flex-direction: column; height: auto; width: 100%; }
+            .g-canvas-pane { flex: none; width: 100%; height: 75vh; min-height: 560px; }
+            .g-info-pane { flex: none; width: 100%; max-width: 100%; height: auto; overflow: visible; }
+        }
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
@@ -357,7 +375,9 @@
                 <button type="button" id="btnZoomOut">缩小 (-)</button>
                 <button type="button" id="piExpandPerson" disabled>展开选中亲属</button>
                 <button type="button" id="piShowFamilyEvidence">关系来源</button>
+                <button type="button" id="piFamilyReadingSize">阅读大小</button>
             </div>
+            <div class="pi-family-layout-key">方形接点：亲子家庭单元；粉色：配偶；长虚线：前配偶；点线：待核验／资料不完整。可横向拖动人物、拖动画布。<div id="piFamilyLayoutNotice" aria-live="polite"></div></div>
             <p id="piFamilyStatus" class="pi-family-status" role="status" aria-live="polite">实时外部声明；缺失关系不作推断。</p>
             <svg id="familyTreeSvg"></svg>
         </main>
