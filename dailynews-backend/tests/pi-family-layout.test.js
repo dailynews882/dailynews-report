@@ -70,7 +70,9 @@ test("positions and route lanes are deterministic under reordered input", () => 
 });
 test("conflicting parent identities never become an invented multi-parent couple", () => {
     const result = arrangement(data("Q1", { Q1: "中心", Q2: "父亲甲", Q3: "父亲乙", Q4: "母亲" }, [relation("Q1", "Q2", "father"), relation("Q1", "Q3", "father"), relation("Q1", "Q4", "mother")]));
-    geometry(result); assert(result.ambiguous.includes("Q1")); assert(result.units.every(u => u.parents.length === 1 && u.uncertain));
+    geometry(result); assert(result.ambiguous.includes("Q1"));
+    assert.equal(result.units.length, 1); assert(result.units[0].uncertain);
+    assert.equal(result.routes.filter(r => r.kind === "family").length, 0);
 });
 test("generation contradictions retain evidence and use conflict routes", () => {
     const result = arrangement(data("Q1", { Q1: "中心", Q2: "另一个人物" }, [relation("Q1", "Q2", "father"), relation("Q1", "Q2", "child")]));
@@ -86,6 +88,23 @@ test("duplicate QIDs and temporary identities retain one main node", () => {
     const result = arrangement({ ...zhao, nodes: [...zhao.nodes, ...zhao.nodes], family_relations: [...zhao.family_relations, ...zhao.family_relations] });
     assert.equal(result.positions.size, zhao.nodes.length); geometry(result);
 });
+test("co-parents align over their own child blocks, not over the centre person's whole row", () => {
+    const result = arrangement(musk);
+    for (const partner of ["Q110", "Q111", "Q112"]) {
+        const unit = result.units.find(u => u.parents.includes(partner));
+        const centre = unit.children.reduce((sum, id) => sum + result.positions.get(id).x, 0) / unit.children.length;
+        assert.equal(result.positions.get(partner).x, centre);
+        assert.equal(result.routes.find(r => r.unit?.key === unit.key).junction.x, centre);
+    }
+    const seen = result.units.flatMap(u => Array.from(u.children)); assert.equal(new Set(seen).size, seen.length);
+});
+test("relationship labels use the centre perspective and explicit parent roles, never gender guesses", () => {
+    const graph = engine(), model = graph.buildModel(female);
+    for (const [id, label] of [["Q301", "父亲"], ["Q302", "母亲"], ["Q305", "外祖母"], ["Q307", "兄弟姐妹"], ["Q304", "子女"]]) assert.equal(graph.relationshipLabel(model, id), label);
+    const articleChild = data("Q1", { Q1: "中心", Q2: "未知性别姓名" }, [relation("Q1", "Q2", "child", { article: { location: { relation_term: "女儿" } } })]);
+    assert.equal(graph.relationshipLabel(graph.buildModel(articleChild), "Q2"), "女儿");
+    assert.equal(graph.relationshipLabel(graph.buildModel(zhao), temp(3)), "前配偶");
+});
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewport retention", { timeout: 60000 }, async t => {
@@ -99,10 +118,16 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
         const url = new URL(req.url, "http://fixture.invalid");
         if (url.pathname === "/d3.js") { res.setHeader("Content-Type", "text/javascript"); res.end(fs.readFileSync(d3Path)); }
         else if (url.pathname === "/graph.js") { res.setHeader("Content-Type", "text/javascript"); res.end(graphSource); }
+        else if (url.pathname === "/controller.js") { res.setHeader("Content-Type", "text/javascript"); res.end(fs.readFileSync(path.join(root, "public/people-intelligence.js"), "utf8")); }
         else if (url.pathname === "/style.css") { res.setHeader("Content-Type", "text/css"); res.end(fs.readFileSync(path.join(root, "public/style.css"))); }
         else if (url.pathname === "/") {
             res.setHeader("Content-Type", "text/html; charset=utf-8");
-            res.end(html.replace("</body>", '<script src="/d3.js"></script><script src="/graph.js"></script><script>window.fixture=' + JSON.stringify(fixtures[url.searchParams.get("case")] || zhao) + ';window.PIExternalGraph.render(window.fixture);</script></body>'));
+            const fixture = JSON.stringify(fixtures[url.searchParams.get("case")] || zhao);
+            const init = `window.fixture=${fixture};window.PIExternalGraph.render(window.fixture);
+                window.profileCalls=[];window.fetch=(url,options)=>{profileCalls.push(url);const id=url.split('/').pop();const node=fixture.nodes.find(n=>n.id===id)||{id,name:'Expanded person'};
+                return new Promise(resolve=>setTimeout(()=>resolve({ok:true,json:async()=>({success:true,qid:id,profile:{...node,description:node.name+' DETAILS',citizenship:[id+' COUNTRY'],education:[id+' SCHOOL']},nodes:[node],family_relations:[],organization_relations:[]})}),id==='Q101'?160:15));};
+                window.addEventListener('load',()=>{const s=document.createElement('script');s.src='/controller.js';s.onload=()=>{window.controllerReady=true;document.getElementById('piFamilyReadingSize').onclick=()=>PIExternalGraph.focus();};document.body.appendChild(s);});`;
+            res.end(html.replace("</body>", '<script src="/d3.js"></script><script src="/graph.js"></script><script>' + init + '</script></body>'));
         } else { res.statusCode = 404; res.end(); }
     });
     await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -135,11 +160,32 @@ test("real Chrome/D3: desktop/mobile rendering, full names, selection and viewpo
         for (const [name, width, height] of [["zhao", 1600, 1000], ["musk", 1600, 1000], ["female", 1600, 1000], ["female", 390, 844]]) {
             await call("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width < 500 }, sessionId);
             await call("Page.navigate", { url: "http://127.0.0.1:" + server.address().port + "/?case=" + name }, sessionId);
-            await evaluate('new Promise((resolve,reject)=>{let i=0;const check=()=>{if(window.PIExternalGraph?.getState().layout)resolve(true);else if(i++>100)reject(Error("Graph not ready"));else setTimeout(check,20)};check()})');
+            await evaluate('new Promise((resolve,reject)=>{let i=0;const check=()=>{if(window.PIExternalGraph?.getState().layout&&window.controllerReady)resolve(true);else if(i++>100)reject(Error("Graph/controller not ready"));else setTimeout(check,20)};check()})');
             await delay(400);
             const metrics = await evaluate(`(()=>{const nodes=[...document.querySelectorAll('g.pi-person')];return {count:nodes.length,allNames:nodes.every(g=>g.querySelector('.pi-person-fullname').textContent.replace(/\\s/g,'')===fixture.nodes.find(n=>n.id===g.dataset.personId).name.replace(/\\s/g,'')),widths:nodes.map(g=>g.querySelector('.pi-person-fullname').getBBox().width),radii:nodes.map(g=>g.querySelector('circle').getAttribute('r')),diagonal:[...document.querySelectorAll('path.pi-family-route')].some(p=>/[LCQ]/.test(p.getAttribute('d'))),toolbar:getComputedStyle(document.querySelector('.g-canvas-toolbar')).zIndex};})()`);
             assert.equal(metrics.count, fixtures[name].nodes.length); assert(metrics.allNames); assert(metrics.widths.every(w => w <= 190));
             assert(metrics.radii.every(r => r === "30")); assert.equal(metrics.diagonal, false); assert(Number(metrics.toolbar) > 10);
+            const textOverlaps = await evaluate(`Array.from(document.querySelectorAll('g.pi-person')).map(g=>{const a=g.querySelector('.pi-person-fullname').getBBox(),b=g.querySelector('.pi-person-relation').getBBox();return {id:g.dataset.personId,width:b.width,relationTop:b.y,nameBottom:a.y+a.height}}).filter(r=>r.width>190||r.relationTop<r.nameBottom)`);
+            assert.deepEqual(textOverlaps, [], "Relation labels fit their own area: " + JSON.stringify(textOverlaps));
+            const styles = await evaluate('Array.from(document.querySelectorAll("path.pi-family-route"),p=>({stroke:p.getAttribute("stroke"),dash:p.getAttribute("stroke-dasharray")}))');
+            assert(styles.every(s => s.stroke === "#334b63" && s.dash === null));
+            assert(await evaluate('Array.from(document.querySelectorAll("g.pi-person"),g=>!!g.querySelector(".pi-person-relation").textContent).every(Boolean)'));
+            const chosen = name === "zhao" ? temp(5) : name === "musk" ? "Q110" : "Q304";
+            await evaluate(`(()=>{document.getElementById('infoCountry').textContent='OLD CENTRE COUNTRY';document.querySelector('[data-person-id="${chosen}"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));return true})()`);
+            assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), fixtures[name].nodes.find(n => n.id === chosen).name);
+            if (chosen.startsWith("wp:")) {
+                assert.equal(await evaluate('document.getElementById("infoCountry").textContent'), "未获取");
+                assert.equal(await evaluate('profileCalls.length'), 0);
+            } else {
+                await delay(60); assert((await evaluate('document.getElementById("infoCountry").textContent')).includes(chosen + " COUNTRY"));
+            }
+            if (name === "musk") {
+                await evaluate(`(()=>{document.querySelector('[data-person-id="Q101"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));document.querySelector('[data-person-id="Q102"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));return true})()`);
+                await delay(230);
+                assert.equal(await evaluate('document.getElementById("infoNameZh").textContent'), "Parent Two");
+                assert.equal(await evaluate('document.getElementById("infoCountry").textContent'), "Q102 COUNTRY");
+                assert(await evaluate('profileCalls.every(u=>u.startsWith("/api/people-intelligence/external/profile/"))'));
+            }
             const canvas = await evaluate('(()=>{const r=document.querySelector(".g-canvas-pane").getBoundingClientRect();return {width:r.width,height:r.height,scroll:document.documentElement.scrollWidth,viewport:innerWidth}})()');
             assert(canvas.width > 300 && canvas.height > 400, "The graph canvas remains visible on mobile");
             assert(canvas.scroll <= canvas.viewport + 1, "No page-level horizontal overflow");

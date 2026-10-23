@@ -264,10 +264,40 @@
             const ids = [...parents.keys()].sort();
             const roleCount = role => [...parents.values()].filter(p => p.roles.has(role)).length;
             const uncertain = ids.length > 2 || roleCount("father") > 1 || roleCount("mother") > 1 || model.edges.some(e => e.source_difference && parentPair(e)?.child === child);
-            if (uncertain) { ambiguous.push(child); for (const id of ids) add([id], child, parents.get(id).edges, true); }
+            if (uncertain) {
+                ambiguous.push(child);
+                units.set("ambiguous|" + child, { key: "ambiguous|" + child, parents: ids, children: [child], edges: [...parents.values()].flatMap(p => p.edges), uncertain: true, level: model.levels.get(ids[0]) });
+            }
             else add(ids, child, [...parents.values()].flatMap(p => p.edges), false);
         }
         return { units: [...units.values()].sort((a, b) => a.level - b.level || a.key.localeCompare(b.key, "en")), ambiguous };
+    }
+    function relationshipLabel(model, id) {
+        if (id === model.root) return "中心人物";
+        const labels = new Set();
+        const childTerm = edge => /^(儿子|兒子)$/.test(edge.article?.location?.relation_term || "") ? "儿子" : /^(女儿|女兒)$/.test(edge.article?.location?.relation_term || "") ? "女儿" : "子女";
+        for (const edge of model.edges) {
+            if (edge.layout_conflict) continue;
+            const pair = parentPair(edge);
+            if (pair?.child === model.root && pair.parent === id) labels.add({ father: "父亲", mother: "母亲", parent: "父母（未区分）" }[pair.role]);
+            if (pair?.parent === model.root && pair.child === id) labels.add(edge.type === "child" ? childTerm(edge) : "子女");
+            if (["spouse", "sibling"].includes(edge.type) && [edge.from, edge.to].includes(model.root) && [edge.from, edge.to].includes(id))
+                labels.add(edge.type === "sibling" ? "兄弟姐妹" : edge.spouse_status === "former" ? "前配偶" : edge.spouse_status === "reported_current" ? "配偶（文章称现任）" : "配偶（状态待核验）");
+        }
+        for (const path of model.paths.filter(p => p.to === id)) {
+            if (path.steps.some(step => model.edges.some(e => e.layout_conflict && edgeKey(e) === edgeKey(step)))) continue;
+            if (path.type === "grandparent") {
+                const first = parentPair(path.steps[0])?.role, second = parentPair(path.steps[1])?.role;
+                labels.add(first === "father" ? second === "father" ? "祖父" : second === "mother" ? "祖母" : "父系祖辈" : first === "mother" ? second === "father" ? "外祖父" : second === "mother" ? "外祖母" : "母系祖辈" : "祖辈（两段路径）");
+            } else labels.add("孙辈／外孙辈（两段路径）");
+        }
+        if (!labels.size) {
+            const rootChildren = new Set(model.edges.map(parentPair).filter(p => p?.parent === model.root).map(p => p.child));
+            const coParent = model.edges.map(parentPair).find(p => p?.parent === id && rootChildren.has(p.child));
+            if (coParent) labels.add(coParent.role === "mother" ? "子女的母亲（婚姻未声明）" : coParent.role === "father" ? "子女的父亲（婚姻未声明）" : "子女的另一位家长（婚姻未声明）");
+        }
+        if (labels.has("儿子") || labels.has("女儿")) labels.delete("子女");
+        return [...labels].join("／") || "关联人物（见来源路径）";
     }
     function layout(model, overrides = new Map()) {
         const { units, ambiguous } = familyUnits(model), positions = new Map(), rows = new Map(), labels = new Map();
@@ -295,11 +325,43 @@
             const ordered = blocks.flatMap(b => b.ids);
             if (level === 0 && ordered.includes(model.root)) { ordered.splice(ordered.indexOf(model.root), 1); ordered.splice(Math.floor(ordered.length / 2), 0, model.root); }
             rows.set(level, ordered);
-            ordered.forEach((id, index) => positions.set(id, { x: (index - (ordered.length - 1) / 2) * 218, y: 0, level, bottom: 51 + labels.get(id).length * 18 + 20, width: 190 }));
+            ordered.forEach((id, index) => positions.set(id, { x: (index - (ordered.length - 1) / 2) * 218, y: 0, level, bottom: 59 + labels.get(id).length * 18 + wrapName(relationshipLabel(model, id)).length * 15 + 24, width: 190 }));
         }
         // Root remains the coordinate origin. Every generation has exactly one horizontal row.
         const rootX = positions.get(model.root).x;
         for (const point of positions.values()) point.x -= rootX;
+        // A shared parent occupies the gap between family blocks. Each other explicit
+        // parent is aligned over their own children's centre; spouse status is irrelevant.
+        const rootUnits = units.filter(u => !u.uncertain && u.parents.includes(model.root));
+        if (rootUnits.length > 1) {
+            const split = Math.ceil(rootUnits.length / 2), placed = new Set();
+            let left = -230, right = 230;
+            const place = (unit, side) => {
+                const children = [...new Set(unit.children)].sort(), width = (children.length - 1) * 218;
+                const start = side < 0 ? left - width : right;
+                children.forEach((id, i) => { positions.get(id).x = start + i * 218; placed.add(id); });
+                if (side < 0) left = start - 340; else right = start + width + 340;
+            };
+            rootUnits.slice(0, split).reverse().forEach(u => place(u, -1)); rootUnits.slice(split).forEach(u => place(u, 1));
+            const level = model.levels.get(model.root) + 1;
+            for (const id of rows.get(level) || []) if (!placed.has(id)) { positions.get(id).x = right; right += 218; }
+        }
+        for (const level of [...levels].reverse()) {
+            const outgoing = units.filter(u => u.level === level && !u.uncertain), counts = new Map(), targets = new Map();
+            outgoing.forEach(u => u.parents.forEach(id => counts.set(id, (counts.get(id) || 0) + 1)));
+            for (const unit of outgoing) {
+                const centre = unit.children.reduce((sum, id) => sum + positions.get(id).x, 0) / unit.children.length;
+                const movable = unit.parents.filter(id => id !== model.root && counts.get(id) === 1);
+                movable.forEach((id, i) => targets.set(id, centre + (movable.length > 1 ? (i - (movable.length - 1) / 2) * 218 : 0)));
+            }
+            const order = [...rows.get(level)].sort((a, b) => (targets.get(a) ?? positions.get(a).x) - (targets.get(b) ?? positions.get(b).x) || a.localeCompare(b, "en"));
+            if (order.includes(model.root)) {
+                const centre = order.indexOf(model.root); positions.get(model.root).x = 0;
+                for (let i = centre - 1; i >= 0; i--) positions.get(order[i]).x = Math.min(targets.get(order[i]) ?? positions.get(order[i]).x, positions.get(order[i + 1]).x - 218);
+                for (let i = centre + 1; i < order.length; i++) positions.get(order[i]).x = Math.max(targets.get(order[i]) ?? positions.get(order[i]).x, positions.get(order[i - 1]).x + 218);
+            } else order.forEach((id, i) => { positions.get(id).x = Math.max(targets.get(id) ?? positions.get(id).x, i ? positions.get(order[i - 1]).x + 218 : -Infinity); });
+            rows.set(level, order);
+        }
         const relatedLinks = model.edges.filter(e => ["spouse", "sibling"].includes(e.type)).sort((a, b) => edgeKey(a).localeCompare(edgeKey(b), "en"));
         const rowBottom = new Map(levels.map(l => [l, Math.max(...rows.get(l).map(id => positions.get(id).bottom))]));
         const band = level => (units.filter(u => u.level === level).length * 2 + relatedLinks.filter(e => model.levels.get(e.from) === level).length + 5) * 18 + 30;
@@ -336,12 +398,22 @@
             const junctionY = rowY.get(unit.level) + rowBottom.get(unit.level) + nextLane(unit.level) * 18;
             const index = (unitIndexes.get(unit.level) || 0) + 1; unitIndexes.set(unit.level, index);
             const busY = rowY.get(unit.level + 1) - 38 - index * 18;
+            if (unit.uncertain) {
+                for (const parent of unit.parents) for (const childId of children) {
+                    const a = port(parent), child = positions.get(childId);
+                    routes.push({ key: "candidate|" + parent + "|" + childId, kind: "conflict", conflict: true,
+                        edges: unit.edges.filter(e => parentPair(e)?.parent === parent), label: "父母归属冲突候选 · 未组成家庭",
+                        d: pathThrough([a, { x: a.x, y: junctionY }, { x: child.x, y: junctionY }, { x: child.x, y: child.y - 34 }]) });
+                }
+                continue;
+            }
             const pieces = parentPorts.map(p => pathThrough([p, { x: p.x, y: junctionY }, { x, y: junctionY }]));
             pieces.push(pathThrough([{ x, y: junctionY }, { x, y: busY }]));
             for (const id of children) { const child = positions.get(id); pieces.push(pathThrough([{ x, y: busY }, { x: child.x, y: busY }, { x: child.x, y: child.y - 34 }])); }
             routes.push({ key: "family|" + unit.key, kind: "family", unit, edges: unit.edges, uncertain: unit.uncertain || unit.parents.length === 1 || unit.edges.some(e => e.derived),
                 pending: unit.edges.some(e => e.verification_status !== "verified"), d: pieces.join(" "), junction: { x, y: junctionY },
-                label: unit.uncertain ? "父母归属待核对" : unit.parents.length === 1 ? "单亲资料 · 另一方未知" : "双亲声明 · 婚姻另行核验" });
+                caption: `家庭 ${index} · ${unit.parents.length === 1 ? "另一方未知" : "双亲有记载"}`,
+                captionPoint: { x, y: busY - 10 }, label: unit.parents.length === 1 ? "单亲资料 · 另一方未知" : "双亲声明 · 婚姻另行核验" });
         }
         // Keep contradictory constraints visible as outside evidence paths, never as a false family unit.
         const right = Math.max(...[...positions.values()].map(p => p.x)) + 140; let conflictIndex = 0;
@@ -446,8 +518,8 @@
         const lines = edgeLayer.selectAll("path.pi-family-route").data(result.routes, r => r.key).join("path")
             .attr("class", r => "pi-family-route pi-route-" + r.kind)
             .attr("d", r => r.d).attr("fill", "none")
-            .attr("stroke", r => r.conflict || r.unit?.uncertain ? "#d97706" : r.kind === "spouse" ? "#e11d48" : r.kind === "sibling" ? "#9333ea" : "#64748b")
-            .attr("stroke-width", 1.7).attr("stroke-dasharray", r => r.former ? "9,5" : r.conflict || r.uncertain ? "3,5" : r.pending ? "2,3" : r.kind === "spouse" && r.edges.some(e => e.spouse_status !== "current") ? "5,3" : null)
+            .attr("stroke", "#334b63")
+            .attr("stroke-width", 1.7).attr("stroke-dasharray", null)
             .style("cursor", "pointer").on("click", (event, route) => {
                 event.stopPropagation(); window.dispatchEvent(new CustomEvent("pi:external-evidence-selected", { detail: { edges: route.edges } }));
             });
@@ -459,19 +531,23 @@
             });
         joins.append("rect").attr("x", -4).attr("y", -4).attr("width", 8).attr("height", 8).attr("fill", "#fff").attr("stroke", "#64748b");
         joins.append("title").text(r => r.label);
+        const captions = edgeLayer.selectAll("text.pi-family-caption").data(result.routes.filter(r => r.caption)).join("text")
+            .attr("class", "pi-family-caption").attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#334b63")
+            .attr("x", r => r.captionPoint.x).attr("y", r => r.captionPoint.y).text(r => r.caption);
         const groups = nodeLayer.selectAll("g.pi-person").data(model.nodes, n => n.id).join("g").attr("class", "pi-person")
             .attr("data-person-id", n => n.id).attr("data-generation", n => model.levels.get(n.id)).attr("data-selected", n => String(n.id === selectedId))
             .attr("transform", n => { const p = result.positions.get(n.id); return "translate(" + p.x + "," + p.y + ")"; })
             .attr("tabindex", 0).attr("role", "button").attr("aria-label", n => n.name || n.id).style("cursor", "pointer");
         const select = node => {
             selectedId = node.id; groups.attr("data-selected", n => String(n.id === selectedId));
-            const paths = model.paths.filter(p => p.to === node.id), direct = model.edges.find(e => e.from === model.root && e.to === node.id);
+            const paths = model.paths.filter(p => p.to === node.id);
             window.dispatchEvent(new CustomEvent("pi:external-person-selected", { detail: { qid: node.id, node, isCenter: node.id === model.root,
-                relationship: node.id === model.root ? "中心人物" : paths[0]?.label || direct?.label || "有来源的家庭关系（见连接与证据）", paths } }));
+                relationship: relationshipLabel(model, node.id), perspective: model.nodes.find(n => n.id === model.root)?.name || model.root,
+                edges: model.edges.filter(e => e.from === node.id || e.to === node.id), paths } }));
             window.dispatchEvent(new CustomEvent("pi:external-evidence-selected", { detail: { edges: model.edges.filter(e => e.from === node.id || e.to === node.id), paths } }));
         };
-        const expand = node => { select(node); if (canExpand(node.id)) window.dispatchEvent(new CustomEvent("pi:external-expand", { detail: { qid: node.id } })); };
-        groups.on("click", (event, node) => select(node)).on("dblclick", (event, node) => { event.stopPropagation(); expand(node); })
+        const expand = node => { if (selectedId !== node.id) select(node); if (canExpand(node.id)) window.dispatchEvent(new CustomEvent("pi:external-expand", { detail: { qid: node.id } })); };
+        groups.on("click", (event, node) => { if (event.detail < 2 || !event.detail) select(node); }).on("dblclick", (event, node) => { event.stopPropagation(); expand(node); })
             .on("keydown", (event, node) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(node); } if (event.key.toLowerCase() === "e") expand(node); });
         // Horizontal dragging keeps generations and non-overlapping card spacing intact.
         groups.call(d3.drag().subject((event, node) => result.positions.get(node.id))
@@ -485,6 +561,7 @@
                 groups.attr("transform", n => { const p = revised.positions.get(n.id); return "translate(" + p.x + "," + p.y + ")"; });
                 lines.attr("d", r => byKey.get(r.key).d);
                 joins.attr("transform", r => { const p = byKey.get(r.key).junction; return "translate(" + p.x + "," + p.y + ")"; });
+                captions.attr("x", r => byKey.get(r.key).captionPoint.x).attr("y", r => byKey.get(r.key).captionPoint.y);
                 lastLayout = revised;
             }).on("end", (event, node) => {
                 // Keep horizontal adjustments while preserving generation and family constraints.
@@ -501,19 +578,23 @@
             const name = group.append("text").attr("class", "pi-person-fullname").attr("text-anchor", "middle").attr("font-size", 14).attr("fill", "#172033");
             result.labels.get(node.id).forEach((line, index) => name.append("tspan").attr("x", 0).attr("y", 51 + index * 18).text(line));
             const point = result.positions.get(node.id);
+            const relationText = group.append("text").attr("class", "pi-person-relation").attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#334b63");
+            wrapName(relationshipLabel(model, node.id)).forEach((line, i) => relationText.append("tspan").attr("x", 0).attr("y", 59 + result.labels.get(node.id).length * 18 + i * 15).text(line));
             group.append("text").attr("class", "pi-person-hint").attr("text-anchor", "middle").attr("y", point.bottom - 2).attr("font-size", 10).attr("fill", "#64748b")
-                .text(node.id === model.root ? "中心人物" : canExpand(node.id) ? "双击或按 E 展开 · 待核验" : "来源可查 · 待核验");
+                .text(model.edges.some(e => e.source_difference || e.layout_conflict ? e.from === node.id || e.to === node.id : false) ? "! 来源冲突 · 查看证据" : canExpand(node.id) ? "双击或按 E 展开 · 待核验" : "来源可查 · 待核验");
             group.append("title").text((node.name || node.id) + "\n" + node.id);
         });
         const b = result.bounds;
         externalBounds = { width: b.maxX - b.minX, height: b.maxY - b.minY, centerX: (b.minX + b.maxX) / 2, centerY: (b.minY + b.maxY) / 2 };
         if (previousTransform) svg.call(externalZoom.transform, previousTransform); else fit();
         const notice = document.getElementById("piFamilyLayoutNotice");
-        if (notice) notice.textContent = `家庭单元 ${result.units.length} 个；单亲资料不补齐另一方。${result.ambiguous.length ? ` ${result.ambiguous.length} 位人物父母归属待核对，分别显示来源连接。` : ""}${model.generation_conflicts ? ` ${model.generation_conflicts} 条世代矛盾边以橙色外侧线保留，未强行归组。` : ""}`;
+        if (notice) notice.textContent = `家庭单元 ${result.units.length} 个；单亲资料不补齐另一方。${result.ambiguous.length ? ` ${result.ambiguous.length} 位人物父母归属待核对，保留候选证据。` : ""}${model.generation_conflicts ? ` ${model.generation_conflicts} 条世代矛盾边保留，未强行归组。` : ""}`;
+        const perspective = document.getElementById("piFamilyPerspective");
+        if (perspective) perspective.textContent = `关系视角：中心人物 ${model.nodes.find(n => n.id === model.root)?.name || model.root}`;
         return { rendered: true, family_node_count: model.nodes.length, relation_count: model.edges.length, derived_path_count: model.paths.length,
             family_unit_count: result.units.length, ambiguous_children: result.ambiguous.length, generation_conflicts: model.generation_conflicts };
     }
-    window.PIExternalGraph = { render: reset, merge, buildModel, layout, wrapName, canExpand, hide, show, clear, fit,
+    window.PIExternalGraph = { render: reset, merge, buildModel, layout, wrapName, relationshipLabel, canExpand, hide, show, clear, fit,
         focus: () => {
             if (!externalZoom || !lastLayout) return;
             const point = lastLayout.positions.get(selectedId || lastLayout.model.root), rect = externalSvg.getBoundingClientRect();

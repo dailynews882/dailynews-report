@@ -226,6 +226,10 @@ let piLiveMode = false;
 let piSelectedExternalQid = null;
 let piSelectedExternalVersion = 0;
 let piExternalBusy = false;
+let piSelectionController = null;
+let piSelectionSequence = 0;
+let piSelectionPromise = null;
+let piSelectionRequestQid = null;
 
 function piFamilyStatus(message) {
     const status = document.getElementById("piFamilyStatus");
@@ -241,6 +245,7 @@ function piUpdateExpandButton() {
     if (button) button.disabled = piExternalBusy || !piSelectedExternalQid || !window.PIExternalGraph?.canExpand(piSelectedExternalQid);
 }
 function piResetFamilyPanel() {
+    ++piSelectionSequence; piSelectionController?.abort(); piSelectionPromise = null; piSelectionRequestQid = null;
     piSelectedExternalQid = null; piSelectedExternalVersion++; piExternalBusy = false;
     document.getElementById("piFamilyEvidenceList")?.replaceChildren();
     piUpdateExpandButton();
@@ -296,18 +301,16 @@ async function piExpandExternalPerson(qid) {
     const timer = setTimeout(() => controller.abort(), 30000);
     piExternalBusy = true; piUpdateExpandButton(); piFamilyStatus("正在实时展开 " + qid + "…");
     try {
-        const response = await fetch("/api/people-intelligence/external/profile/" + encodeURIComponent(qid), { cache: "no-store", signal: controller.signal });
-        const data = await response.json();
+        const shared = piSelectionRequestQid === qid ? piSelectionPromise : null;
+        const data = shared ? await shared : await piReadSelectedProfile(qid, controller.signal);
         if (sequence !== piExternalProfileSequence || searchVersion !== piExternalSearchSequence || version !== piSelectedExternalVersion) return;
-        if (!response.ok || !data.success) throw new Error(data.message || "展开失败");
         const result = window.PIExternalGraph.merge(data);
         if (!result.rendered) { piFamilyStatus("已达到展开边界，未重复加载。"); return; }
         piExternalOrganizationCache.set(qid, data.organization_relations || []);
         for (const node of data.nodes || []) piExternalOrganizationNodeMap.set(node.id, node);
         const selected = data.profile || {};
-        window.dispatchEvent(new CustomEvent("pi:external-person-selected", { detail: { qid, node: selected, relationship: "已展开；关系见来源连线" } }));
+        piRenderSelectedInfo(selected, { relationship: "关系见图谱中心视角标签" });
         piShowEvidence({ edges: data.family_relations || [] });
-        piFillExternalIdentity(selected);
         piFamilyStatus(piPartialNotice(data) + (result.limited ? " 已达到当前图谱节点上限。" : ""));
     } catch (error) {
         if (sequence === piExternalProfileSequence && searchVersion === piExternalSearchSequence && version === piSelectedExternalVersion)
@@ -1317,147 +1320,65 @@ function renderStrictFamilyTree(familyTree) {
  * Independent from the verified local V8.2 family tree.
  * Read-only; no database writes.
  */
+async function piReadSelectedProfile(qid, signal) {
+    const response = await fetch("/api/people-intelligence/external/profile/" + encodeURIComponent(qid), { cache: "no-store", signal });
+    const data = await response.json();
+    if (!response.ok || !data.success || data.profile?.id && data.profile.id !== qid || data.qid && data.qid !== qid) throw new Error(data.message || "人物资料读取失败或身份不匹配");
+    return data;
+}
+function piRenderSelectedInfo(node, detail = {}) {
+    const qid = String(node.id || detail.qid || ""), temporary = qid.startsWith("wp:"), article = temporary || node.source === "Wikipedia";
+    const list = values => Array.isArray(values) && values.length ? values.filter(Boolean).join("、") : "未获取";
+    const date = value => typeof (value?.time || value) === "string" ? (value.time || value).replace(/^\+/, "").split("T")[0] : "未获取";
+    const text = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value || "未获取"; };
+    const fields = {
+        infoNameZh: node.name || qid, infoNameEn: temporary ? "Wikipedia 会话临时身份 · 待独立核验" : "Wikidata · " + qid,
+        infoRole: list(node.occupations) === "未获取" ? node.description || "未获取" : list(node.occupations),
+        infoBirth: date(node.birth_date), infoDeath: date(node.death_date), infoCountry: list(node.citizenship), infoEducation: list(node.education),
+        infoMarital: "未获取（婚姻现状需来源核验）", infoCoreOrg: "未获取", infoBizList: "未获取当前人物企业资料", ciPositions: "未获取当前人物任职资料",
+        ciOwnership: "未获取当前人物持股资料", ciIndustries: "未获取当前人物产业资料", ciNews: "未获取当前人物新闻资料",
+        infoRelation: `关系视角：中心人物 ${detail.perspective || piCurrentExternalProfile?.name || piExternalRootQid || "（见图谱）"} · ${detail.relationship || "关系未获取"}`,
+        infoBiography: (node.description || "未获取人物简介") + (temporary && node.article?.excerpt ? "\n文章片段：" + node.article.excerpt : "") + `\n来源：${article ? "Wikipedia 文章记载" : "Wikidata"}；待独立核验。`
+    };
+    if (node.residence?.length || node.birthplace?.length) fields.infoCountry += `；居住：${list(node.residence)}；出生地：${list(node.birthplace)}`;
+    for (const [id, value] of Object.entries(fields)) text(id, value);
+    const photo = document.getElementById("infoPhoto"), wrap = document.getElementById("infoPhotoWrap");
+    const image = typeof node.profile_image_url === "string" && node.profile_image_url.startsWith("https://commons.wikimedia.org/") ? node.profile_image_url : "";
+    if (photo) { if (image) photo.src = image; else photo.removeAttribute("src"); }
+    if (wrap) wrap.style.display = image ? "block" : "none";
+    const wiki = document.getElementById("infoWikiUrl");
+    if (wiki) {
+        wiki.href = article && /^https:\/\/(zh|en)\.wikipedia\.org\//.test(node.source_url || "") ? node.source_url : temporary ? "#" : "https://www.wikidata.org/wiki/" + encodeURIComponent(qid);
+        wiki.textContent = article ? "查看 Wikipedia 修订来源 ↗" : "查看 Wikidata 原始资料 ↗";
+    }
+    if (!temporary && piExternalOrganizationCache.has(qid)) renderSelectedExternalOrganizations(qid);
+}
 window.addEventListener("pi:external-person-selected", event => {
-    const detail = event.detail || {};
-    const node = detail.node || {};
-    const qid = detail.qid || node.id;
-
-    if (!/^Q[1-9]\d*$/.test(String(qid || "")) && !/^wp:[a-f0-9]{32}:\d+$/.test(String(qid || ""))) {
-        return;
-    }
-
-    if (piExternalBusy && piSelectedExternalQid !== String(qid)) {
-        ++piExternalProfileSequence; piExternalProfileController?.abort(); piExternalBusy = false;
-    }
-    piSelectedExternalQid = String(qid);
-    piSelectedExternalVersion++;
-    piUpdateExpandButton();
-    // Invalidate pending local commercial intelligence requests.
-    ciRequestSequence += 1;
-
-    const setText = (id, value) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent =
-                value === null || value === undefined || value === ""
-                    ? "--"
-                    : String(value);
-        }
-    };
-
-    const formatDate = value => {
-        const raw = value?.time || value;
-
-        if (typeof raw !== "string") {
-            return "--";
-        }
-
-        const match = raw.match(
-            /^([+-]?\d{4,})-(\d{2})-(\d{2})/
-        );
-
-        return match
-            ? `${match[1].replace(/^\+/, "")}-${match[2]}-${match[3]}`
-            : "--";
-    };
-
-    // 01: Selected person's identity.
-    setText("infoNameZh", node.name || qid);
-    const articleNode = node.source === "Wikipedia";
-    setText("infoNameEn", articleNode ? `${/^wp:/.test(qid) ? "会话内临时身份" : "QID 身份"} · Wikipedia 文章记载／待独立核验` : `Wikidata · ${qid}`);
-
-    setText(
-        "infoRole",
-        node.description || "外部人物候选"
-    );
-
-    setText(
-        "infoBirth",
-        formatDate(node.birth_date)
-    );
-
-    setText(
-        "infoDeath",
-        formatDate(node.death_date)
-    );
-
-    piFillExternalIdentity(
-        String(qid) === String(piExternalRootQid)
-            ? (piCurrentExternalProfile || {})
-            : {},
-        detail.relationship ? `与中心人物关系：${detail.relationship}` : ""
-    );
-
-    setText(
-        "infoMarital",
-        detail.relationship
-            ? `与中心人物关系：${detail.relationship}`
-            : "外部人物关系待核验"
-    );
-
-    setText("infoCoreOrg", "暂无数据");
-
-    // Selected person's photo.
-    const photo = document.getElementById("infoPhoto");
-    const photoWrap = document.getElementById("infoPhotoWrap");
-
-    const imageUrl =
-        typeof node.profile_image_url === "string" &&
-            node.profile_image_url.startsWith(
-                "https://commons.wikimedia.org/"
-            )
-            ? node.profile_image_url
-            : "";
-
-    if (photo) {
-        if (imageUrl) {
-            photo.src = imageUrl;
-        } else {
-            photo.removeAttribute("src");
-        }
-    }
-
-    if (photoWrap) {
-        photoWrap.style.display =
-            imageUrl ? "block" : "none";
-    }
-
-    // Never reuse the previous person's commercial records.
-    const pendingFields = {
-        infoBizList: "当前人物企业关系待核验",
-        ciPositions: "当前人物商业任职待核验",
-        ciOwnership: "当前人物持股与控制权待核验",
-        ciIndustries: "当前人物产业与资本事件待核验",
-        ciNews: "当前人物商业新闻与风险事件待核验"
-    };
-
-    for (const [id, message] of Object.entries(pendingFields)) {
-        const element = document.getElementById(id);
-
-        if (element) {
-            element.textContent = message;
-            element.classList.add("ci-empty");
-        }
-    }
-
-    // V9.3-B: Restore only the selected person's own external organizations.
-    renderSelectedExternalOrganizations(String(qid));
-
-
-    setText(
-        "infoBiography",
-        node.description
-            ? `${node.description}\n\n来源：${articleNode ? "Wikipedia 文章记载" : "Wikidata"}。人物资料与关系尚未经过本站独立核验。`
-            : "外部人物候选，详细资料尚待核验。"
-    );
-
-    const wikiLink = document.getElementById("infoWikiUrl");
-
-    if (wikiLink) {
-        wikiLink.href = articleNode && /^https:\/\/(?:zh|en)\.wikipedia\.org\//.test(node.source_url || "") ? node.source_url : `https://www.wikidata.org/wiki/${encodeURIComponent(qid)}`;
-        wikiLink.textContent = articleNode ? "查看 Wikipedia 文章修订 ↗" : "查看 Wikidata 原始资料 ↗";
-    }
+    const detail = event.detail || {}, node = detail.node || {}, qid = String(detail.qid || node.id || "");
+    if (!/^Q[1-9]\d*$/.test(qid) && !/^wp:[a-f0-9]{32}:\d+$/.test(qid)) return;
+    if (piExternalBusy && piSelectedExternalQid !== qid) { ++piExternalProfileSequence; piExternalProfileController?.abort(); piExternalBusy = false; }
+    const sequence = ++piSelectionSequence, searchVersion = piExternalSearchSequence;
+    piSelectionController?.abort(); piSelectionPromise = null; piSelectionRequestQid = null;
+    piSelectedExternalQid = qid; piSelectedExternalVersion++; ciRequestSequence++; piUpdateExpandButton();
+    piRenderSelectedInfo({ ...node, id: qid }, detail);
+    const status = value => { const el = document.getElementById("piPersonStatus"); if (el) el.textContent = value; };
+    if (qid.startsWith("wp:")) { status("会话内已有资料与证据；未获取字段不补造，未进行姓名或本地人物回退。"); return; }
+    status("正在按所选人物 QID 获取实时详情…");
+    const controller = piSelectionController = new AbortController(), timer = setTimeout(() => controller.abort(), 30000);
+    piSelectionRequestQid = qid;
+    const task = piSelectionPromise = piReadSelectedProfile(qid, controller.signal);
+    task.then(data => {
+        if (sequence !== piSelectionSequence || searchVersion !== piExternalSearchSequence || piSelectedExternalQid !== qid) return;
+        piExternalOrganizationCache.set(qid, data.organization_relations || []);
+        for (const candidate of data.nodes || []) piExternalOrganizationNodeMap.set(candidate.id, candidate);
+        piRenderSelectedInfo({ ...data.profile, id: qid }, detail);
+        piShowEvidence({ edges: [...(detail.edges || []), ...(data.family_relations || [])], paths: detail.paths || [] });
+        status(data.partial_results ? "当前人物资料部分未获取；保留已取得内容。" : "当前人物实时资料已更新；关系仍待独立核验。");
+    }).catch(error => {
+        if (sequence === piSelectionSequence && searchVersion === piExternalSearchSequence) status("详情未获取：" + (controller.signal.aborted ? "请求已取消或超时" : error.message) + "；仅显示当前所选人物已有资料。");
+    }).finally(() => clearTimeout(timer));
 });
+
 
 
 function renderRightInfobox(entity, familyTree) {

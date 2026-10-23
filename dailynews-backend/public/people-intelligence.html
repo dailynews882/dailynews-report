@@ -377,7 +377,7 @@
                 <button type="button" id="piShowFamilyEvidence">关系来源</button>
                 <button type="button" id="piFamilyReadingSize">阅读大小</button>
             </div>
-            <div class="pi-family-layout-key">方形接点：亲子家庭单元；粉色：配偶；长虚线：前配偶；点线：待核验／资料不完整。可横向拖动人物、拖动画布。<div id="piFamilyLayoutNotice" aria-live="polite"></div></div>
+            <div class="pi-family-layout-key"><strong id="piFamilyPerspective">关系视角：中心人物</strong><br>统一深蓝灰色线：有来源的关系；方形接点：家庭单元。婚姻、待核验与冲突状态见文字及证据。可拖动画布、缩放查看。<div id="piFamilyLayoutNotice" aria-live="polite"></div></div>
             <p id="piFamilyStatus" class="pi-family-status" role="status" aria-live="polite">实时外部声明；缺失关系不作推断。</p>
             <svg id="familyTreeSvg"></svg>
         </main>
@@ -400,6 +400,8 @@
                     <div class="wiki-infobox-header">
                         <h2 id="infoNameZh">--</h2>
                         <span id="infoNameEn">--</span>
+                        <p id="infoRelation" style="font-size:12px;line-height:1.6;margin:8px 0 0">关系视角：中心人物</p>
+                        <p id="piPersonStatus" role="status" aria-live="polite" style="font-size:12px;line-height:1.6;margin:6px 0 0">单击人物查看其资料</p>
                     </div>
 
                     <div class="wiki-photo-box" id="infoPhotoWrap">
