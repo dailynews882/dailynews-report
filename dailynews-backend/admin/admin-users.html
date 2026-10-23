@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>用户管理 - Daily News</title>
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="admin.css?v=role-dialog-20261023" />
 </head>
 
 <body>
@@ -89,17 +89,21 @@
         </div>
       </div>
 
-      <dialog id="userRoleDialog" aria-labelledby="userRoleTitle" style="width:min(430px,calc(100% - 32px));box-sizing:border-box;border:0;border-radius:12px;padding:24px;">
+      <dialog id="userRoleDialog" aria-labelledby="userRoleTitle" aria-describedby="userRoleAvailability userRolePolicy">
         <form id="userRoleForm">
           <h2 id="userRoleTitle">设置管理角色</h2>
-          <p>当前角色：<strong id="userRoleCurrent"></strong></p>
+          <p id="userRoleActor"></p>
+          <p>目标用户当前角色：<strong id="userRoleCurrent"></strong></p>
           <label for="userRoleSelect">允许分配的角色</label>
-          <select id="userRoleSelect" required style="display:block;width:100%;margin:8px 0 14px;"></select>
-          <p>管理员、HR及超级管理员不能直接授予。高权限需独立审批；当前未开放此流程。公司职务不决定系统权限。</p>
+          <select id="userRoleSelect" required aria-describedby="userRoleAvailability"></select>
+          <p id="userRoleAvailability" role="status" aria-live="polite"></p>
+          <p id="userRolePolicy">管理员、HR及超级管理员不能直接授予。高权限需独立审批；当前未开放此流程。公司职务不决定系统权限。</p>
           <label for="userRoleReason">操作原因（5至500字）</label>
-          <textarea id="userRoleReason" required minlength="5" maxlength="500" rows="3" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px;"></textarea>
-          <button id="userRoleSubmit" type="submit" class="small-btn">确认设置</button>
-          <button id="userRoleCancel" type="button" class="table-btn">取消</button>
+          <textarea id="userRoleReason" required minlength="5" maxlength="500" rows="3"></textarea>
+          <div class="role-dialog-actions">
+            <button id="userRoleSubmit" type="submit" class="small-btn">确认设置</button>
+            <button id="userRoleCancel" type="button" class="table-btn">取消</button>
+          </div>
         </form>
       </dialog>
 
@@ -109,7 +113,7 @@
 
   <script src="admin-menu.js"></script>
   <script src="admin.js"></script>
-  <script src="admin-users-live.js?v=roles-20261023"></script>
+  <script src="admin-users-live.js?v=role-dialog-20261023"></script>
 </body>
 
 </html>

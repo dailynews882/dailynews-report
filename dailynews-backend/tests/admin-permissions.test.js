@@ -205,7 +205,7 @@ test("admin users UI: authorized role dialog, server-driven operations and filte
     function element(tag = "div") {
         const item = { tagName: tag, value: "", textContent: "", children: [], dataset: {}, style: {}, events: {}, disabled: false,
             appendChild(child) { this.children.push(child); }, append(...children) { this.children.push(...children); }, replaceChildren(...children) { this.children = children; },
-            addEventListener(event, fn) { this.events[event] = fn; }, showModal() { this.open = true; }, close() { this.open = false; } };
+            addEventListener(event, fn) { this.events[event] = fn; }, focus() {}, showModal() { this.open = true; }, close() { this.open = false; } };
         Object.defineProperty(item, "options", { get() { return this.children; } }); return item;
     }
     const get = id => { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); };
@@ -226,7 +226,7 @@ test("admin users UI: authorized role dialog, server-driven operations and filte
     await actions[1].events.click();
     assert.equal(get("userRoleDialog").open, true); assert(get("userRoleCurrent").textContent.includes("普通用户"));
     assert.deepEqual(get("userRoleSelect").children.map(option => option.value), ["member", "editor"]);
-    get("userRoleSelect").value = "editor"; get("userRoleReason").value = "Synthetic HR role reason";
+    get("userRoleSelect").value = "editor"; get("userRoleSelect").events.change(); get("userRoleReason").value = "Synthetic HR role reason";
     await get("userRoleForm").events.submit({ preventDefault() {} });
     assert.equal(get("userRoleDialog").open, false);
     assert.equal(calls.find(call => call.options.method === "POST").options.headers.Authorization, "Bearer fixture-admin-token");

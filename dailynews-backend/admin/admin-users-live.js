@@ -10,6 +10,11 @@
     const roleDialog = document.getElementById("userRoleDialog");
     const roleForm = document.getElementById("userRoleForm");
     let roleTarget = null;
+    function updateRoleSubmit() {
+        const role = document.getElementById("userRoleSelect").value;
+        document.getElementById("userRoleSubmit").disabled = !roleTarget ||
+            !(roleTarget.assignable_roles || []).includes(role) || role === roleTarget.admin_role;
+    }
     let page = 1;
     let requestNumber = 0;
     let debounce;
@@ -94,15 +99,22 @@
                             roleTarget = user;
                             const select = document.getElementById("userRoleSelect");
                             select.replaceChildren();
-                            for (const value of user.assignable_roles || []) {
+                            for (const value of [...new Set(user.assignable_roles || [])]) {
                                 const option = document.createElement("option"); option.value = value; option.textContent = roles[value] || value;
                                 select.appendChild(option);
                             }
-                            if (!select.options.length) return;
-                            if ((user.assignable_roles || []).includes(user.admin_role)) select.value = user.admin_role;
+                            select.disabled = select.options.length === 0;
+                            select.value = (user.assignable_roles || []).includes(user.admin_role) ? user.admin_role : select.options[0]?.value || "";
+                            document.getElementById("userRoleActor").textContent = "当前操作者：" + (roles[result.admin?.adminRole] || result.admin?.adminRole || "未知身份");
+                            const availability = document.getElementById("userRoleAvailability");
+                            if (!select.options.length) availability.textContent = "后端未授权可分配角色，不能提交角色变更。";
+                            else if (select.options.length === 1) availability.textContent = "权限限制：后端仅授权“" + select.options[0].textContent + "”；其他角色未获授权。";
+                            else availability.textContent = "本次允许分配：" + [...select.options].map(option => option.textContent).join("、") + "。请选择与当前角色不同的一项。";
                             document.getElementById("userRoleCurrent").textContent = (roles[user.admin_role] || user.admin_role) + " · " + user.username;
                             document.getElementById("userRoleReason").value = "";
+                            updateRoleSubmit();
                             roleDialog.showModal();
+                            if (!select.disabled) select.focus();
                             return;
                         }
                         let body = { ...extra };
@@ -186,6 +198,7 @@
         finally { submit.disabled = false; }
     });
     document.getElementById("userRoleCancel").addEventListener("click", () => roleDialog.close());
+    document.getElementById("userRoleSelect").addEventListener("change", updateRoleSubmit);
     roleFilter.addEventListener("change", () => { page = 1; load(); });
     search.addEventListener("input", () => {
         clearTimeout(debounce);
